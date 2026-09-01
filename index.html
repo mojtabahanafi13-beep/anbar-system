@@ -3066,8 +3066,13 @@ async function viewReceipt(docId) {
             return;
         }
 
-  }
-
+        currentReceiptPageIndex = 0;
+        showReceiptPage(0);
+    } catch(e) {
+        alert("خطا در دریافت سند: " + e.message);
+        document.getElementById('receipt-modal').style.display = 'none';
+    }
+}
 function showReceiptPage(index) {
     if(index < 0 || index >= currentReceiptImages.length) return;
     currentReceiptPageIndex = index;
