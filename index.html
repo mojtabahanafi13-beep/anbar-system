@@ -2024,7 +2024,7 @@ function deleteProduct(pCode) {
             location.reload();
         }
 
-  async function deleteReceipt(docId, event) {
+ async function deleteReceipt(docId, event) {
     if(event) event.stopPropagation();
     if(!confirm("⚠️ آیا از حذف عکس این رسید مطمئن هستید؟")) return;
     
@@ -2036,13 +2036,15 @@ function deleteProduct(pCode) {
         });
     } catch(e) {}
 
-  historyLog.forEach(log => { 
-                    if(String(log.docId) === String(docId)) { 
-                        log.receiptFile = "D1_STORED"; 
-                        log.receiptType = filesArray.some(f => typeof f === 'string' && f.startsWith('data:application/pdf')) ? 'pdf' : 'image'; 
-                        log.deliveryDate = nowStr; 
-                    } 
-                });
+    historyLog.forEach(log => { 
+        if(String(log.docId) === String(docId)) { 
+            log.receiptFile = null; 
+            log.receiptImage = null; 
+            log.receiptType = null; 
+            log.deliveryDate = null; 
+        } 
+    });
+    
     saveData();
     generateCardex();
     alert("✅ عکس رسید با موفقیت حذف شد.");
