@@ -3084,23 +3084,24 @@ function showReceiptPage(index) {
     const imgEl = document.getElementById('receiptImageDisplay');
     const pdfEl = document.getElementById('receiptPdfDisplay');
     const dlBtn = document.getElementById('btnDownloadPdf');
-    const isPdf = typeof content === 'string' && content.startsWith('data:application/pdf');
+    
+    // تشخیص نوع فایل بر اساس فرمت یا لینک
+    const isPdf = typeof content === 'string' && (content.startsWith('data:application/pdf') || content.toLowerCase().endsWith('.pdf'));
 
     if (isPdf) {
         if (imgEl) imgEl.style.display = 'none';
         if (pdfEl) {
             pdfEl.style.display = 'block';
-            try {
-                let arr = content.split(',');
-                let bstr = atob(arr.length > 1 ? arr[1] : arr[0]);
-                let n = bstr.length;
-                let u8arr = new Uint8Array(n);
-                for (let i = 0; i < n; i++) {
-                    u8arr[i] = bstr.charCodeAt(i);
-                }
-                let blob = new Blob([u8arr], { type: 'application/pdf' });
-                pdfEl.src = URL.createObjectURL(blob);
-            } catch(e) {
+            if (content.startsWith('data:')) {
+                try {
+                    let arr = content.split(',');
+                    let bstr = atob(arr.length > 1 ? arr[1] : arr[0]);
+                    let n = bstr.length;
+                    let u8arr = new Uint8Array(n);
+                    for (let i = 0; i < n; i++) u8arr[i] = bstr.charCodeAt(i);
+                    pdfEl.src = URL.createObjectURL(new Blob([u8arr], { type: 'application/pdf' }));
+                } catch(e) { pdfEl.src = content; }
+            } else {
                 pdfEl.src = content;
             }
         }
@@ -3110,17 +3111,9 @@ function showReceiptPage(index) {
             dlBtn.download = `Document_${photoDocId || 'file'}.pdf`;
         }
     } else {
-        if (pdfEl) {
-            pdfEl.style.display = 'none';
-            pdfEl.src = '';
-        }
-        if (imgEl) {
-            imgEl.style.display = 'block';
-            imgEl.src = content;
-        }
-        if (dlBtn) {
-            dlBtn.style.display = 'none';
-        }
+        if (pdfEl) { pdfEl.style.display = 'none'; pdfEl.src = ''; }
+        if (imgEl) { imgEl.style.display = 'block'; imgEl.src = content; }
+        if (dlBtn) { dlBtn.style.display = 'none'; }
     }
 
     document.getElementById('receiptPageCounter').innerText = `برگه ${index + 1} از ${currentReceiptImages.length}${isPdf ? ' (PDF)' : ''}`;
