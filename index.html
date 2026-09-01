@@ -2024,7 +2024,7 @@ function deleteProduct(pCode) {
             location.reload();
         }
 
- async function deleteReceipt(docId, event) {
+async function deleteReceipt(docId, event) {
     if(event) event.stopPropagation();
     if(!confirm("⚠️ آیا از حذف عکس این رسید مطمئن هستید؟")) return;
     
@@ -3066,20 +3066,7 @@ async function viewReceipt(docId) {
             return;
         }
 
-        currentReceiptPageIndex = 0;
-        showReceiptPage(0);
-    } catch(e) {
-        alert("خطا در دریافت سند: " + e.message);
-        document.getElementById('receipt-modal').style.display = 'none';
-    }
-}
-        currentReceiptPageIndex = 0;
-        showReceiptPage(0);
-    } catch(e) {
-        alert("خطا در دریافت سند: " + e.message);
-        document.getElementById('receipt-modal').style.display = 'none';
-    }
-}
+  }
 
 function showReceiptPage(index) {
     if(index < 0 || index >= currentReceiptImages.length) return;
