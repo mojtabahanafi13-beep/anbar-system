@@ -3063,7 +3063,7 @@ async function viewReceipt(docId) {
             }
         }
         
-        currentReceiptImages = list.filter(item => typeof item === 'string' && (item.startsWith('data:image') || item.startsWith('data:application/pdf')));
+      currentReceiptImages = list.filter(item => typeof item === 'string' && (item.startsWith('data:image') || item.startsWith('data:application/pdf') || item.startsWith('http') || item.startsWith('https')));
         
         if(!currentReceiptImages.length) {
             alert("سندی در سرور یافت نشد.");
