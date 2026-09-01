@@ -3033,11 +3033,6 @@ function uploadReceiptFilesWithProgress(docId, filesArray) {
 
 // نمایش رسید (پشتیبانی هوشمند از PDF و عکس)
 async function viewReceipt(docId) { 
-    currentViewingDocData = historyLog.find(t => String(t.docId) === String(docId));
-    if(!currentViewingDocData || (!currentViewingDocData.receiptFile && !currentViewingDocData.receiptImage)) {
-        return alert("رسیدی برای این سند ثبت نشده است.");
-    }
-    
     photoDocId = docId;
     resetZoom();
     document.getElementById('receipt-modal').style.display = 'flex';
@@ -3063,14 +3058,21 @@ async function viewReceipt(docId) {
             }
         }
         
-      currentReceiptImages = list.filter(item => typeof item === 'string' && (item.startsWith('data:image') || item.startsWith('data:application/pdf') || item.startsWith('http') || item.startsWith('https')));
+        currentReceiptImages = list.filter(item => typeof item === 'string' && (item.startsWith('data:image') || item.startsWith('data:application/pdf') || item.startsWith('http') || item.startsWith('https')));
         
         if(!currentReceiptImages.length) {
-            alert("سندی در سرور یافت نشد.");
+            alert("رسیدی برای این سند در سرور یافت نشد.");
             document.getElementById('receipt-modal').style.display = 'none';
             return;
         }
 
+        currentReceiptPageIndex = 0;
+        showReceiptPage(0);
+    } catch(e) {
+        alert("خطا در دریافت سند: " + e.message);
+        document.getElementById('receipt-modal').style.display = 'none';
+    }
+}
         currentReceiptPageIndex = 0;
         showReceiptPage(0);
     } catch(e) {
