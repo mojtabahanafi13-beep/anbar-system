@@ -721,118 +721,151 @@
         }
 
         // 🔥 اصلاح: ارسال تمام اسناد (نه فقط ۵۰ تای آخر)
-        function saveData() {
+      function saveData() {
             if (saveInProgress) { saveQueued = true; return; }
             saveInProgress = true; saveQueued = false;
             try {
                 rebuildInventory();
                 updateLocalCache();
-                
-                fetch(`${DB_URL}/api/append-doc?company=${companyPrefix}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ company: companyPrefix, items: historyLog })
-                }).then(r => {
-                    if (r.ok) { 
-                        cloudSyncedRevision = localMutationRevision;
-                        document.getElementById('cloudStatus').innerHTML = '☁️ آنلاین';
-                        document.getElementById('cloudStatus').style.background = 'rgba(16,185,129,0.9)'; 
-                    }
-                }).catch(e => {
-                    document.getElementById('cloudStatus').innerHTML = '⚠️ نسخه محلی';
-                    document.getElementById('cloudStatus').style.background = 'rgba(239,68,68,0.9)';
-                }).finally(() => { 
-                    saveInProgress = false; 
-                    if (saveQueued) setTimeout(saveData, 0); 
-                });
-            } catch (e) {
-                console.error(e);
-                saveInProgress = false;
-                showToast('❌ خطا در ذخیره: ' + e.message, 'error');
-            }
-        }
 
-        async function fetchDataFromServer() {
-            const statusDiv = document.getElementById('cloudStatus');
-            try {
-                const res = await fetch(`${DB_URL}/api/data?company=${companyPrefix}&t=${Date.now()}`);
-                const cloud = await res.json();
-                if (!cloud) return;
-                
-                const cloudRev = cloud._revision || 0;
-                if (cloudRev > localMutationRevision) {
-                    productsMap = cloud.productsMap || {};
-                    productsUnitsMap = cloud.productsUnitsMap || {};
-                    productsWeightMap = cloud.productsWeightMap || {};
-                    lastDocNumber = cloud.lastDocNumber || 1000;
-                    sysSettings = cloud.sysSettings || sysSettings;
-                    sysUsers = cloud.sysUsers || sysUsers;
-                    historyLog = (cloud.historyLog || []).filter(x => x && x.docId != null);
-                    rebuildInventory();
-                    updateLocalCache();
-                    localMutationRevision = cloudRev;
-                    cloudSyncedRevision = cloudRev;
-                    if (statusDiv) {
-                        statusDiv.innerText = '☁️ آنلاین';
-                        statusDiv.style.background = 'rgba(16,185,129,0.9)';
-                    }
-                    showToast('✅ داده‌های جدید از سرور دریافت شد.', 'success');
-                } else if (localMutationRevision > cloudRev) {
-                    await uploadLocalToCloud();
+                let statusDiv = document.getElementById('cloudStatus');
+                if (statusDiv) { 
+                    statusDiv.innerText = '⏳ در حال ذخیره...'; 
+                    statusDiv.style.background = 'rgba(59,130,246,0.9)'; 
                 }
-                
-                if (currentUser) {
-                    if (currentUser.role !== 'loader') loadDropdowns();
-                    if (currentUser.role === 'admin') renderSettings();
-                    if (currentUser.role !== 'loader') renderInventory();
-                    if (document.getElementById('tab-dashboard').style.display === 'block') renderDashboard();
-                    if (document.getElementById('tab-cardex').style.display === 'block') generateCardex();
-                }
-            } catch (e) {
-                if (!navigator.onLine && statusDiv) {
-                    statusDiv.innerText = '🔌 آفلاین';
-                    statusDiv.style.background = 'rgba(239,68,68,0.9)';
-                }
-                console.warn('Sync error', e);
-            }
-        }
+                if (!companyPrefix) { saveInProgress = false; return; }
 
-        async function uploadLocalToCloud() {
-            const statusDiv = document.getElementById('cloudStatus');
-            if (statusDiv) {
-                statusDiv.innerText = '⏳ در حال ارسال...';
-                statusDiv.style.background = 'rgba(59,130,246,0.9)';
-            }
-            
-            try {
-                // 🔥 تغییر: ارسال کل historyLog
                 const payload = {
-                    company: companyPrefix,
-                    items: historyLog
+                    productsMap,
+                    productsUnitsMap,
+                    productsWeightMap,
+                    inventory,
+                    historyLog,
+                    lastDocNumber,
+                    sysSettings,
+                    sysUsers
                 };
-                
-                const res = await fetch(`${DB_URL}/api/append-doc?company=${companyPrefix}`, {
-                    method: 'POST',
+
+                fetch(`${DB_URL}/api/save-all?company=${companyPrefix}`, {
+                    method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
-                });
-                
-                if (res.ok) {
-                    showToast('✅ همگام‌سازی با سرور انجام شد.', 'success');
+                }).then(r => {
+                    if (!r.ok) throw new Error('HTTP ' + r.status);
                     if (statusDiv) {
                         statusDiv.innerText = '☁️ آنلاین';
                         statusDiv.style.background = 'rgba(16,185,129,0.9)';
                     }
-                } else {
-                    throw new Error('HTTP ' + res.status);
+                }).catch(err => {
+                    console.warn('Cloud save error:', err);
+                    if (statusDiv) {
+                        statusDiv.innerText = '⚠️ نسخه محلی';
+                        statusDiv.style.background = 'rgba(239,68,68,0.9)';
+                    }
+                }).finally(() => {
+                    saveInProgress = false;
+                    if (saveQueued) setTimeout(saveData, 0);
+                });
+            } catch (err) {
+                console.error(err);
+                saveInProgress = false;
+                saveQueued = false;
+            }
+            if (document.getElementById('tab-dashboard')?.style.display === 'block') renderDashboard();
+        }
+    function fetchDataFromServer() {
+            if (!companyPrefix) return;
+            const statusDiv = document.getElementById('cloudStatus');
+            fetch(`${DB_URL}/api/data?company=${companyPrefix}&t=${Date.now()}`)
+                .then(res => res.json())
+                .then(cloudData => {
+                    if (cloudData && typeof cloudData === 'object') {
+                        // فقط در صورتی که دیتای سرور پر باشد جایگزین می‌شود
+                        if (cloudData.productsMap && Object.keys(cloudData.productsMap).length > 0) {
+                            productsMap = cloudData.productsMap;
+                        }
+                        if (cloudData.productsUnitsMap) productsUnitsMap = cloudData.productsUnitsMap;
+                        if (cloudData.productsWeightMap) productsWeightMap = cloudData.productsWeightMap;
+                        if (cloudData.lastDocNumber) lastDocNumber = cloudData.lastDocNumber;
+                        if (cloudData.sysSettings) sysSettings = cloudData.sysSettings;
+                        
+                        if (Array.isArray(cloudData.historyLog) && cloudData.historyLog.length > 0) {
+                            const cloudDocs = cloudData.historyLog.filter(x => x && x.docId != null);
+                            if (cloudDocs.length >= historyLog.length) {
+                                historyLog = cloudDocs;
+                            }
+                        }
+                        
+                        if (Array.isArray(cloudData.sysUsers) && cloudData.sysUsers.length > 0) {
+                            sysUsers = cloudData.sysUsers.filter(u => u && u.name);
+                        }
+                        ensureDefaultUsers();
+                        rebuildInventory();
+                        updateLocalCache();
+                    }
+
+                    if (statusDiv) {
+                        statusDiv.innerText = '☁️ آنلاین';
+                        statusDiv.style.background = 'rgba(16,185,129,0.9)';
+                    }
+
+                    if (currentUser) {
+                        if (currentUser.role !== 'loader') loadDropdowns();
+                        if (currentUser.role === 'admin') renderSettings();
+                        if (currentUser.role !== 'loader') renderInventory();
+                        if (document.getElementById('tab-dashboard')?.style.display === 'block') renderDashboard();
+                        if (document.getElementById('tab-cardex')?.style.display === 'block') generateCardex();
+                    }
+                })
+                .catch(err => {
+                    if (!navigator.onLine && statusDiv) {
+                        statusDiv.innerText = '🔌 آفلاین';
+                        statusDiv.style.background = 'rgba(239,68,68,0.9)';
+                    }
+                });
+        }
+ function uploadLocalToCloud() {
+            if (!companyPrefix) return showToast("❌ شرکتی انتخاب نشده است.", "error");
+            const statusDiv = document.getElementById('cloudStatus');
+            if (statusDiv) {
+                statusDiv.innerText = '⏳ در حال ارسال کامل به سرور...';
+                statusDiv.style.background = 'rgba(59,130,246,0.9)';
+            }
+
+            rebuildInventory();
+            updateLocalCache();
+
+            const payload = {
+                productsMap,
+                productsUnitsMap,
+                productsWeightMap,
+                inventory,
+                historyLog,
+                lastDocNumber,
+                sysSettings,
+                sysUsers
+            };
+
+            fetch(`${DB_URL}/api/save-all?company=${companyPrefix}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(res => {
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                showToast('✅ تمام اطلاعات با سرور ابری همگام و ذخیره شد.', 'success');
+                if (statusDiv) {
+                    statusDiv.innerText = '☁️ آنلاین';
+                    statusDiv.style.background = 'rgba(16,185,129,0.9)';
                 }
-            } catch (e) {
-                showToast('❌ خطا در ارسال به سرور: ' + e.message, 'error');
+            })
+            .catch(err => {
+                showToast('❌ خطا در ارسال به سرور: ' + err.message, 'error');
                 if (statusDiv) {
                     statusDiv.innerText = '⚠️ خطای ارسال';
                     statusDiv.style.background = 'rgba(239,68,68,0.9)';
                 }
-            }
+            });
         }
 
         function getSafeLocal(key, defaultVal) {
