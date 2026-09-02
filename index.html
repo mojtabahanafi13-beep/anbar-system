@@ -4822,6 +4822,7 @@ function loadDropdowns() {
     };
 
     // ۴. ارسال نقطه‌ای اسناد (Point-in-time Sync) به همراه تاریخ بارگیری
+  // ۴. ارسال نقطه‌ای اسناد (Point-in-time Sync) به همراه تاریخ بارگیری و انبار اختصاصی
     window.syncSingleDocToServer = async function(docId, docItems) {
         if (!navigator.onLine) return;
         try {
@@ -4831,7 +4832,13 @@ function loadDropdowns() {
                 warehouse: docItems[0].warehouse || '', operator: docItems[0].operator || 'سیستم',
                 dispatchStatus: docItems[0].dispatchStatus || 'done',
                 dispatchDate: docItems[0].dispatchDate || null, 
-                items: docItems.map(i => ({ pCode: i.pCode, batch: i.batch || 'نامشخص', qtyCarton: i.qtyCarton || 0, qtyLoose: i.qtyLoose || 0, totalPieces: i.totalPieces }))
+                // افزودن متغیر انبار (warehouse) به ازای هر کالا!
+                items: docItems.map(i => ({ 
+                    pCode: i.pCode, batch: i.batch || 'نامشخص', 
+                    qtyCarton: i.qtyCarton || 0, qtyLoose: i.qtyLoose || 0, 
+                    totalPieces: i.totalPieces, 
+                    warehouse: i.warehouse || i.wh || docItems[0].warehouse 
+                }))
             };
             await fetch(`${DB_URL}/api/document?company=${companyPrefix}`, {
                 method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
@@ -4931,6 +4938,125 @@ function loadDropdowns() {
                 await syncSingleDocToServer(targetDocId, updatedDocs);
             }
         }
+    };
+// ۸. رفع مشکل ادغام شدن کالاها از انبارهای مختلف در سفارش‌برداری خروج
+    window.addRequirement = function() { 
+        let wh = document.getElementById('outWarehouseSelect').value;
+        if(!wh) { playBeep('error'); return alert("ابتدا انبار مبدأ (بارگیری) را مشخص کنید."); }
+        
+        let rawVal = document.getElementById('reqProductSelect').value;
+        let pCode = rawVal.split(' - ')[0].trim();
+        let reqP = parseInt(document.getElementById('reqTotalPieces').value) || 0; 
+        
+        if(!pCode || !productsMap[pCode]) { return alert("❌ کد یا نام کالا اشتباه است!"); }
+        if(reqP <= 0) { return alert("❌ تعداد سفارش را به درستی وارد کنید."); }
+        
+        let totalStock = getActualStock(pCode, wh);
+
+        let existing = outRequirements.find(r => r.pCode === pCode && r.wh === wh); 
+        let currentReq = existing ? existing.reqPieces : 0;
+        
+        if((currentReq + reqP) > totalStock) {
+            playBeep('error');
+            return alert(`❌ موجودی ناکافی در انبار ${wh}!\nموجودی کل این کالا: ${totalStock} عدد\nسفارش شما تا الان: ${currentReq + reqP} عدد`);
+        }
+
+        if(existing) existing.reqPieces += reqP; 
+        else outRequirements.push({ pCode: pCode, name: productsMap[pCode], uPerCarton: parseInt(productsUnitsMap[pCode]) || 1, reqPieces: reqP, scannedPieces: 0, wh: wh }); 
+        
+        document.getElementById('reqProductSelect').value = ''; 
+        document.getElementById('reqTotalPieces').value = ''; 
+        document.getElementById('dl-prods').style.display = 'none';
+        renderRequirements(); playBeep('success'); document.getElementById('reqProductSelect').focus();
+    };
+
+    // ۹. اصلاح تابع باز کردن اسکنر کامیون برای به خاطر سپردن انبارِ اصلیِ هر کالا
+    window.openDispatchScanner = function(docId, event) {
+        try {
+            if(event && typeof event.stopPropagation === 'function') event.stopPropagation();
+            const targetDocId = String(docId ?? '').trim();
+            if(!targetDocId) { showScanError('شماره حواله نامعتبر است.'); return; }
+
+            const docs = Array.isArray(historyLog) ? historyLog.filter(t => String(t.docId ?? '').trim() === targetDocId) : [];
+            if(!docs.length) { showScanError(`حواله ${targetDocId} پیدا نشد.`); return; }
+
+            currentDispatchDocId = docs[0].docId;
+            currentDispatchScans = [];
+            dispatchReqs = {};
+
+            docs.forEach(item => {
+                const key = String(item.pCode ?? '').trim();
+                if(!key) return;
+                if(!dispatchReqs[key]) {
+                    dispatchReqs[key] = {
+                        pCode: key, batch: item.batch || 'نامشخص', name: productsMap[key] || key,
+                        req: 0, scanned: 0, scannedCartons: 0, scannedLoose: 0,
+                        warehouse: item.warehouse || docs[0].warehouse 
+                    };
+                }
+                dispatchReqs[key].req += Number(item.totalPieces) || 0;
+            });
+
+            restoreDispatchProgress(targetDocId);
+
+            document.getElementById('dispatchDocIdLabel').innerText = targetDocId;
+            document.getElementById('dispatchBarcode').value = '';
+            document.getElementById('dispatchQtyLoose').value = 0;
+            document.getElementById('dispatchQtyManualCarton').value = 0;
+            updateLiveInfoDispatch(false, '');
+            renderDispatchTable();
+            document.getElementById('dispatch-modal').style.display = 'flex';
+            setTimeout(() => { try { document.getElementById('dispatchBarcode').focus(); } catch(e) {} }, 300);
+        } catch(err) { showScanError('خطا: ' + err.message); }
+    };
+
+    // ۱۰. ثبت نهایی اسکن کامیون با جایگذاری صحیح انبارِ هر کالا و آپلود به سرور
+    window.finalizeDispatchDoc = async function() {
+        let oldItems = historyLog.filter(log => String(log.docId) === String(currentDispatchDocId));
+        if(!oldItems.length) { alert('❌ حواله پیدا نشد یا قبلاً نهایی شده است.'); return; }
+
+        const problems = [];
+        Object.keys(dispatchReqs || {}).forEach(key => {
+            const r = dispatchReqs[key];
+            if (Number(r.scanned || 0) !== Number(r.req || 0)) problems.push(`${r.name}: موردنیاز ${r.req} عدد، اسکن‌شده ${r.scanned} عدد`);
+        });
+        if (!currentDispatchScans || currentDispatchScans.length === 0) problems.push('هیچ اسکن ثبت‌شده‌ای وجود ندارد.');
+        if (problems.length) { alert('⛔ تأیید متوقف شد.\n\n' + problems.slice(0,10).join('\n')); renderDispatchTable(); return; }
+        
+        let master = oldItems[0];
+        historyLog = historyLog.filter(log => String(log.docId) !== String(currentDispatchDocId));
+        
+        let groupedScans = {};
+        currentDispatchScans.forEach(scan => {
+            let key = scan.rawBarcode; 
+            if(!groupedScans[key]) {
+                let originalWh = dispatchReqs[scan.pCode] ? dispatchReqs[scan.pCode].warehouse : master.warehouse;
+                groupedScans[key] = { pCode: scan.pCode, batch: scan.batch, rawBarcode: scan.rawBarcode, pieces: 0, warehouse: originalWh };
+            }
+            groupedScans[key].pieces += scan.pieces;
+        });
+        
+        let updatedDocs = [];
+        Object.values(groupedScans).forEach(scan => {
+            let units = parseInt(productsUnitsMap[scan.pCode]) || 1;
+            let newItem = {
+                docId: currentDispatchDocId, officeDoc: master.officeDoc, date: master.date, type: 'خروج',
+                pCode: scan.pCode, batch: scan.batch, rawBarcode: scan.rawBarcode,
+                qtyCarton: Math.floor(scan.pieces / units), qtyLoose: scan.pieces % units, totalPieces: scan.pieces,
+                warehouse: scan.warehouse || master.warehouse, 
+                ref: master.ref, operator: master.operator, dispatchStatus: 'done',
+                dispatchDate: new Date().toLocaleString('fa-IR'), 
+                receiptFile: master.receiptFile || null, receiptType: master.receiptType || null, deliveryDate: master.deliveryDate || null
+            };
+            historyLog.push(newItem);
+            updatedDocs.push(newItem);
+        });
+        
+        clearDispatchProgress(currentDispatchDocId);
+        if(updatedDocs.length > 0) await syncSingleDocToServer(currentDispatchDocId, updatedDocs);
+        
+        saveData(); generateCardex(); closeDispatchScanner();
+        alert("🎉 بارگیری تایید شد و کالاها از انبارهای مجزای خود کسر شدند!");
     };
 </script>
 </body>
