@@ -4172,7 +4172,7 @@ function generateCardex() {
         });
         
         // مرتب‌سازی بر اساس آخرین سند ثبت‌شده توسط کاربر در بالاترین سطر
-        let filteredDocs = Object.values(docsMap).sort((a,b) => b._orderIndex - a._orderIndex).filter(doc => {
+        let filteredDocs = Object.values(docsMap).sort((a,b) => a._orderIndex - b._orderIndex).filter(doc => {
             const matchType = (fType === 'all' || doc.type === fType);
             const normRef = normalizeSearchText(doc.ref);
             const matchTarget = (fTarget === '' || normRef.includes(fTarget) || Array.from(doc.involvedWH).some(w => normalizeSearchText(w).includes(fTarget)));
@@ -4414,7 +4414,7 @@ function getFilteredDocumentRows() {
     });
 
     return Object.values(map)
-        .sort((a,b) => b._orderIndex - a._orderIndex)
+        .sort((a,b) => a._orderIndex - b._orderIndex)
         .filter(d => {
             let blob = normalizeSearchText([d.officeDoc, d.docId, d.ref, ...d.warehouses, ...d.items.map(i => [productsMap[i.pCode]||'', i.pCode, i.batch, i.rawBarcode||''])].flat().join(' '));
             return (fType === 'all' || d.type === fType) && (!fTarget || blob.includes(fTarget)) && (!query || blob.includes(query));
