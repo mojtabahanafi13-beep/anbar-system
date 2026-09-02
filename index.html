@@ -3137,14 +3137,7 @@ function printReceiptImage() {
     `).join('');
 
     printArea.innerHTML = pagesHtml;
-    printArea.style.display = 'block';
-    document.body.classList.add('printing');
-    setTimeout(() => {
-        window.print();
-        printArea.innerHTML = '';
-        printArea.style.display = 'none';
-        document.body.classList.remove('printing');
-    }, 2000);
+    window.print();
 }
 
 function applyReceiptTransform() {
@@ -3182,17 +3175,8 @@ function printFactor() {
     const target = document.getElementById('printArea');
     if(target) {
         target.innerHTML = source.innerHTML;
-        target.style.display = 'block';
     }
-    document.body.classList.add('printing');
-    setTimeout(() => {
-        window.print();
-        if(target) {
-            target.innerHTML = '';
-            target.style.display = 'none';
-        }
-        document.body.classList.remove('printing');
-    }, 2000);
+    window.print();
 }
 
 function viewSystemFactor(docId) { 
@@ -4002,10 +3986,11 @@ function exportInventoryExcel() {
 }
 
 // پرینت استاندارد و سازگار با انواع مرورگر و دستگاه‌ها
-function printInventory() {
-    let rows = getInventoryRowsForExport();
-    if (!rows.length) return alert("❌ موردی برای چاپ وجود ندارد.");
-
+const printArea = document.getElementById('printArea');
+    if (!printArea) return;
+    printArea.innerHTML = html;
+    window.print();
+}
     let filterWh = document.getElementById('filterWarehouseSelect')?.value || 'all';
     let whTitle = filterWh === 'all' ? 'همه انبارها' : filterWh;
     let todayStr = new Date().toLocaleDateString('fa-IR');
