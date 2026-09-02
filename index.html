@@ -4746,6 +4746,7 @@ function loadDropdowns() {
     };
 
     // ۲. دریافت اطلاعات با API جدید و سیستم خطایاب
+   // ۲. دریافت اطلاعات با API جدید و سیستم خطایاب
     window.fetchDataFromServer = function() {
         if (!companyPrefix) return;
         const statusDiv = document.getElementById("cloudStatus");
@@ -4770,8 +4771,23 @@ function loadDropdowns() {
                     if (cloudData.productsUnitsMap) productsUnitsMap = cloudData.productsUnitsMap;
                     if (cloudData.productsWeightMap) productsWeightMap = cloudData.productsWeightMap;
                     if (cloudData.sysSettings) sysSettings = cloudData.sysSettings;
-                    if (Array.isArray(cloudData.historyLog)) historyLog = cloudData.historyLog;
                     if (Array.isArray(cloudData.sysUsers)) sysUsers = cloudData.sysUsers;
+                    
+                    // --- فیلتر جادویی برای شمسی کردن ساعت و تاریخ سرور ابری ---
+                    if (Array.isArray(cloudData.historyLog)) {
+                        historyLog = cloudData.historyLog.map(log => {
+                            // بررسی می‌کند اگر تاریخ آپلود عکس، میلادی خام است، آن را به شمسیِ منطقه زمانی شما تبدیل کند
+                            if (log.deliveryDate && log.deliveryDate.match(/^20\d{2}-\d{2}-\d{2}/)) {
+                                try {
+                                    // تبدیل ساعت جهانی (GMT) کلودفلر به وقت محلی شما و سپس فرمت شمسی
+                                    log.deliveryDate = new Date(log.deliveryDate + " GMT").toLocaleString('fa-IR');
+                                } catch(e) {}
+                            }
+                            return log;
+                        });
+                    }
+                    // -------------------------------------------------------------
+
                     ensureDefaultUsers(); rebuildInventory(); updateLocalCacheOnly();
                 }
                 if (currentUser) {
