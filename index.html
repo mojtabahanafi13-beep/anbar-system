@@ -3144,7 +3144,7 @@ function printReceiptImage() {
         printArea.innerHTML = '';
         printArea.style.display = 'none';
         document.body.classList.remove('printing');
-    }, 100000);
+    }, 2000);
 }
 
 function applyReceiptTransform() {
@@ -3192,7 +3192,7 @@ function printFactor() {
             target.style.display = 'none';
         }
         document.body.classList.remove('printing');
-    }, 100000);
+    }, 2000);
 }
 
 function viewSystemFactor(docId) { 
@@ -4087,7 +4087,7 @@ function printInventory() {
         printArea.innerHTML = '';
         printArea.style.display = 'none';
         document.body.classList.remove('printing');
-    }, 100000);
+    }, 2000);
 }
         function downloadCsv(rows,filename){
             let headers=Object.keys(rows[0]),csv="\uFEFF"+headers.join(",")+"\n"+rows.map(r=>headers.map(h=>`"${String(r[h]??"").replace(/"/g,'""')}"`).join(",")).join("\n");
