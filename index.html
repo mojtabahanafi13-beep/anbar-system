@@ -4743,13 +4743,26 @@ function loadDropdowns() {
     };
 
     // ۲. جایگزین کردن دریافت اطلاعات با API جدید (سبک‌سازی لود اولیه)
+   // ۲. جایگزین کردن دریافت اطلاعات با API جدید (همراه با سیستم خطایاب هوشمند)
     window.fetchDataFromServer = function() {
         if (!companyPrefix) return;
         const statusDiv = document.getElementById("cloudStatus");
+        
         fetch(`${DB_URL}/api/init?company=${companyPrefix}&t=${Date.now()}`)
-            .then(response => response.json())
+            .then(async response => {
+                if (!response.ok) {
+                    const errText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errText}`);
+                }
+                return response.json();
+            })
             .then(cloudData => {
-                if (statusDiv) { statusDiv.innerText = "☁️ آنلاین (D1)"; statusDiv.style.background = "rgba(16, 185, 129, 0.9)"; }
+                if (cloudData.error) throw new Error(cloudData.error);
+                
+                if (statusDiv) { 
+                    statusDiv.innerText = "☁️ آنلاین (D1)"; 
+                    statusDiv.style.background = "rgba(16, 185, 129, 0.9)"; 
+                }
                 if (cloudData && typeof cloudData === 'object') {
                     if (cloudData.productsMap) productsMap = cloudData.productsMap;
                     if (cloudData.productsUnitsMap) productsUnitsMap = cloudData.productsUnitsMap;
@@ -4768,10 +4781,14 @@ function loadDropdowns() {
                 }
             })
             .catch(err => {
-                if (!navigator.onLine && statusDiv) { statusDiv.innerText = "🔌 آفلاین"; statusDiv.style.background = "rgba(239, 68, 68, 0.9)"; }
+                console.error("خطای ارتباط با سرور:", err);
+                if (statusDiv) { 
+                    statusDiv.innerText = "⚠️ خطا در ارتباط"; 
+                    statusDiv.style.background = "rgba(239, 68, 68, 0.9)"; 
+                    statusDiv.title = err.message; // با نگه داشتن موس روی دکمه قرمز، متن ارور نشان داده می‌شود
+                }
             });
     };
-
     // ۳. جدا کردن ذخیره اطلاعات پایه (کالاها) از اسناد حجیم
     window.saveData = function() {
         rebuildInventory();
