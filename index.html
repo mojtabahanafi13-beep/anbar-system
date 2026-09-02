@@ -3986,11 +3986,10 @@ function exportInventoryExcel() {
 }
 
 // پرینت استاندارد و سازگار با انواع مرورگر و دستگاه‌ها
-const printArea = document.getElementById('printArea');
-    if (!printArea) return;
-    printArea.innerHTML = html;
-    window.print();
-}
+function printInventory() {
+    let rows = getInventoryRowsForExport();
+    if (!rows.length) return alert("❌ موردی برای چاپ وجود ندارد.");
+
     let filterWh = document.getElementById('filterWarehouseSelect')?.value || 'all';
     let whTitle = filterWh === 'all' ? 'همه انبارها' : filterWh;
     let todayStr = new Date().toLocaleDateString('fa-IR');
@@ -4064,15 +4063,7 @@ const printArea = document.getElementById('printArea');
     const printArea = document.getElementById('printArea');
     if (!printArea) return;
     printArea.innerHTML = html;
-    printArea.style.display = 'block';
-    document.body.classList.add('printing');
-
-    setTimeout(() => {
-        window.print();
-        printArea.innerHTML = '';
-        printArea.style.display = 'none';
-        document.body.classList.remove('printing');
-    }, 2000);
+    window.print();
 }
         function downloadCsv(rows,filename){
             let headers=Object.keys(rows[0]),csv="\uFEFF"+headers.join(",")+"\n"+rows.map(r=>headers.map(h=>`"${String(r[h]??"").replace(/"/g,'""')}"`).join(",")).join("\n");
