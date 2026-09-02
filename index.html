@@ -4216,10 +4216,12 @@ function generateCardex() {
             let hasReceipt = Boolean(doc.receiptFile || doc.receiptImage);
             
             let typeHtml = doc.type;
-            if (doc.type === 'خروج') {
-                let statusStr = doc.dispatchStatus === 'pending' ? 'در انتظار بارگیری' : 'ارسال شده';
-                let statusColor = doc.dispatchStatus === 'pending' ? 'color:#d97706; background:#fef3c7;' : 'color:var(--success); background:#ecfdf5;';
-                typeHtml += `<br><span style="display:inline-block; margin-top:4px; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:bold; ${statusColor}">${statusStr}</span>`;
+          if (doc.type === 'خروج') {
+                let isDone = doc.dispatchStatus === 'done';
+                let statusStr = isDone ? '✅ تایید و ارسال شد' : 'در انتظار بارگیری';
+                let statusColor = isDone ? 'color:var(--success); background:#ecfdf5; font-size:11px; padding:4px 8px;' : 'color:#d97706; background:#fef3c7; padding:2px 6px;';
+                let dispatchDateStr = (isDone && doc.dispatchDate) ? `<br><span style="font-size:9px; color:var(--text-muted); font-family: Tahoma;">${doc.dispatchDate}</span>` : '';
+                typeHtml += `<br><span style="display:inline-block; margin-top:4px; border-radius:4px; font-weight:bold; ${statusColor}">${statusStr}</span>${dispatchDateStr}`;
             }
 
             if (currentUser && currentUser.role === 'viewer') {
@@ -4915,6 +4917,50 @@ function loadDropdowns() {
         if (targetDocId) {
             let updatedDocs = historyLog.filter(log => String(log.docId) === String(targetDocId));
             if(updatedDocs.length > 0) await syncSingleDocToServer(targetDocId, updatedDocs); // ارسال به سرور
+        }
+    };
+// جایگزینی تابع سینک برای ارسال تاریخ بارگیری
+    window.syncSingleDocToServer = async function(docId, docItems) {
+        if (!navigator.onLine) return;
+        try {
+            const payload = {
+                docId: String(docId), type: docItems[0].type, date: docItems[0].date,
+                officeDoc: docItems[0].officeDoc || 'بدون شماره', ref: docItems[0].ref || '',
+                warehouse: docItems[0].warehouse || '', operator: docItems[0].operator || 'سیستم',
+                dispatchStatus: docItems[0].dispatchStatus || 'done',
+                dispatchDate: docItems[0].dispatchDate || null, 
+                items: docItems.map(i => ({ pCode: i.pCode, batch: i.batch || 'نامشخص', qtyCarton: i.qtyCarton || 0, qtyLoose: i.qtyLoose || 0, totalPieces: i.totalPieces }))
+            };
+            await fetch(`${DB_URL}/api/document?company=${companyPrefix}`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+            });
+        } catch(e) { console.error('خطا در ارسال سند:', e); }
+    };
+
+    // اتصال بخش اسکن کامیون به سرور ابری (دلیل اصلی برگشتن تاییدیه در سیستم)
+    const originalFinalizeDispatch = window.finalizeDispatchDoc;
+    window.finalizeDispatchDoc = async function() {
+        const targetDocId = currentDispatchDocId;
+        originalFinalizeDispatch(); 
+        if (targetDocId) {
+            let updatedDocs = historyLog.filter(log => String(log.docId) === String(targetDocId));
+            if(updatedDocs.length > 0) {
+                updatedDocs.forEach(d => { d.dispatchStatus = 'done'; d.dispatchDate = new Date().toLocaleString('fa-IR'); });
+                await syncSingleDocToServer(targetDocId, updatedDocs);
+            }
+        }
+    };
+
+    const originalBypassDispatch = window.bypassAndFinalizeDispatch;
+    window.bypassAndFinalizeDispatch = async function() {
+        const targetDocId = currentDispatchDocId;
+        originalBypassDispatch(); 
+        if (targetDocId) {
+            let updatedDocs = historyLog.filter(log => String(log.docId) === String(targetDocId));
+            if(updatedDocs.length > 0) {
+                updatedDocs.forEach(d => { d.dispatchStatus = 'done'; d.dispatchDate = new Date().toLocaleString('fa-IR'); });
+                await syncSingleDocToServer(targetDocId, updatedDocs);
+            }
         }
     };
  </script>
