@@ -4686,8 +4686,8 @@ function loadDropdowns() {
 }
 </script>
 <!-- کدهای ارتقاء یافته برای اتصال به سیستم ابری جدید و جلوگیری از هنگ کردن -->
-    <script>
-    // ۱. جایگزین کردن تابع آپلود برای استفاده از FormData (ارسال مستقیم باینری)
+<script>
+    // ۱. آپلود با FormData (ارسال مستقیم باینری)
     window.handleReceiptFilesSelected = async function(event) {
         let files = Array.from(event.target.files || []);
         if(!files.length) return;
@@ -4745,8 +4745,7 @@ function loadDropdowns() {
         });
     };
 
-    // ۲. جایگزین کردن دریافت اطلاعات با API جدید (سبک‌سازی لود اولیه)
-   // ۲. جایگزین کردن دریافت اطلاعات با API جدید (همراه با سیستم خطایاب هوشمند)
+    // ۲. دریافت اطلاعات با API جدید و سیستم خطایاب
     window.fetchDataFromServer = function() {
         if (!companyPrefix) return;
         const statusDiv = document.getElementById("cloudStatus");
@@ -4788,11 +4787,12 @@ function loadDropdowns() {
                 if (statusDiv) { 
                     statusDiv.innerText = "⚠️ خطا در ارتباط"; 
                     statusDiv.style.background = "rgba(239, 68, 68, 0.9)"; 
-                    statusDiv.title = err.message; // با نگه داشتن موس روی دکمه قرمز، متن ارور نشان داده می‌شود
+                    statusDiv.title = err.message;
                 }
             });
     };
-  // ۳. جدا کردن ذخیره اطلاعات پایه (همراه با تنظیمات)
+
+    // ۳. ذخیره اطلاعات پایه (کالاها و کاربران)
     window.saveData = function() {
         rebuildInventory();
         updateLocalCacheOnly();
@@ -4805,8 +4805,8 @@ function loadDropdowns() {
         }).catch(e => console.warn("خطا در همگام‌سازی تنظیمات:", e));
     };
 
-    // ۴. هوشمندسازی توابع ثبت نهایی برای ارسال نقطه‌ای (Point-in-time Sync)
-    async function syncSingleDocToServer(docId, docItems) {
+    // ۴. ارسال نقطه‌ای اسناد (Point-in-time Sync) به همراه تاریخ بارگیری
+    window.syncSingleDocToServer = async function(docId, docItems) {
         if (!navigator.onLine) return;
         try {
             const payload = {
@@ -4814,13 +4814,14 @@ function loadDropdowns() {
                 officeDoc: docItems[0].officeDoc || 'بدون شماره', ref: docItems[0].ref || '',
                 warehouse: docItems[0].warehouse || '', operator: docItems[0].operator || 'سیستم',
                 dispatchStatus: docItems[0].dispatchStatus || 'done',
+                dispatchDate: docItems[0].dispatchDate || null, 
                 items: docItems.map(i => ({ pCode: i.pCode, batch: i.batch || 'نامشخص', qtyCarton: i.qtyCarton || 0, qtyLoose: i.qtyLoose || 0, totalPieces: i.totalPieces }))
             };
             await fetch(`${DB_URL}/api/document?company=${companyPrefix}`, {
                 method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
             });
         } catch(e) { console.error('خطا در ارسال سند:', e); }
-    }
+    };
 
     const originalFinalizeEntry = window.finalizeEntryDoc;
     window.finalizeEntryDoc = async function() {
@@ -4843,13 +4844,13 @@ function loadDropdowns() {
             if(newDocs.length > 0) await syncSingleDocToServer(latestDocId, newDocs);
         }
     };
- // ۵. حل مشکل حذف عکس (همگام‌سازی با فرمت جدید ابری)
+
+    // ۵. حل مشکل حذف عکس (همگام‌سازی با فرمت جدید ابری)
     window.deleteReceipt = async function(docId, event) {
         if(event) event.stopPropagation();
         if(!confirm("⚠️ آیا از حذف عکس این رسید مطمئن هستید؟")) return;
         
         try {
-            // ساخت یک FormData خالی (بدون فایل) به معنای درخواست حذف است
             const formData = new FormData();
             formData.append("docId", String(docId)); 
             
@@ -4858,7 +4859,6 @@ function loadDropdowns() {
                 body: formData
             });
 
-            // حذف از کلاینت
             historyLog.forEach(log => { 
                 if(String(log.docId) === String(docId)) { 
                     log.receiptFile = null; log.receiptImage = null; log.receiptType = null; log.deliveryDate = null; 
@@ -4866,9 +4866,7 @@ function loadDropdowns() {
             });
             generateCardex();
             alert("✅ عکس رسید با موفقیت حذف شد.");
-        } catch(e) { 
-            alert("خطا در حذف عکس: " + e.message); 
-        }
+        } catch(e) { alert("خطا در حذف عکس: " + e.message); }
     };
 
     // ۶. حل مشکل ابطال سند (ارسال دستور DELETE به سرور)
@@ -4877,74 +4875,28 @@ function loadDropdowns() {
         if(!confirm("⚠️ آیا از ابطال و حذف کامل این سند مطمئن هستید؟ موجودی کالاها به حالت قبل برمی‌گردد.")) return;
         
         try {
-            // دستور حذف قطعی از دیتابیس ابری
             const res = await fetch(`${DB_URL}/api/document?company=${companyPrefix}`, {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
+                method: 'DELETE', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ docId: String(docId) })
             });
-            
             if(!res.ok) throw new Error("خطا در ارتباط با سرور");
 
-            // حذف از کلاینت و رفرش جداول
             historyLog = historyLog.filter(t => String(t.docId) !== String(docId));
-            rebuildInventory(); 
-            updateLocalCacheOnly(); 
-            renderInventory(); 
-            generateCardex();
+            rebuildInventory(); updateLocalCacheOnly(); renderInventory(); generateCardex();
             if (document.getElementById('tab-dashboard')?.style.display === 'block') renderDashboard();
-            
             alert("✅ سند با موفقیت باطل شد و از موجودی حذف گردید.");
-        } catch (e) {
-            alert("⚠️ خطا در ارتباط با سرور برای حذف سند.");
-        }
+        } catch (e) { alert("⚠️ خطا در ارتباط با سرور برای حذف سند."); }
     };
-// ۷. اتصال بخش اسکن کامیون (Dispatch) به سرور ابری
+
+    // ۷. اتصال بخش اسکن کامیون به سرور ابری (حل قطعی مشکل برگشت وضعیت)
     const originalFinalizeDispatch = window.finalizeDispatchDoc;
     window.finalizeDispatchDoc = async function() {
         const targetDocId = currentDispatchDocId;
         originalFinalizeDispatch(); // اجرای عملیات در مرورگر
         if (targetDocId) {
             let updatedDocs = historyLog.filter(log => String(log.docId) === String(targetDocId));
-            if(updatedDocs.length > 0) await syncSingleDocToServer(targetDocId, updatedDocs); // ارسال به سرور
-        }
-    };
-
-    const originalBypassDispatch = window.bypassAndFinalizeDispatch;
-    window.bypassAndFinalizeDispatch = async function() {
-        const targetDocId = currentDispatchDocId;
-        originalBypassDispatch(); // اجرای عملیات در مرورگر
-        if (targetDocId) {
-            let updatedDocs = historyLog.filter(log => String(log.docId) === String(targetDocId));
-            if(updatedDocs.length > 0) await syncSingleDocToServer(targetDocId, updatedDocs); // ارسال به سرور
-        }
-    };
-// جایگزینی تابع سینک برای ارسال تاریخ بارگیری
-    window.syncSingleDocToServer = async function(docId, docItems) {
-        if (!navigator.onLine) return;
-        try {
-            const payload = {
-                docId: String(docId), type: docItems[0].type, date: docItems[0].date,
-                officeDoc: docItems[0].officeDoc || 'بدون شماره', ref: docItems[0].ref || '',
-                warehouse: docItems[0].warehouse || '', operator: docItems[0].operator || 'سیستم',
-                dispatchStatus: docItems[0].dispatchStatus || 'done',
-                dispatchDate: docItems[0].dispatchDate || null, 
-                items: docItems.map(i => ({ pCode: i.pCode, batch: i.batch || 'نامشخص', qtyCarton: i.qtyCarton || 0, qtyLoose: i.qtyLoose || 0, totalPieces: i.totalPieces }))
-            };
-            await fetch(`${DB_URL}/api/document?company=${companyPrefix}`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
-            });
-        } catch(e) { console.error('خطا در ارسال سند:', e); }
-    };
-
-    // اتصال بخش اسکن کامیون به سرور ابری (دلیل اصلی برگشتن تاییدیه در سیستم)
-    const originalFinalizeDispatch = window.finalizeDispatchDoc;
-    window.finalizeDispatchDoc = async function() {
-        const targetDocId = currentDispatchDocId;
-        originalFinalizeDispatch(); 
-        if (targetDocId) {
-            let updatedDocs = historyLog.filter(log => String(log.docId) === String(targetDocId));
             if(updatedDocs.length > 0) {
+                // اطمینان از ثبت تاریخ به صورت محلی و ارسال سریع به سرور
                 updatedDocs.forEach(d => { d.dispatchStatus = 'done'; d.dispatchDate = new Date().toLocaleString('fa-IR'); });
                 await syncSingleDocToServer(targetDocId, updatedDocs);
             }
@@ -4958,11 +4910,12 @@ function loadDropdowns() {
         if (targetDocId) {
             let updatedDocs = historyLog.filter(log => String(log.docId) === String(targetDocId));
             if(updatedDocs.length > 0) {
+                // اطمینان از ثبت تاریخ به صورت محلی و ارسال سریع به سرور
                 updatedDocs.forEach(d => { d.dispatchStatus = 'done'; d.dispatchDate = new Date().toLocaleString('fa-IR'); });
                 await syncSingleDocToServer(targetDocId, updatedDocs);
             }
         }
     };
- </script>
+</script>
 </body>
 </html>
