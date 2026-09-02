@@ -4682,6 +4682,147 @@ function loadDropdowns() {
         if(dDisp) dDisp.innerHTML = (dWhVal === 'all' ? 'همه انبارها' : dWhVal) + ' <span style="font-size:10px;">▼</span>';
     }
 }
-</script>
+<!-- کدهای ارتقاء یافته برای اتصال به سیستم ابری جدید و جلوگیری از هنگ کردن -->
+    <script>
+    // ۱. جایگزین کردن تابع آپلود برای استفاده از FormData (ارسال مستقیم باینری)
+    window.handleReceiptFilesSelected = async function(event) {
+        let files = Array.from(event.target.files || []);
+        if(!files.length) return;
+        showUploadProgress(10, "در حال آماده‌سازی فایل‌ها...");
+        stopPhotoCamera();
+        try { await uploadReceiptFilesWithProgress(photoDocId, files); } 
+        catch (err) { hideUploadProgress(); alert("❌ خطا: " + err.message); } 
+        finally { event.target.value = ''; }
+    };
+
+    window.handleAppendReceiptFiles = async function(event) {
+        let files = Array.from(event.target.files || []);
+        if(!files.length) return;
+        showUploadProgress(10, "در حال افزودن به اسناد...");
+        try { 
+            await uploadReceiptFilesWithProgress(photoDocId, files);
+            viewReceipt(photoDocId); 
+        } 
+        catch (err) { hideUploadProgress(); alert("❌ خطا در افزودن فایل: " + err.message); } 
+        finally { event.target.value = ''; }
+    };
+
+    window.uploadReceiptFilesWithProgress = function(docId, filesArray) {
+        return new Promise((resolve, reject) => {
+            showUploadProgress(35, "در حال ارسال فایل به سرور ابری...");
+            const formData = new FormData();
+            formData.append("docId", String(docId));
+            for(let i=0; i<filesArray.length; i++) { formData.append("files", filesArray[i]); }
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', `${DB_URL}/api/upload-receipt?company=${companyPrefix}`, true);
+            xhr.upload.onprogress = function(e) {
+                if (e.lengthComputable) {
+                    const uploadPercent = 35 + Math.round((e.loaded / e.total) * 60);
+                    showUploadProgress(Math.min(96, uploadPercent), `در حال ارسال اطلاعات (${Math.round((e.loaded / 1024 / 1024) * 10) / 10} MB)...`);
+                }
+            };
+            xhr.onload = function() {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    showUploadProgress(100, "✅ ذخیره‌سازی با موفقیت انجام شد.");
+                    let nowStr = new Date().toLocaleString('fa-IR');
+                    historyLog.forEach(log => { 
+                        if(String(log.docId) === String(docId)) { 
+                            log.receiptFile = "D1_STORED"; log.receiptType = 'mixed'; log.deliveryDate = nowStr; 
+                        } 
+                    });
+                    updateLocalCacheOnly(); generateCardex();
+                    setTimeout(() => { hideUploadProgress(); resolve(true); }, 400);
+                } else {
+                    hideUploadProgress(); reject(new Error(`خطای سرور: HTTP ${xhr.status}`));
+                }
+            };
+            xhr.onerror = function() { hideUploadProgress(); reject(new Error("عدم برقراری ارتباط با سرور.")); };
+            xhr.send(formData);
+        });
+    };
+
+    // ۲. جایگزین کردن دریافت اطلاعات با API جدید (سبک‌سازی لود اولیه)
+    window.fetchDataFromServer = function() {
+        if (!companyPrefix) return;
+        const statusDiv = document.getElementById("cloudStatus");
+        fetch(`${DB_URL}/api/init?company=${companyPrefix}&t=${Date.now()}`)
+            .then(response => response.json())
+            .then(cloudData => {
+                if (statusDiv) { statusDiv.innerText = "☁️ آنلاین (D1)"; statusDiv.style.background = "rgba(16, 185, 129, 0.9)"; }
+                if (cloudData && typeof cloudData === 'object') {
+                    if (cloudData.productsMap) productsMap = cloudData.productsMap;
+                    if (cloudData.productsUnitsMap) productsUnitsMap = cloudData.productsUnitsMap;
+                    if (cloudData.productsWeightMap) productsWeightMap = cloudData.productsWeightMap;
+                    if (cloudData.sysSettings) sysSettings = cloudData.sysSettings;
+                    if (Array.isArray(cloudData.historyLog)) historyLog = cloudData.historyLog;
+                    if (Array.isArray(cloudData.sysUsers)) sysUsers = cloudData.sysUsers;
+                    ensureDefaultUsers(); rebuildInventory(); updateLocalCacheOnly();
+                }
+                if (currentUser) {
+                    if (currentUser.role !== 'loader') loadDropdowns();
+                    if (currentUser.role === 'admin') renderSettings();
+                    if (currentUser.role !== 'loader') renderInventory();
+                    if (document.getElementById('tab-dashboard')?.style.display === 'block') renderDashboard();
+                    if (document.getElementById('tab-cardex')?.style.display === 'block') generateCardex();
+                }
+            })
+            .catch(err => {
+                if (!navigator.onLine && statusDiv) { statusDiv.innerText = "🔌 آفلاین"; statusDiv.style.background = "rgba(239, 68, 68, 0.9)"; }
+            });
+    };
+
+    // ۳. جدا کردن ذخیره اطلاعات پایه (کالاها) از اسناد حجیم
+    window.saveData = function() {
+        rebuildInventory();
+        updateLocalCacheOnly();
+        if (document.getElementById('tab-dashboard')?.style.display === 'block') renderDashboard();
+        
+        fetch(`${DB_URL}/api/save-master?company=${companyPrefix}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ productsMap, productsUnitsMap, productsWeightMap, sysUsers })
+        }).catch(e => console.warn("خطا در همگام‌سازی تنظیمات:", e));
+    };
+
+    // ۴. هوشمندسازی توابع ثبت نهایی برای ارسال نقطه‌ای (Point-in-time Sync)
+    async function syncSingleDocToServer(docId, docItems) {
+        if (!navigator.onLine) return;
+        try {
+            const payload = {
+                docId: String(docId), type: docItems[0].type, date: docItems[0].date,
+                officeDoc: docItems[0].officeDoc || 'بدون شماره', ref: docItems[0].ref || '',
+                warehouse: docItems[0].warehouse || '', operator: docItems[0].operator || 'سیستم',
+                dispatchStatus: docItems[0].dispatchStatus || 'done',
+                items: docItems.map(i => ({ pCode: i.pCode, batch: i.batch || 'نامشخص', qtyCarton: i.qtyCarton || 0, qtyLoose: i.qtyLoose || 0, totalPieces: i.totalPieces }))
+            };
+            await fetch(`${DB_URL}/api/document?company=${companyPrefix}`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+            });
+        } catch(e) { console.error('خطا در ارسال سند:', e); }
+    }
+
+    const originalFinalizeEntry = window.finalizeEntryDoc;
+    window.finalizeEntryDoc = async function() {
+        const preLength = historyLog.length;
+        originalFinalizeEntry();
+        if (historyLog.length !== preLength || window.editingEntryDocId) {
+            let latestDocId = historyLog[historyLog.length - 1].docId;
+            let newDocs = historyLog.filter(log => String(log.docId) === String(latestDocId));
+            if(newDocs.length > 0) await syncSingleDocToServer(latestDocId, newDocs);
+        }
+    };
+
+    const originalFinalizeExit = window.finalizeExitDoc;
+    window.finalizeExitDoc = async function() {
+        const preLength = historyLog.length;
+        originalFinalizeExit(); 
+        if (historyLog.length !== preLength || window.editingExitDocId) {
+            let latestDocId = historyLog[historyLog.length - 1].docId;
+            let newDocs = historyLog.filter(log => String(log.docId) === String(latestDocId));
+            if(newDocs.length > 0) await syncSingleDocToServer(latestDocId, newDocs);
+        }
+    };
+  </script>
 </body>
 </html>
