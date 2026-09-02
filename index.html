@@ -3144,7 +3144,7 @@ function printReceiptImage() {
         printArea.innerHTML = '';
         printArea.style.display = 'none';
         document.body.classList.remove('printing');
-    }, 3000);
+    }, 100000);
 }
 
 function applyReceiptTransform() {
@@ -3192,7 +3192,7 @@ function printFactor() {
             target.style.display = 'none';
         }
         document.body.classList.remove('printing');
-    }, 3000);
+    }, 100000);
 }
 
 function viewSystemFactor(docId) { 
@@ -4087,7 +4087,7 @@ function printInventory() {
         printArea.innerHTML = '';
         printArea.style.display = 'none';
         document.body.classList.remove('printing');
-    }, 3000);
+    }, 100000);
 }
         function downloadCsv(rows,filename){
             let headers=Object.keys(rows[0]),csv="\uFEFF"+headers.join(",")+"\n"+rows.map(r=>headers.map(h=>`"${String(r[h]??"").replace(/"/g,'""')}"`).join(",")).join("\n");
@@ -5022,7 +5022,7 @@ function loadDropdowns() {
         renderRequirements(); playBeep('success'); document.getElementById('reqProductSelect').focus();
     };
 
-    // ۹. اصلاح تابع باز کردن اسکنر کامیون
+  // ۹. اصلاح تابع باز کردن اسکنر کامیون (با رفع خطای کادرهای Null)
     window.openDispatchScanner = function(docId, event) {
         try {
             if(event && typeof event.stopPropagation === 'function') event.stopPropagation();
@@ -5052,9 +5052,13 @@ function loadDropdowns() {
             restoreDispatchProgress(targetDocId);
 
             document.getElementById('dispatchDocIdLabel').innerText = targetDocId;
-            document.getElementById('dispatchBarcode').value = '';
-            document.getElementById('dispatchQtyLoose').value = 0;
-            document.getElementById('dispatchQtyManualCarton').value = 0;
+            
+            // جلوگیری از ارور Null با چک کردن وجود داشتنِ المان‌ها در صفحه
+            if(document.getElementById('dispatchBarcode')) document.getElementById('dispatchBarcode').value = '';
+            if(document.getElementById('dispatchQtyLoose')) document.getElementById('dispatchQtyLoose').value = 0;
+            if(document.getElementById('dispatchQtyManualLoose')) document.getElementById('dispatchQtyManualLoose').value = 0;
+            if(document.getElementById('dispatchQtyManualCarton')) document.getElementById('dispatchQtyManualCarton').value = 0;
+            
             updateLiveInfoDispatch(false, '');
             renderDispatchTable();
             document.getElementById('dispatch-modal').style.display = 'flex';
