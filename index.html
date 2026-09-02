@@ -4790,7 +4790,7 @@ function loadDropdowns() {
                 }
             });
     };
-    // ۳. جدا کردن ذخیره اطلاعات پایه (کالاها) از اسناد حجیم
+  // ۳. جدا کردن ذخیره اطلاعات پایه (همراه با تنظیمات)
     window.saveData = function() {
         rebuildInventory();
         updateLocalCacheOnly();
@@ -4799,7 +4799,7 @@ function loadDropdowns() {
         fetch(`${DB_URL}/api/save-master?company=${companyPrefix}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ productsMap, productsUnitsMap, productsWeightMap, sysUsers })
+            body: JSON.stringify({ productsMap, productsUnitsMap, productsWeightMap, sysUsers, sysSettings })
         }).catch(e => console.warn("خطا در همگام‌سازی تنظیمات:", e));
     };
 
@@ -4895,6 +4895,26 @@ function loadDropdowns() {
             alert("✅ سند با موفقیت باطل شد و از موجودی حذف گردید.");
         } catch (e) {
             alert("⚠️ خطا در ارتباط با سرور برای حذف سند.");
+        }
+    };
+// ۷. اتصال بخش اسکن کامیون (Dispatch) به سرور ابری
+    const originalFinalizeDispatch = window.finalizeDispatchDoc;
+    window.finalizeDispatchDoc = async function() {
+        const targetDocId = currentDispatchDocId;
+        originalFinalizeDispatch(); // اجرای عملیات در مرورگر
+        if (targetDocId) {
+            let updatedDocs = historyLog.filter(log => String(log.docId) === String(targetDocId));
+            if(updatedDocs.length > 0) await syncSingleDocToServer(targetDocId, updatedDocs); // ارسال به سرور
+        }
+    };
+
+    const originalBypassDispatch = window.bypassAndFinalizeDispatch;
+    window.bypassAndFinalizeDispatch = async function() {
+        const targetDocId = currentDispatchDocId;
+        originalBypassDispatch(); // اجرای عملیات در مرورگر
+        if (targetDocId) {
+            let updatedDocs = historyLog.filter(log => String(log.docId) === String(targetDocId));
+            if(updatedDocs.length > 0) await syncSingleDocToServer(targetDocId, updatedDocs); // ارسال به سرور
         }
     };
  </script>
