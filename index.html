@@ -4746,9 +4746,55 @@ function loadDropdowns() {
     };
 
     // ۲. دریافت اطلاعات با API جدید و سیستم خطایاب
-   // ۲. دریافت اطلاعات با API جدید و سیستم خطایاب
+  // -------------------------------------------------------------
+    // سیستم هوشمند و آفلاین (Offline Queue / Outbox)
+    // -------------------------------------------------------------
+    window.offlineDocQueue = JSON.parse(localStorage.getItem('anbar_offline_docs') || '[]');
+    window.saveOfflineQueue = () => localStorage.setItem('anbar_offline_docs', JSON.stringify(window.offlineDocQueue));
+
+    window.processOfflineQueue = async function() {
+        if(window.offlineDocQueue.length === 0 || !navigator.onLine) return;
+        
+        let statusDiv = document.getElementById("cloudStatus");
+        if(statusDiv) { statusDiv.innerText = `⏳ ارسال ${window.offlineDocQueue.length} سند آفلاین...`; statusDiv.style.background = "#f59e0b"; }
+
+        let remaining = [];
+        for(let payload of window.offlineDocQueue) {
+            try {
+                let res = await fetch(`${DB_URL}/api/document?company=${companyPrefix}`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+                });
+                if(!res.ok) throw new Error("Sync Fail");
+            } catch(e) {
+                remaining.push(payload); // در صورت قطعی اینترنت یا محدودیت، سند در صف باقی می‌ماند
+            }
+        }
+        window.offlineDocQueue = remaining;
+        window.saveOfflineQueue();
+        
+        if(window.offlineDocQueue.length === 0) {
+            if(statusDiv) { statusDiv.innerText = "☁️ آنلاین (D1)"; statusDiv.style.background = "rgba(16, 185, 129, 0.9)"; }
+            window.fetchDataFromServer(); // بعد از خالی شدن صف، اطلاعات جدید را از سرور بگیر
+        } else {
+            if(statusDiv) { statusDiv.innerText = `⚠️ ${window.offlineDocQueue.length} سند در صف`; statusDiv.style.background = "#ef4444"; }
+        }
+    };
+
+    // تلاش برای ارسالِ خودکارِ اسنادِ صف هر 15 ثانیه
+    setInterval(window.processOfflineQueue, 15000);
+    window.addEventListener('online', window.processOfflineQueue);
+    // -------------------------------------------------------------
+
+    // ۲. دریافت اطلاعات با API جدید و سیستم خطایاب
     window.fetchDataFromServer = function() {
         if (!companyPrefix) return;
+        
+        // ******* جلوگیری از پاک شدن اسناد آفلاین با مسدود کردن رفرش *******
+        if (window.offlineDocQueue && window.offlineDocQueue.length > 0) {
+            window.processOfflineQueue();
+            return; 
+        }
+
         const statusDiv = document.getElementById("cloudStatus");
         
         fetch(`${DB_URL}/api/init?company=${companyPrefix}&t=${Date.now()}`)
@@ -4773,20 +4819,14 @@ function loadDropdowns() {
                     if (cloudData.sysSettings) sysSettings = cloudData.sysSettings;
                     if (Array.isArray(cloudData.sysUsers)) sysUsers = cloudData.sysUsers;
                     
-                    // --- فیلتر جادویی برای شمسی کردن ساعت و تاریخ سرور ابری ---
                     if (Array.isArray(cloudData.historyLog)) {
                         historyLog = cloudData.historyLog.map(log => {
-                            // بررسی می‌کند اگر تاریخ آپلود عکس، میلادی خام است، آن را به شمسیِ منطقه زمانی شما تبدیل کند
                             if (log.deliveryDate && log.deliveryDate.match(/^20\d{2}-\d{2}-\d{2}/)) {
-                                try {
-                                    // تبدیل ساعت جهانی (GMT) کلودفلر به وقت محلی شما و سپس فرمت شمسی
-                                    log.deliveryDate = new Date(log.deliveryDate + " GMT").toLocaleString('fa-IR');
-                                } catch(e) {}
+                                try { log.deliveryDate = new Date(log.deliveryDate + " GMT").toLocaleString('fa-IR'); } catch(e) {}
                             }
                             return log;
                         });
                     }
-                    // -------------------------------------------------------------
 
                     ensureDefaultUsers(); rebuildInventory(); updateLocalCacheOnly();
                 }
@@ -4801,8 +4841,8 @@ function loadDropdowns() {
             .catch(err => {
                 console.error("خطای ارتباط با سرور:", err);
                 if (statusDiv) { 
-                    statusDiv.innerText = "⚠️ خطا در ارتباط"; 
-                    statusDiv.style.background = "rgba(239, 68, 68, 0.9)"; 
+                    statusDiv.innerText = "⚠️ آفلاین (آرشیو محلی)"; 
+                    statusDiv.style.background = "#ef4444"; 
                     statusDiv.title = err.message;
                 }
             });
@@ -4821,29 +4861,44 @@ function loadDropdowns() {
         }).catch(e => console.warn("خطا در همگام‌سازی تنظیمات:", e));
     };
 
-    // ۴. ارسال نقطه‌ای اسناد (Point-in-time Sync) به همراه تاریخ بارگیری
-  // ۴. ارسال نقطه‌ای اسناد (Point-in-time Sync) به همراه تاریخ بارگیری و انبار اختصاصی
+    // ۴. ارسال نقطه‌ای اسناد (Point-in-time Sync) مجهز به صف آفلاین
     window.syncSingleDocToServer = async function(docId, docItems) {
-        if (!navigator.onLine) return;
+        const payload = {
+            docId: String(docId), type: docItems[0].type, date: docItems[0].date,
+            officeDoc: docItems[0].officeDoc || 'بدون شماره', ref: docItems[0].ref || '',
+            warehouse: docItems[0].warehouse || '', operator: docItems[0].operator || 'سیستم',
+            dispatchStatus: docItems[0].dispatchStatus || 'done',
+            dispatchDate: docItems[0].dispatchDate || null, 
+            items: docItems.map(i => ({ 
+                pCode: i.pCode, batch: i.batch || 'نامشخص', 
+                qtyCarton: i.qtyCarton || 0, qtyLoose: i.qtyLoose || 0, 
+                totalPieces: i.totalPieces, 
+                warehouse: i.warehouse || i.wh || docItems[0].warehouse 
+            }))
+        };
+
+        // اگر گوشی/سیستم به اینترنت وصل نیست، مستقیم برود در صف انتظار
+        if (!navigator.onLine) {
+            const exists = window.offlineDocQueue.find(p => p.docId === payload.docId);
+            if(!exists) { window.offlineDocQueue.push(payload); window.saveOfflineQueue(); }
+            let statusDiv = document.getElementById("cloudStatus");
+            if(statusDiv) { statusDiv.innerText = `⚠️ ذخیره آفلاین (${window.offlineDocQueue.length})`; statusDiv.style.background = "#ef4444"; }
+            return;
+        }
+
         try {
-            const payload = {
-                docId: String(docId), type: docItems[0].type, date: docItems[0].date,
-                officeDoc: docItems[0].officeDoc || 'بدون شماره', ref: docItems[0].ref || '',
-                warehouse: docItems[0].warehouse || '', operator: docItems[0].operator || 'سیستم',
-                dispatchStatus: docItems[0].dispatchStatus || 'done',
-                dispatchDate: docItems[0].dispatchDate || null, 
-                // افزودن متغیر انبار (warehouse) به ازای هر کالا!
-                items: docItems.map(i => ({ 
-                    pCode: i.pCode, batch: i.batch || 'نامشخص', 
-                    qtyCarton: i.qtyCarton || 0, qtyLoose: i.qtyLoose || 0, 
-                    totalPieces: i.totalPieces, 
-                    warehouse: i.warehouse || i.wh || docItems[0].warehouse 
-                }))
-            };
-            await fetch(`${DB_URL}/api/document?company=${companyPrefix}`, {
+            const res = await fetch(`${DB_URL}/api/document?company=${companyPrefix}`, {
                 method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
             });
-        } catch(e) { console.error('خطا در ارسال سند:', e); }
+            if(!res.ok) throw new Error("خطای سرور یا محدودیت روزانه");
+        } catch(e) { 
+            console.warn('انتقال سند به صف آفلاین...', e); 
+            // در صورت وجود لیمیت سرور یا قطعی لحظه‌ای اینترنت
+            const exists = window.offlineDocQueue.find(p => p.docId === payload.docId);
+            if(!exists) { window.offlineDocQueue.push(payload); window.saveOfflineQueue(); }
+            let statusDiv = document.getElementById("cloudStatus");
+            if(statusDiv) { statusDiv.innerText = `⚠️ ذخیره آفلاین (${window.offlineDocQueue.length})`; statusDiv.style.background = "#ef4444"; }
+        }
     };
 
     const originalFinalizeEntry = window.finalizeEntryDoc;
@@ -4868,7 +4923,7 @@ function loadDropdowns() {
         }
     };
 
-    // ۵. حل مشکل حذف عکس (همگام‌سازی با فرمت جدید ابری)
+    // ۵. حل مشکل حذف عکس
     window.deleteReceipt = async function(docId, event) {
         if(event) event.stopPropagation();
         if(!confirm("⚠️ آیا از حذف عکس این رسید مطمئن هستید؟")) return;
@@ -4878,8 +4933,7 @@ function loadDropdowns() {
             formData.append("docId", String(docId)); 
             
             await fetch(`${DB_URL}/api/upload-receipt?company=${companyPrefix}`, {
-                method: 'POST',
-                body: formData
+                method: 'POST', body: formData
             });
 
             historyLog.forEach(log => { 
@@ -4889,10 +4943,10 @@ function loadDropdowns() {
             });
             generateCardex();
             alert("✅ عکس رسید با موفقیت حذف شد.");
-        } catch(e) { alert("خطا در حذف عکس: " + e.message); }
+        } catch(e) { alert("خطا در حذف عکس (شاید آفلاین هستید): " + e.message); }
     };
 
-    // ۶. حل مشکل ابطال سند (ارسال دستور DELETE به سرور)
+    // ۶. حل مشکل ابطال سند
     window.cancelTransaction = async function(docId, event) {
         if(event) event.stopPropagation();
         if(!confirm("⚠️ آیا از ابطال و حذف کامل این سند مطمئن هستید؟ موجودی کالاها به حالت قبل برمی‌گردد.")) return;
@@ -4908,10 +4962,10 @@ function loadDropdowns() {
             rebuildInventory(); updateLocalCacheOnly(); renderInventory(); generateCardex();
             if (document.getElementById('tab-dashboard')?.style.display === 'block') renderDashboard();
             alert("✅ سند با موفقیت باطل شد و از موجودی حذف گردید.");
-        } catch (e) { alert("⚠️ خطا در ارتباط با سرور برای حذف سند."); }
+        } catch (e) { alert("⚠️ برای حذف کامل سند باید به اینترنت متصل باشید."); }
     };
 
-    // ۷. اتصال بخش اسکن کامیون به سرور ابری (حل قطعی مشکل برگشت وضعیت)
+    // ۷. اتصال بخش اسکن کامیون به سرور ابری و صف آفلاین
     const originalFinalizeDispatch = window.finalizeDispatchDoc;
     window.finalizeDispatchDoc = async function() {
         const targetDocId = currentDispatchDocId;
@@ -4919,7 +4973,6 @@ function loadDropdowns() {
         if (targetDocId) {
             let updatedDocs = historyLog.filter(log => String(log.docId) === String(targetDocId));
             if(updatedDocs.length > 0) {
-                // اطمینان از ثبت تاریخ به صورت محلی و ارسال سریع به سرور
                 updatedDocs.forEach(d => { d.dispatchStatus = 'done'; d.dispatchDate = new Date().toLocaleString('fa-IR'); });
                 await syncSingleDocToServer(targetDocId, updatedDocs);
             }
@@ -4933,13 +4986,13 @@ function loadDropdowns() {
         if (targetDocId) {
             let updatedDocs = historyLog.filter(log => String(log.docId) === String(targetDocId));
             if(updatedDocs.length > 0) {
-                // اطمینان از ثبت تاریخ به صورت محلی و ارسال سریع به سرور
                 updatedDocs.forEach(d => { d.dispatchStatus = 'done'; d.dispatchDate = new Date().toLocaleString('fa-IR'); });
                 await syncSingleDocToServer(targetDocId, updatedDocs);
             }
         }
     };
-// ۸. رفع مشکل ادغام شدن کالاها از انبارهای مختلف در سفارش‌برداری خروج
+
+    // ۸. رفع مشکل ادغام شدن کالاها از انبارهای مختلف در سفارش‌برداری خروج
     window.addRequirement = function() { 
         let wh = document.getElementById('outWarehouseSelect').value;
         if(!wh) { playBeep('error'); return alert("ابتدا انبار مبدأ (بارگیری) را مشخص کنید."); }
@@ -4952,7 +5005,6 @@ function loadDropdowns() {
         if(reqP <= 0) { return alert("❌ تعداد سفارش را به درستی وارد کنید."); }
         
         let totalStock = getActualStock(pCode, wh);
-
         let existing = outRequirements.find(r => r.pCode === pCode && r.wh === wh); 
         let currentReq = existing ? existing.reqPieces : 0;
         
@@ -4970,7 +5022,7 @@ function loadDropdowns() {
         renderRequirements(); playBeep('success'); document.getElementById('reqProductSelect').focus();
     };
 
-    // ۹. اصلاح تابع باز کردن اسکنر کامیون برای به خاطر سپردن انبارِ اصلیِ هر کالا
+    // ۹. اصلاح تابع باز کردن اسکنر کامیون
     window.openDispatchScanner = function(docId, event) {
         try {
             if(event && typeof event.stopPropagation === 'function') event.stopPropagation();
@@ -5008,55 +5060,6 @@ function loadDropdowns() {
             document.getElementById('dispatch-modal').style.display = 'flex';
             setTimeout(() => { try { document.getElementById('dispatchBarcode').focus(); } catch(e) {} }, 300);
         } catch(err) { showScanError('خطا: ' + err.message); }
-    };
-
-    // ۱۰. ثبت نهایی اسکن کامیون با جایگذاری صحیح انبارِ هر کالا و آپلود به سرور
-    window.finalizeDispatchDoc = async function() {
-        let oldItems = historyLog.filter(log => String(log.docId) === String(currentDispatchDocId));
-        if(!oldItems.length) { alert('❌ حواله پیدا نشد یا قبلاً نهایی شده است.'); return; }
-
-        const problems = [];
-        Object.keys(dispatchReqs || {}).forEach(key => {
-            const r = dispatchReqs[key];
-            if (Number(r.scanned || 0) !== Number(r.req || 0)) problems.push(`${r.name}: موردنیاز ${r.req} عدد، اسکن‌شده ${r.scanned} عدد`);
-        });
-        if (!currentDispatchScans || currentDispatchScans.length === 0) problems.push('هیچ اسکن ثبت‌شده‌ای وجود ندارد.');
-        if (problems.length) { alert('⛔ تأیید متوقف شد.\n\n' + problems.slice(0,10).join('\n')); renderDispatchTable(); return; }
-        
-        let master = oldItems[0];
-        historyLog = historyLog.filter(log => String(log.docId) !== String(currentDispatchDocId));
-        
-        let groupedScans = {};
-        currentDispatchScans.forEach(scan => {
-            let key = scan.rawBarcode; 
-            if(!groupedScans[key]) {
-                let originalWh = dispatchReqs[scan.pCode] ? dispatchReqs[scan.pCode].warehouse : master.warehouse;
-                groupedScans[key] = { pCode: scan.pCode, batch: scan.batch, rawBarcode: scan.rawBarcode, pieces: 0, warehouse: originalWh };
-            }
-            groupedScans[key].pieces += scan.pieces;
-        });
-        
-        let updatedDocs = [];
-        Object.values(groupedScans).forEach(scan => {
-            let units = parseInt(productsUnitsMap[scan.pCode]) || 1;
-            let newItem = {
-                docId: currentDispatchDocId, officeDoc: master.officeDoc, date: master.date, type: 'خروج',
-                pCode: scan.pCode, batch: scan.batch, rawBarcode: scan.rawBarcode,
-                qtyCarton: Math.floor(scan.pieces / units), qtyLoose: scan.pieces % units, totalPieces: scan.pieces,
-                warehouse: scan.warehouse || master.warehouse, 
-                ref: master.ref, operator: master.operator, dispatchStatus: 'done',
-                dispatchDate: new Date().toLocaleString('fa-IR'), 
-                receiptFile: master.receiptFile || null, receiptType: master.receiptType || null, deliveryDate: master.deliveryDate || null
-            };
-            historyLog.push(newItem);
-            updatedDocs.push(newItem);
-        });
-        
-        clearDispatchProgress(currentDispatchDocId);
-        if(updatedDocs.length > 0) await syncSingleDocToServer(currentDispatchDocId, updatedDocs);
-        
-        saveData(); generateCardex(); closeDispatchScanner();
-        alert("🎉 بارگیری تایید شد و کالاها از انبارهای مجزای خود کسر شدند!");
     };
 </script>
 </body>
