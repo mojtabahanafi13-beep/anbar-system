@@ -4715,8 +4715,10 @@ function loadDropdowns() {
         if(dDisp) dDisp.innerHTML = (dWhVal === 'all' ? 'همه انبارها' : dWhVal) + ' <span style="font-size:10px;">▼</span>';
     }
 }
-<!-- کدهای ارتقاء یافته برای اتصال به سیستم ابری جدید و جلوگیری از هنگ کردن -->
-<script>
+if(dDisp) dDisp.innerHTML = (dWhVal === 'all' ? 'همه انبارها' : dWhVal) + ' <span style="font-size:10px;">▼</span>';
+        }
+    }
+
     // ۱. آپلود با FormData (ارسال مستقیم باینری)
     window.handleReceiptFilesSelected = async function(event) {
         let files = Array.from(event.target.files || []);
