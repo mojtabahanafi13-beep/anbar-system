@@ -2150,44 +2150,7 @@ async function deleteReceipt(docId, event) {
         body: JSON.stringify({ docId: String(docId) })
     }).catch(e => console.warn("خطا در حذف سند قدیمی از سرور:", e));
 }
-    if(type === 'ورود' || type === 'اول دوره') {
-        editingEntryDocId = docId; // 👈 این خط اضافه شود
-        document.querySelector(`input[name="entryDocType"][value="${type}"]`).checked = true;
-        toggleEntryType();
-        document.getElementById('inOfficeDoc').value = master.officeDoc === 'بدون شماره' ? '' : master.officeDoc;
-        document.getElementById('inSender').value = master.ref;
-        
-        selectCS('inWarehouseSelect', master.warehouse, master.warehouse);
-        
-        docs.forEach(item => {
-            draftEntryItems.push({ raw: item.rawBarcode || "", pCode: item.pCode, batch: item.batch, qtyCarton: item.qtyCarton, qtyLoose: item.qtyLoose, totalPieces: item.totalPieces, name: productsMap[item.pCode], weight: item.weight, units: item.units, wh: item.warehouse }); 
-        });
-        renderDrafts();
-        openTab('tab-entry', document.getElementById('tabBtnEntry'));
-    } else {
-        editingExitDocId = docId; // 👈 این خط اضافه شود
-        document.getElementById('outOfficeDoc').value = master.officeDoc === 'بدون شماره' ? '' : master.officeDoc;
-        
-        let cust = master.ref.includes(' -> ') ? master.ref.split(' -> ')[1] : master.ref;
-        document.getElementById('outCustomer').value = cust;
-        
-        selectCS('outWarehouseSelect', master.warehouse, master.warehouse);
-        
-        docs.forEach(item => {
-            draftExitItems.push({ raw: item.rawBarcode || "", pCode: item.pCode, batch: item.batch, qtyCarton: item.qtyCarton, qtyLoose: item.qtyLoose, totalPieces: item.totalPieces, name: productsMap[item.pCode], wh: item.warehouse, units: productsUnitsMap[item.pCode] || 1 }); 
-        });
-        
-        let scanNowToggle = document.getElementById('outScanNowToggle');
-        if(scanNowToggle) scanNowToggle.checked = true;
-        toggleExitScanMode();
-
-        renderDrafts();
-        openTab('tab-exit', document.getElementById('tabBtnExit'));
-    }
-    
-    historyLog = historyLog.filter(t => String(t.docId) !== String(docId));
-    saveData();
-}
+   
         
         let currentDispatchDocId = null;
         let dispatchReqs = {}; 
@@ -3521,7 +3484,7 @@ function viewSystemFactor(docId) {
             } catch(e) { console.error(e); alert("خطایی رخ داد: " + e.message); }
         }
         
-      function finalizeEntryDoc() { 
+    function finalizeEntryDoc() { 
             try {
                 if(!draftEntryItems.length) return alert("اقلام آماده ثبت خالی است."); 
                 let defaultWh = document.getElementById('inWarehouseSelect').value;
@@ -3551,9 +3514,11 @@ function viewSystemFactor(docId) {
                     dispatchStatus: 'done' 
                 }));
 
+                // حذف رکوردهای قبلی این سند قبل از درج اقلام جدید (جلوگیری از تکرار اقلام)
+                historyLog = historyLog.filter(t => String(t.docId) !== String(currentDocId));
                 historyLog.push(...newItems);
                 saveData(); 
-                                draftEntryItems = []; editingEntryDocId = null; 
+                draftEntryItems = []; editingEntryDocId = null; 
                 ['inOfficeDoc','inBarcode','inName','inWeight','inUnitsPerCarton','inCartonQty','inLooseQty','inTotalPiecesOnly','inSender'].forEach(id=>{const el=document.getElementById(id); if(el) el.value = (id==='inCartonQty' ? '1' : (id==='inLooseQty' ? '0' : ''));});
                 const inInfo=document.getElementById('inBarcodeInfo'); if(inInfo) inInfo.innerText='';
                 renderDrafts();
@@ -3561,7 +3526,6 @@ function viewSystemFactor(docId) {
                 viewSystemFactor(currentDocId);
             } catch(e) { console.error(e); alert("خطا در ثبت نهایی: " + e.message); }
         }
-
         function addToExitDraft(isAuto = false) { 
             try {
                 let wh = document.getElementById('outWarehouseSelect').value;
@@ -3632,7 +3596,7 @@ function viewSystemFactor(docId) {
             } catch(e) { console.error(e); alert("خطایی رخ داد: " + e.message); }
         }
         
-       function finalizeExitDoc() { 
+    function finalizeExitDoc() { 
             try {
                 let cust = document.getElementById('outCustomer').value || "مشتری نامشخص";
                 let defaultWh = document.getElementById('outWarehouseSelect').value;
@@ -3671,6 +3635,9 @@ function viewSystemFactor(docId) {
                 let currentDocId = editingExitDocId ? editingExitDocId : generateUniqueDocId();
                 let dateStr = new Date().toLocaleString('fa-IR'); 
 
+                // حذف رکوردهای قبلی این سند قبل از درج اقلام جدید
+                historyLog = historyLog.filter(t => String(t.docId) !== String(currentDocId));
+
                 if (!isScanNow) {
                     if (outRequirements.length === 0) return alert("❌ هیچ کالایی در فرم (سفارش‌برداری) وارد نشده است!");
                     if (!outRequirements.every(req => req.wh || defaultWh)) return alert("برای همه اقلام انبار مبدأ را مشخص کنید.");
@@ -3697,7 +3664,7 @@ function viewSystemFactor(docId) {
 
                     historyLog.push(...outItems);
                     saveData(); 
-                                        alert("✅ فاکتور صادر و موجودی کسر شد! پیش‌نمایش سند برای چاپ باز می‌شود.");
+                    alert("✅ فاکتور صادر و موجودی کسر شد! پیش‌نمایش سند برای چاپ باز می‌شود.");
                 } else {
                     if(!draftExitItems.length) return alert("❌ هیچ کالایی اسکن و وارد لیست نشده است."); 
                     if (outRequirements.length > 0 && outRequirements.some(r => r.scannedPieces < r.reqPieces)) {
@@ -3723,7 +3690,7 @@ function viewSystemFactor(docId) {
 
                     historyLog.push(...outItems);
                     saveData(); 
-                                        alert("✅ حواله خروج با موفقیت اسکن، صادر و نهایی شد! پیش‌نمایش سند برای چاپ باز می‌شود.");
+                    alert("✅ حواله خروج با موفقیت اسکن، صادر و نهایی شد! پیش‌نمایش سند برای چاپ باز می‌شود.");
                 }
 
                 draftExitItems = []; 
@@ -4785,10 +4752,7 @@ function loadDropdowns() {
         });
     };
 
-    // ۲. دریافت اطلاعات با API جدید و سیستم خطایاب
-  // -------------------------------------------------------------
-    // سیستم هوشمند و آفلاین (Offline Queue / Outbox)
-    // -------------------------------------------------------------
+    // ۲. سیستم هوشمند صف آفلاین (مستقل به تفکیک شرکت)
     window.offlineDocQueue = JSON.parse(localStorage.getItem('anbar_offline_docs') || '[]');
     window.saveOfflineQueue = () => localStorage.setItem('anbar_offline_docs', JSON.stringify(window.offlineDocQueue));
 
@@ -4801,50 +4765,6 @@ function loadDropdowns() {
         let remaining = [];
         for(let payload of window.offlineDocQueue) {
             try {
-                let res = await fetch(`${DB_URL}/api/document?company=${companyPrefix}`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
-                });
-                if(!res.ok) throw new Error("Sync Fail");
-            } catch(e) {
-                remaining.push(payload); // در صورت قطعی اینترنت یا محدودیت، سند در صف باقی می‌ماند
-            }
-        }
-        window.offlineDocQueue = remaining;
-        window.saveOfflineQueue();
-        
-        if(window.offlineDocQueue.length === 0) {
-            if(statusDiv) { statusDiv.innerText = "☁️ آنلاین (D1)"; statusDiv.style.background = "rgba(16, 185, 129, 0.9)"; }
-            window.fetchDataFromServer(); // بعد از خالی شدن صف، اطلاعات جدید را از سرور بگیر
-        } else {
-            if(statusDiv) { statusDiv.innerText = `⚠️ ${window.offlineDocQueue.length} سند در صف`; statusDiv.style.background = "#ef4444"; }
-        }
-    };
-
-    // تلاش برای ارسالِ خودکارِ اسنادِ صف هر 15 ثانیه
-    setInterval(window.processOfflineQueue, 15000);
-    window.addEventListener('online', window.processOfflineQueue);
-    // -------------------------------------------------------------
-
-    // ۲. دریافت اطلاعات با API جدید و سیستم خطایاب
-    window.fetchDataFromServer = function() {
-        if (!companyPrefix) return;
-        
-// -------------------------------------------------------------
-    // سیستم هوشمند و آفلاین (Offline Queue / Outbox) - نسخه ایزوله برای چند شرکت
-    // -------------------------------------------------------------
-    window.offlineDocQueue = JSON.parse(localStorage.getItem('anbar_offline_docs') || '[]');
-    window.saveOfflineQueue = () => localStorage.setItem('anbar_offline_docs', JSON.stringify(window.offlineDocQueue));
-
-    window.processOfflineQueue = async function() {
-        if(window.offlineDocQueue.length === 0 || !navigator.onLine) return;
-        
-        let statusDiv = document.getElementById("cloudStatus");
-        if(statusDiv) { statusDiv.innerText = `⏳ ارسال ${window.offlineDocQueue.length} سند آفلاین...`; statusDiv.style.background = "#f59e0b"; }
-
-        let remaining = [];
-        for(let payload of window.offlineDocQueue) {
-            try {
-                // هدایت هوشمند: سند به دیتابیسِ شرکتی می‌رود که در آن ثبت شده، نه شرکتی که الان روی صفحه باز است!
                 let targetCompany = payload.companyTarget || companyPrefix;
                 let res = await fetch(`${DB_URL}/api/document?company=${targetCompany}`, {
                     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
@@ -4865,16 +4785,14 @@ function loadDropdowns() {
         }
     };
 
-    // تلاش برای ارسالِ خودکارِ اسنادِ صف هر 15 ثانیه
     setInterval(window.processOfflineQueue, 15000);
     window.addEventListener('online', window.processOfflineQueue);
-    // -------------------------------------------------------------
 
-    // ۲. دریافت اطلاعات با API جدید و سیستم خطایاب
+    // ۳. دریافت اطلاعات از سرور با مدیریت عدم تداخل حین ویرایش
     window.fetchDataFromServer = function() {
         if (!companyPrefix) return;
-        
-        // جلوگیری از پاک شدن اسناد آفلاین با مسدود کردن رفرش
+        if (window.editingEntryDocId || window.editingExitDocId) return;
+
         if (window.offlineDocQueue && window.offlineDocQueue.length > 0) {
             window.processOfflineQueue();
             return; 
@@ -4933,7 +4851,7 @@ function loadDropdowns() {
             });
     };
 
-    // ۳. ذخیره اطلاعات پایه (کالاها و کاربران)
+    // ۴. ذخیره اطلاعات پایه در سرور
     window.saveData = function() {
         rebuildInventory();
         updateLocalCacheOnly();
@@ -4946,7 +4864,7 @@ function loadDropdowns() {
         }).catch(e => console.warn("خطا در همگام‌سازی تنظیمات:", e));
     };
 
-// ۴. ارسال نقطه‌ای اسناد مجهز به پاکسازی پیش از درج مجدد
+    // ۵. ارسال سند به سرور با پاکسازی نسخه قدیمی قبل از ثبت مجدد
     window.syncSingleDocToServer = async function(docId, docItems) {
         const payload = {
             companyTarget: companyPrefix,
@@ -4972,7 +4890,6 @@ function loadDropdowns() {
         }
 
         try {
-            // حذف رکورد قبلی از سرور قبل از درج اقلام جدید (جلوگیری قطعی از اقلام تکراری)
             await fetch(`${DB_URL}/api/document?company=${payload.companyTarget || companyPrefix}`, {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
@@ -4995,7 +4912,6 @@ function loadDropdowns() {
     const originalFinalizeEntry = window.finalizeEntryDoc;
     window.finalizeEntryDoc = async function() {
         const editId = editingEntryDocId;
-        const preLength = historyLog.length;
         originalFinalizeEntry();
         let targetDocId = editId || (historyLog.length > 0 ? historyLog[historyLog.length - 1].docId : null);
         if (targetDocId) {
@@ -5007,7 +4923,6 @@ function loadDropdowns() {
     const originalFinalizeExit = window.finalizeExitDoc;
     window.finalizeExitDoc = async function() {
         const editId = editingExitDocId;
-        const preLength = historyLog.length;
         originalFinalizeExit(); 
         let targetDocId = editId || (historyLog.length > 0 ? historyLog[historyLog.length - 1].docId : null);
         if (targetDocId) {
@@ -5015,7 +4930,8 @@ function loadDropdowns() {
             if(newDocs.length > 0) await syncSingleDocToServer(targetDocId, newDocs);
         }
     };
-    // ۵. حل مشکل حذف عکس
+
+    // ۶. حذف عکس رسید
     window.deleteReceipt = async function(docId, event) {
         if(event) event.stopPropagation();
         if(!confirm("⚠️ آیا از حذف عکس این رسید مطمئن هستید؟")) return;
@@ -5038,7 +4954,7 @@ function loadDropdowns() {
         } catch(e) { alert("خطا در حذف عکس (شاید آفلاین هستید): " + e.message); }
     };
 
-    // ۶. حل مشکل ابطال سند
+    // ۷. ابطال سند
     window.cancelTransaction = async function(docId, event) {
         if(event) event.stopPropagation();
         if(!confirm("⚠️ آیا از ابطال و حذف کامل این سند مطمئن هستید؟ موجودی کالاها به حالت قبل برمی‌گردد.")) return;
@@ -5057,11 +4973,11 @@ function loadDropdowns() {
         } catch (e) { alert("⚠️ برای حذف کامل سند باید به اینترنت متصل باشید."); }
     };
 
-    // ۷. اتصال بخش اسکن کامیون به سرور ابری و صف آفلاین
+    // ۸. نهایی‌سازی اسکن بارگیری کامیون
     const originalFinalizeDispatch = window.finalizeDispatchDoc;
     window.finalizeDispatchDoc = async function() {
         const targetDocId = currentDispatchDocId;
-        originalFinalizeDispatch(); // اجرای عملیات در مرورگر
+        originalFinalizeDispatch();
         if (targetDocId) {
             let updatedDocs = historyLog.filter(log => String(log.docId) === String(targetDocId));
             if(updatedDocs.length > 0) {
@@ -5084,7 +5000,7 @@ function loadDropdowns() {
         }
     };
 
-    // ۸. رفع مشکل ادغام شدن کالاها از انبارهای مختلف در سفارش‌برداری خروج
+    // ۹. سفارش‌برداری خروج
     window.addRequirement = function() { 
         let wh = document.getElementById('outWarehouseSelect').value;
         if(!wh) { playBeep('error'); return alert("ابتدا انبار مبدأ (بارگیری) را مشخص کنید."); }
@@ -5114,7 +5030,7 @@ function loadDropdowns() {
         renderRequirements(); playBeep('success'); document.getElementById('reqProductSelect').focus();
     };
 
-  // ۹. اصلاح تابع باز کردن اسکنر کامیون (با رفع خطای کادرهای Null)
+    // ۱۰. اسکنر کامیون و رفع خطای المان‌های Null
     window.openDispatchScanner = function(docId, event) {
         try {
             if(event && typeof event.stopPropagation === 'function') event.stopPropagation();
@@ -5145,7 +5061,6 @@ function loadDropdowns() {
 
             document.getElementById('dispatchDocIdLabel').innerText = targetDocId;
             
-            // جلوگیری از ارور Null با چک کردن وجود داشتنِ المان‌ها در صفحه
             if(document.getElementById('dispatchBarcode')) document.getElementById('dispatchBarcode').value = '';
             if(document.getElementById('dispatchQtyLoose')) document.getElementById('dispatchQtyLoose').value = 0;
             if(document.getElementById('dispatchQtyManualLoose')) document.getElementById('dispatchQtyManualLoose').value = 0;
