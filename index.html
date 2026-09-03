@@ -1472,17 +1472,18 @@
                     if(currentUser.role === 'admin') { try{ renderSettings(); }catch(e){} }
                     try{ renderInventory(); }catch(e){} 
                     openTab('tab-dashboard', document.getElementById('tabBtnDashboard'));
-               try {
-                    let dIn = localStorage.getItem(companyPrefix + '_draftEntry');
-                    if(dIn) draftEntryItems = JSON.parse(dIn) || [];
-                    let dOut = localStorage.getItem(companyPrefix + '_draftExit');
-                    if(dOut) { let p = JSON.parse(dOut); draftExitItems = p.items || []; outRequirements = p.reqs || []; }
-                    renderDrafts(); renderRequirements();
-                } catch(e){}
- }, 50);
+               
+                    // بارگذاری پیش‌نویس‌های ذخیره‌شده
+                    try {
+                        let dIn = localStorage.getItem(companyPrefix + '_draftEntry');
+                        if(dIn) draftEntryItems = JSON.parse(dIn) || [];
+                        let dOut = localStorage.getItem(companyPrefix + '_draftExit');
+                        if(dOut) { let p = JSON.parse(dOut); draftExitItems = p.items || []; outRequirements = p.reqs || []; }
+                        renderDrafts(); renderRequirements();
+                    } catch(e){}
+                }, 50);
             }
         }
-
         function rebuildInventory() {
             // موجودی واقعی فقط از اسناد ثبت‌شده محاسبه می‌شود؛ اقلام پیش‌نویس نباید
             // قبل از ثبت سند موجودی را کم/زیاد کنند.
@@ -4762,7 +4763,7 @@ function loadDropdowns() {
         });
     };
 
-    // ۲. سیستم هوشمند صف آفلاین (مستقل به تفکیک شرکت)
+  // ۲. سیستم هوشمند صف آفلاین (مستقل به تفکیک شرکت)
     try {
         window.offlineDocQueue = JSON.parse(localStorage.getItem('anbar_offline_docs') || '[]');
         if(!Array.isArray(window.offlineDocQueue)) window.offlineDocQueue = [];
@@ -4802,7 +4803,6 @@ function loadDropdowns() {
 
     setInterval(window.processOfflineQueue, 15000);
     window.addEventListener('online', window.processOfflineQueue);
-
     // ۳. دریافت اطلاعات از سرور با مدیریت عدم تداخل حین ویرایش
     window.fetchDataFromServer = function() {
         if (!companyPrefix) return;
