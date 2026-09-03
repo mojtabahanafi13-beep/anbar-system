@@ -1333,7 +1333,7 @@
             }
         }
 
-        function selectCompany(prefix, name, autoLogin = false) {
+       function selectCompany(prefix, name, autoLogin = false) {
             companyPrefix = prefix; companyNameStr = name;
             productsMap = getSafeLocal(prefix + '_sysProductsMap', {}); 
             productsUnitsMap = getSafeLocal(prefix + '_sysProductsUnitsMap', {}); 
@@ -1358,7 +1358,13 @@
             localStorage.setItem(prefix + '_sysUsersList', JSON.stringify(sysUsers));
             
             sessionStorage.setItem('activeCompany', JSON.stringify({prefix, name}));
+            
+            // رفع باگ گیر کردن صفحه لاگین
             document.getElementById('view-company-select').style.display = 'none';
+            document.getElementById('view-change-pass').style.display = 'none';
+            document.getElementById('loginPassArea').style.display = 'none';
+            document.getElementById('loginUserButtons').style.display = 'flex';
+            selectedLoginIndex = null;
 
             if(autoLogin && currentUser) {
                 document.getElementById('login-overlay').style.display = 'none';
@@ -1375,7 +1381,13 @@
             autoSyncInterval = setInterval(fetchDataFromServer, 30000);
         }
 
-        function showCompanySelect() { document.getElementById('view-company-select').style.display = 'block'; document.getElementById('view-login-main').style.display = 'none'; }
+        function showCompanySelect() { 
+            document.getElementById('view-company-select').style.display = 'block'; 
+            document.getElementById('view-login-main').style.display = 'none';
+            document.getElementById('loginPassArea').style.display = 'none';
+            document.getElementById('loginUserButtons').style.display = 'flex';
+            selectedLoginIndex = null;
+        }
         
         function logoutApp() { 
             sessionStorage.removeItem('activeUser'); 
@@ -1421,7 +1433,7 @@
         function selectUserForLogin(index) { selectedLoginIndex = index; let user = sysUsers[index]; if(user.pass && user.pass.trim() !== '') { document.getElementById('loginUserButtons').style.display = 'none'; document.getElementById('loginPassArea').style.display = 'block'; document.getElementById('loginPassword').value = ''; setTimeout(()=> document.getElementById('loginPassword').focus(), 100); } else { performLogin(); } }
         
         function performLogin() { 
-            if(selectedLoginIndex === null) return; 
+            if(selectedLoginIndex === null) return alert("لطفاً ابتدا یک کاربر را انتخاب کنید."); 
             let user = sysUsers[selectedLoginIndex]; 
             if (user.pass && user.pass !== document.getElementById('loginPassword').value) return alert("رمز اشتباه است!"); 
             currentUser = user; 
@@ -4763,7 +4775,7 @@ function loadDropdowns() {
         });
     };
 
-  // ۲. سیستم هوشمند صف آفلاین (مستقل به تفکیک شرکت)
+    // ۲. سیستم هوشمند صف آفلاین (مستقل به تفکیک شرکت)
     try {
         window.offlineDocQueue = JSON.parse(localStorage.getItem('anbar_offline_docs') || '[]');
         if(!Array.isArray(window.offlineDocQueue)) window.offlineDocQueue = [];
@@ -4803,6 +4815,7 @@ function loadDropdowns() {
 
     setInterval(window.processOfflineQueue, 15000);
     window.addEventListener('online', window.processOfflineQueue);
+
     // ۳. دریافت اطلاعات از سرور با مدیریت عدم تداخل حین ویرایش
     window.fetchDataFromServer = function() {
         if (!companyPrefix) return;
