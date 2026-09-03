@@ -2158,9 +2158,7 @@ async function deleteReceipt(docId, event) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ docId: String(docId) })
     }).catch(e => console.warn("خطا در حذف سند قدیمی از سرور:", e));
-}
-   
-        
+} 
         let currentDispatchDocId = null;
         let dispatchReqs = {}; 
         let html5QrCode_dispatch = null;
@@ -4765,7 +4763,12 @@ function loadDropdowns() {
     };
 
     // ۲. سیستم هوشمند صف آفلاین (مستقل به تفکیک شرکت)
-    window.offlineDocQueue = JSON.parse(localStorage.getItem('anbar_offline_docs') || '[]');
+    try {
+        window.offlineDocQueue = JSON.parse(localStorage.getItem('anbar_offline_docs') || '[]');
+        if(!Array.isArray(window.offlineDocQueue)) window.offlineDocQueue = [];
+    } catch(e) {
+        window.offlineDocQueue = [];
+    }
     window.saveOfflineQueue = () => localStorage.setItem('anbar_offline_docs', JSON.stringify(window.offlineDocQueue));
 
     window.processOfflineQueue = async function() {
@@ -4845,6 +4848,10 @@ function loadDropdowns() {
 
                     ensureDefaultUsers(); rebuildInventory(); updateLocalCacheOnly();
                     if(typeof updateTodayCounter === 'function') updateTodayCounter();
+                    
+                    if(document.getElementById('view-login-main')?.style.display === 'block') {
+                        renderLoginButtons();
+                    }
                 }
                 if (currentUser) {
                     if (currentUser.role !== 'loader') loadDropdowns();
