@@ -4704,7 +4704,6 @@ function loadDropdowns() {
         if(dDisp) dDisp.innerHTML = (dWhVal === 'all' ? 'همه انبارها' : dWhVal) + ' <span style="font-size:10px;">▼</span>';
     }
 }
-</script>
 <!-- کدهای ارتقاء یافته برای اتصال به سیستم ابری جدید و جلوگیری از هنگ کردن -->
 <script>
     // ۱. آپلود با FormData (ارسال مستقیم باینری)
@@ -4844,8 +4843,8 @@ function loadDropdowns() {
                         });
                     }
 
-                   ensureDefaultUsers(); rebuildInventory(); updateLocalCacheOnly();
-if(typeof updateTodayCounter === 'function') updateTodayCounter();
+                    ensureDefaultUsers(); rebuildInventory(); updateLocalCacheOnly();
+                    if(typeof updateTodayCounter === 'function') updateTodayCounter();
                 }
                 if (currentUser) {
                     if (currentUser.role !== 'loader') loadDropdowns();
@@ -4878,31 +4877,27 @@ if(typeof updateTodayCounter === 'function') updateTodayCounter();
         }).catch(e => console.warn("خطا در همگام‌سازی تنظیمات:", e));
     };
 
-    // ۵. ارسال سند به سرور با پاکسازی نسخه قدیمی قبل از ثبت مجدد
-   // شمارنده زنده اسناد ثبت شده امروز در دیتابیس
-   // شمارنده زنده اسناد (فاکتورهای) ثبت شده امروز در دیتابیس
+    // ۵. شمارنده زنده اسناد (فاکتورهای یکتا) ثبت شده امروز
     window.updateTodayCounter = function() {
-        const todayStr = new Date().toLocaleDateString('fa-IR');
-        
-        // ۱. پیدا کردن تمام رکوردهای امروز
-        const todayLogs = historyLog.filter(log => log.date && log.date.includes(todayStr));
-        
-        // ۲. فیلتر کردن شماره سندهای یکتا (تا فاکتورهای چند قلمی، فقط ۱ بار شمرده شوند)
-        const uniqueDocs = new Set(todayLogs.map(log => log.docId));
-        const count = uniqueDocs.size;
-        
-        const el = document.getElementById('db-counter-val');
-        if (el) el.innerText = count.toLocaleString('fa-IR');
-    };
-  // شمارنده زنده اسناد ثبت شده امروز در دیتابیس
-    window.updateTodayCounter = function() {
-        const todayStr = new Date().toLocaleDateString('fa-IR');
-        const count = historyLog.filter(log => log.date && log.date.includes(todayStr)).length;
-        const el = document.getElementById('db-counter-val');
-        if (el) el.innerText = count.toLocaleString('fa-IR');
+        try {
+            const todayStr = new Date().toLocaleDateString('fa-IR');
+            const todayLogs = historyLog.filter(log => log.date && log.date.includes(todayStr));
+            
+            const uniqueDocIds = new Set();
+            todayLogs.forEach(log => {
+                if (log.docId) {
+                    uniqueDocIds.add(String(log.docId).trim());
+                }
+            });
+            
+            const el = document.getElementById('db-counter-val');
+            if (el) el.innerText = uniqueDocIds.size.toLocaleString('fa-IR');
+        } catch (e) {
+            console.error("Counter Error:", e);
+        }
     };
 
-    // ۵. ارسال قطعی و سخت‌گیرانه (تأیید کد 200)
+    // ۶. ارسال قطعی و سخت‌گیرانه (تأیید کد 200)
     window.syncSingleDocToServerStrict = async function(docId, docItems) {
         const payload = {
             companyTarget: companyPrefix,
@@ -4933,6 +4928,7 @@ if(typeof updateTodayCounter === 'function') updateTodayCounter();
         return true; 
     };
 
+    // ۷. ثبت نهایی ورود
     window.finalizeEntryDoc = async function() {
         if(!draftEntryItems.length) return alert("اقلام آماده ثبت خالی است.");
         let docTypeEl = document.querySelector('input[name="entryDocType"]:checked');
@@ -4956,11 +4952,9 @@ if(typeof updateTodayCounter === 'function') updateTodayCounter();
         }));
 
         try {
-            // منتظر تایید 200 از سرور می‌ماند
             await syncSingleDocToServerStrict(currentDocId, newItems);
             hideUploadProgress();
 
-            // فقط در صورت تایید سرور، اطلاعات روی گوشی ثبت و فرم پاک می‌شود
             historyLog = historyLog.filter(t => String(t.docId) !== String(currentDocId));
             historyLog.push(...newItems);
             saveData(); 
@@ -4979,6 +4973,7 @@ if(typeof updateTodayCounter === 'function') updateTodayCounter();
         }
     };
 
+    // ۸. ثبت نهایی خروج
     window.finalizeExitDoc = async function() {
         let cust = document.getElementById('outCustomer').value || "مشتری نامشخص";
         let defaultWh = document.getElementById('outWarehouseSelect').value;
@@ -5014,7 +5009,6 @@ if(typeof updateTodayCounter === 'function') updateTodayCounter();
         }
 
         try {
-            // منتظر تایید قطعی 200
             await syncSingleDocToServerStrict(currentDocId, newItems);
             hideUploadProgress();
 
@@ -5038,7 +5032,8 @@ if(typeof updateTodayCounter === 'function') updateTodayCounter();
             alert("❌ خطا در ثبت دیتابیس: " + e.message + "\n\nاطلاعات فرم پاک نشد! لطفاً پس از رفع مشکل مجدداً دکمه ثبت نهایی را بزنید.");
         }
     };
-    // ۶. حذف عکس رسید
+
+    // ۹. حذف عکس رسید
     window.deleteReceipt = async function(docId, event) {
         if(event) event.stopPropagation();
         if(!confirm("⚠️ آیا از حذف عکس این رسید مطمئن هستید؟")) return;
@@ -5061,7 +5056,7 @@ if(typeof updateTodayCounter === 'function') updateTodayCounter();
         } catch(e) { alert("خطا در حذف عکس (شاید آفلاین هستید): " + e.message); }
     };
 
-    // ۷. ابطال سند
+    // ۱۰. ابطال سند
     window.cancelTransaction = async function(docId, event) {
         if(event) event.stopPropagation();
         if(!confirm("⚠️ آیا از ابطال و حذف کامل این سند مطمئن هستید؟ موجودی کالاها به حالت قبل برمی‌گردد.")) return;
@@ -5080,7 +5075,7 @@ if(typeof updateTodayCounter === 'function') updateTodayCounter();
         } catch (e) { alert("⚠️ برای حذف کامل سند باید به اینترنت متصل باشید."); }
     };
 
-    // ۸. نهایی‌سازی اسکن بارگیری کامیون
+    // ۱۱. نهایی‌سازی اسکن بارگیری کامیون
     const originalFinalizeDispatch = window.finalizeDispatchDoc;
     window.finalizeDispatchDoc = async function() {
         const targetDocId = currentDispatchDocId;
@@ -5089,7 +5084,7 @@ if(typeof updateTodayCounter === 'function') updateTodayCounter();
             let updatedDocs = historyLog.filter(log => String(log.docId) === String(targetDocId));
             if(updatedDocs.length > 0) {
                 updatedDocs.forEach(d => { d.dispatchStatus = 'done'; d.dispatchDate = new Date().toLocaleString('fa-IR'); });
-                await syncSingleDocToServer(targetDocId, updatedDocs);
+                await syncSingleDocToServerStrict(targetDocId, updatedDocs);
             }
         }
     };
@@ -5102,12 +5097,12 @@ if(typeof updateTodayCounter === 'function') updateTodayCounter();
             let updatedDocs = historyLog.filter(log => String(log.docId) === String(targetDocId));
             if(updatedDocs.length > 0) {
                 updatedDocs.forEach(d => { d.dispatchStatus = 'done'; d.dispatchDate = new Date().toLocaleString('fa-IR'); });
-                await syncSingleDocToServer(targetDocId, updatedDocs);
+                await syncSingleDocToServerStrict(targetDocId, updatedDocs);
             }
         }
     };
 
-    // ۹. سفارش‌برداری خروج
+    // ۱۲. سفارش‌برداری خروج
     window.addRequirement = function() { 
         let wh = document.getElementById('outWarehouseSelect').value;
         if(!wh) { playBeep('error'); return alert("ابتدا انبار مبدأ (بارگیری) را مشخص کنید."); }
@@ -5137,7 +5132,7 @@ if(typeof updateTodayCounter === 'function') updateTodayCounter();
         renderRequirements(); playBeep('success'); document.getElementById('reqProductSelect').focus();
     };
 
-    // ۱۰. اسکنر کامیون و رفع خطای المان‌های Null
+    // ۱۳. اسکنر کامیون و رفع خطای المان‌های Null
     window.openDispatchScanner = function(docId, event) {
         try {
             if(event && typeof event.stopPropagation === 'function') event.stopPropagation();
