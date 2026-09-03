@@ -4880,13 +4880,20 @@ if(typeof updateTodayCounter === 'function') updateTodayCounter();
 
     // ۵. ارسال سند به سرور با پاکسازی نسخه قدیمی قبل از ثبت مجدد
    // شمارنده زنده اسناد ثبت شده امروز در دیتابیس
+   // شمارنده زنده اسناد (فاکتورهای) ثبت شده امروز در دیتابیس
     window.updateTodayCounter = function() {
         const todayStr = new Date().toLocaleDateString('fa-IR');
-        const count = historyLog.filter(log => log.date && log.date.includes(todayStr)).length;
+        
+        // ۱. پیدا کردن تمام رکوردهای امروز
+        const todayLogs = historyLog.filter(log => log.date && log.date.includes(todayStr));
+        
+        // ۲. فیلتر کردن شماره سندهای یکتا (تا فاکتورهای چند قلمی، فقط ۱ بار شمرده شوند)
+        const uniqueDocs = new Set(todayLogs.map(log => log.docId));
+        const count = uniqueDocs.size;
+        
         const el = document.getElementById('db-counter-val');
         if (el) el.innerText = count.toLocaleString('fa-IR');
     };
-
   // شمارنده زنده اسناد ثبت شده امروز در دیتابیس
     window.updateTodayCounter = function() {
         const todayStr = new Date().toLocaleDateString('fa-IR');
