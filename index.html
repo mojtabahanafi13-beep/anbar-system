@@ -1333,75 +1333,6 @@
             }
         }
 
-        function loadDropdowns() {
-            let fWh = document.getElementById('filterWarehouseSelect');
-            let fWhVal = fWh ? fWh.value : '';
-            let iWh = document.getElementById('inWarehouseSelect');
-            let iWhVal = iWh ? iWh.value : '';
-            let oWh = document.getElementById('outWarehouseSelect');
-            let oWhVal = oWh ? oWh.value : '';
-
-            let fOpts = `<div class="custom-option" onclick="selectCS('filterWarehouseSelect', 'all', 'همه انبارها')">همه انبارها</div>`;
-            fOpts += (sysSettings.warehouses || []).map(w => `<div class="custom-option" onclick="selectCS('filterWarehouseSelect', '${w}', '${w}')">${w}</div>`).join('');
-            let fEl = document.getElementById('opt-filterWarehouseSelect');
-            if(fEl) fEl.innerHTML = fOpts;
-
-            let inOpts = (sysSettings.warehouses || []).map(w => `<div class="custom-option" onclick="selectCS('inWarehouseSelect', '${w}', '${w}')">${w}</div>`).join('');
-            let iEl = document.getElementById('opt-inWarehouseSelect');
-            if(iEl) iEl.innerHTML = inOpts;
-
-            let outOpts = (sysSettings.warehouses || []).map(w => `<div class="custom-option" onclick="selectCS('outWarehouseSelect', '${w}', '${w}')">${w}</div>`).join('');
-            let oEl = document.getElementById('opt-outWarehouseSelect');
-            if(oEl) oEl.innerHTML = outOpts;
-            
-            let dashLowOpts = `<div class="custom-option" onclick="selectCS('dashLowStockWh', 'all', 'همه انبارها')">همه انبارها</div>`;
-            dashLowOpts += (sysSettings.warehouses || []).map(w => `<div class="custom-option" onclick="selectCS('dashLowStockWh', '${w}', '${w}')">${w}</div>`).join('');
-            let dEl = document.getElementById('opt-dashLowStockWh');
-            if(dEl) dEl.innerHTML = dashLowOpts;
-
-            if(!fWhVal || (fWhVal !== 'all' && !sysSettings.warehouses.includes(fWhVal))) {
-                if(fWh) fWh.value = 'all';
-                let dF = document.getElementById('disp-filterWarehouseSelect');
-                if(dF) dF.innerHTML = 'همه انبارها <span style="font-size:10px;">▼</span>';
-            } else {
-                let dF = document.getElementById('disp-filterWarehouseSelect');
-                if(dF) dF.innerHTML = (fWhVal === 'all' ? 'همه انبارها' : fWhVal) + ' <span style="font-size:10px;">▼</span>';
-            }
-
-            if(!iWhVal || !sysSettings.warehouses.includes(iWhVal)) {
-                if(sysSettings.warehouses && sysSettings.warehouses.length > 0) {
-                    if(iWh) iWh.value = sysSettings.warehouses[0];
-                    let dI = document.getElementById('disp-inWarehouseSelect');
-                    if(dI) dI.innerHTML = sysSettings.warehouses[0] + ' <span style="font-size:10px;">▼</span>';
-                }
-            } else {
-                let dI = document.getElementById('disp-inWarehouseSelect');
-                if(dI) dI.innerHTML = iWhVal + ' <span style="font-size:10px;">▼</span>';
-            }
-
-            if(!oWhVal || !sysSettings.warehouses.includes(oWhVal)) {
-                if(sysSettings.warehouses && sysSettings.warehouses.length > 0) {
-                    if(oWh) oWh.value = sysSettings.warehouses[0];
-                    let dO = document.getElementById('disp-outWarehouseSelect');
-                    if(dO) dO.innerHTML = sysSettings.warehouses[0] + ' <span style="font-size:10px;">▼</span>';
-                }
-            } else {
-                let dO = document.getElementById('disp-outWarehouseSelect');
-                if(dO) dO.innerHTML = oWhVal + ' <span style="font-size:10px;">▼</span>';
-            }
-            
-            let dWh = document.getElementById('dashLowStockWh');
-            let dWhVal = dWh ? dWh.value : '';
-            if(!dWhVal || (dWhVal !== 'all' && !sysSettings.warehouses.includes(dWhVal))) {
-                if(dWh) dWh.value = 'all';
-                let dDisp = document.getElementById('disp-dashLowStockWh');
-                if(dDisp) dDisp.innerHTML = 'همه انبارها <span style="font-size:10px;">▼</span>';
-            } else {
-                let dDisp = document.getElementById('disp-dashLowStockWh');
-                if(dDisp) dDisp.innerHTML = (dWhVal === 'all' ? 'همه انبارها' : dWhVal) + ' <span style="font-size:10px;">▼</span>';
-            }
-        }
-        
         function selectCompany(prefix, name, autoLogin = false) {
             companyPrefix = prefix; companyNameStr = name;
             productsMap = getSafeLocal(prefix + '_sysProductsMap', {}); 
@@ -1427,13 +1358,7 @@
             localStorage.setItem(prefix + '_sysUsersList', JSON.stringify(sysUsers));
             
             sessionStorage.setItem('activeCompany', JSON.stringify({prefix, name}));
-            
-            // رفع باگ گیر کردن صفحه لاگین
             document.getElementById('view-company-select').style.display = 'none';
-            document.getElementById('view-change-pass').style.display = 'none';
-            document.getElementById('loginPassArea').style.display = 'none';
-            document.getElementById('loginUserButtons').style.display = 'flex';
-            selectedLoginIndex = null;
 
             if(autoLogin && currentUser) {
                 document.getElementById('login-overlay').style.display = 'none';
@@ -1450,13 +1375,7 @@
             autoSyncInterval = setInterval(fetchDataFromServer, 30000);
         }
 
-        function showCompanySelect() { 
-            document.getElementById('view-company-select').style.display = 'block'; 
-            document.getElementById('view-login-main').style.display = 'none';
-            document.getElementById('loginPassArea').style.display = 'none';
-            document.getElementById('loginUserButtons').style.display = 'flex';
-            selectedLoginIndex = null;
-        }
+        function showCompanySelect() { document.getElementById('view-company-select').style.display = 'block'; document.getElementById('view-login-main').style.display = 'none'; }
         
         function logoutApp() { 
             sessionStorage.removeItem('activeUser'); 
@@ -1502,7 +1421,7 @@
         function selectUserForLogin(index) { selectedLoginIndex = index; let user = sysUsers[index]; if(user.pass && user.pass.trim() !== '') { document.getElementById('loginUserButtons').style.display = 'none'; document.getElementById('loginPassArea').style.display = 'block'; document.getElementById('loginPassword').value = ''; setTimeout(()=> document.getElementById('loginPassword').focus(), 100); } else { performLogin(); } }
         
         function performLogin() { 
-            if(selectedLoginIndex === null) return alert("لطفاً ابتدا یک کاربر را انتخاب کنید."); 
+            if(selectedLoginIndex === null) return; 
             let user = sysUsers[selectedLoginIndex]; 
             if (user.pass && user.pass !== document.getElementById('loginPassword').value) return alert("رمز اشتباه است!"); 
             currentUser = user; 
@@ -1553,18 +1472,17 @@
                     if(currentUser.role === 'admin') { try{ renderSettings(); }catch(e){} }
                     try{ renderInventory(); }catch(e){} 
                     openTab('tab-dashboard', document.getElementById('tabBtnDashboard'));
-               
-                    // بارگذاری پیش‌نویس‌های ذخیره‌شده
-                    try {
-                        let dIn = localStorage.getItem(companyPrefix + '_draftEntry');
-                        if(dIn) draftEntryItems = JSON.parse(dIn) || [];
-                        let dOut = localStorage.getItem(companyPrefix + '_draftExit');
-                        if(dOut) { let p = JSON.parse(dOut); draftExitItems = p.items || []; outRequirements = p.reqs || []; }
-                        renderDrafts(); renderRequirements();
-                    } catch(e){}
-                }, 50);
+               try {
+                    let dIn = localStorage.getItem(companyPrefix + '_draftEntry');
+                    if(dIn) draftEntryItems = JSON.parse(dIn) || [];
+                    let dOut = localStorage.getItem(companyPrefix + '_draftExit');
+                    if(dOut) { let p = JSON.parse(dOut); draftExitItems = p.items || []; outRequirements = p.reqs || []; }
+                    renderDrafts(); renderRequirements();
+                } catch(e){}
+ }, 50);
             }
         }
+
         function rebuildInventory() {
             // موجودی واقعی فقط از اسناد ثبت‌شده محاسبه می‌شود؛ اقلام پیش‌نویس نباید
             // قبل از ثبت سند موجودی را کم/زیاد کنند.
@@ -1611,6 +1529,56 @@
             return total;
         }
 
+function fetchDataFromServer() {
+            if (!companyPrefix) return;
+            const statusDiv = document.getElementById("cloudStatus");
+            fetch(`${DB_URL}/api/data?company=${companyPrefix}&t=${Date.now()}`)
+                .then(response => response.json())
+                .then(cloudData => {
+                    if (statusDiv) { 
+                        statusDiv.innerText = "☁️ آنلاین (D1)"; 
+                        statusDiv.style.background = "rgba(16, 185, 129, 0.9)"; 
+                    }
+                    
+                    if (cloudData && typeof cloudData === 'object' && Object.keys(cloudData).length > 0) {
+                        if (cloudData.productsMap && Object.keys(cloudData.productsMap).length > 0) {
+                            productsMap = cloudData.productsMap;
+                        }
+                        if (cloudData.productsUnitsMap) productsUnitsMap = cloudData.productsUnitsMap;
+                        if (cloudData.productsWeightMap) productsWeightMap = cloudData.productsWeightMap;
+                        if (cloudData.lastDocNumber) lastDocNumber = Number(cloudData.lastDocNumber) || lastDocNumber;
+                        if (cloudData.sysSettings) sysSettings = cloudData.sysSettings;
+                        
+                        if (Array.isArray(cloudData.historyLog) && cloudData.historyLog.length > 0) {
+                            historyLog = cloudData.historyLog.filter(x => x && x.docId != null);
+                        }
+                        if (Array.isArray(cloudData.sysUsers) && cloudData.sysUsers.length > 0) {
+                            sysUsers = cloudData.sysUsers.filter(u => u && u.name);
+                        }
+                        ensureDefaultUsers();
+                        rebuildInventory();
+                        updateLocalCacheOnly();
+                    } else {
+                        if (Object.keys(productsMap).length > 0 || historyLog.length > 0) {
+                            uploadLocalToCloud();
+                        }
+                    }
+
+                    if (currentUser) {
+                        if (currentUser.role !== 'loader') loadDropdowns();
+                        if (currentUser.role === 'admin') renderSettings();
+                        if (currentUser.role !== 'loader') renderInventory();
+                        if (document.getElementById('tab-dashboard')?.style.display === 'block') renderDashboard();
+                        if (document.getElementById('tab-cardex')?.style.display === 'block') generateCardex();
+                    }
+                })
+                .catch(err => {
+                    if (!navigator.onLine && statusDiv) {
+                        statusDiv.innerText = "🔌 آفلاین";
+                        statusDiv.style.background = "rgba(239, 68, 68, 0.9)";
+                    }
+                });
+        }        
         function updateLocalCacheOnly() {
             try {
                 localStorage.setItem(companyPrefix + '_sysProductsMap', JSON.stringify(productsMap)); 
@@ -1689,6 +1657,59 @@ function uploadLocalToCloud() {
             });
         }
 
+        function saveData() {
+            if (saveInProgress) { saveQueued = true; return; }
+            saveInProgress = true; 
+            saveQueued = false;
+            try {
+                rebuildInventory();
+                updateLocalCacheOnly();
+
+                const statusDiv = document.getElementById('cloudStatus');
+                if (statusDiv) { 
+                    statusDiv.innerText = '⏳ در حال ذخیره در D1...'; 
+                    statusDiv.style.background = 'rgba(59, 130, 246, 0.9)'; 
+                }
+                if (!companyPrefix) { saveInProgress = false; return; }
+
+                const payload = {
+                    productsMap,
+                    productsUnitsMap,
+                    productsWeightMap,
+                    inventory,
+                    historyLog,
+                    lastDocNumber,
+                    sysSettings,
+                    sysUsers
+                };
+
+                fetch(`${DB_URL}/api/save-all?company=${companyPrefix}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                }).then(r => {
+                    if (!r.ok) throw new Error('HTTP ' + r.status);
+                    if (statusDiv) {
+                        statusDiv.innerText = '☁️ آنلاین (D1)';
+                        statusDiv.style.background = 'rgba(16, 185, 129, 0.9)';
+                    }
+                }).catch(err => {
+                    console.warn('D1 save error:', err);
+                    if (statusDiv) {
+                        statusDiv.innerText = '⚠️ نسخه محلی';
+                        statusDiv.style.background = 'rgba(239, 68, 68, 0.9)';
+                    }
+                }).finally(() => {
+                    saveInProgress = false;
+                    if (saveQueued) setTimeout(saveData, 0);
+                });
+            } catch (err) {
+                console.error(err);
+                saveInProgress = false;
+                saveQueued = false;
+            }
+            if (document.getElementById('tab-dashboard')?.style.display === 'block') renderDashboard();
+        }
         function toggleCS(id, event) {
             if(event) event.stopPropagation();
             document.querySelectorAll('.custom-select-options').forEach(el => {
@@ -1755,7 +1776,7 @@ function uploadLocalToCloud() {
     
     document.getElementById('list-users').innerHTML = sysUsers.map((u, i) => `<li><b>${u.name}</b> (${u.role === 'admin' ? 'مدیر' : u.role === 'viewer' ? 'مشاهده' : u.role === 'loader' ? 'راننده/بارگیر' : 'کاربر'}) <button class="del-btn" onclick="deleteUser(${i})">حذف</button></li>`).join('');
 
-    renderProductsSettings(); 
+    renderProductsSettings(); // 👈 این خط اضافه شود
 }
 
         function addCustomer() {
@@ -2012,12 +2033,1717 @@ function deleteProduct(pCode) {
             location.reload();
         }
 
+async function deleteReceipt(docId, event) {
+    if(event) event.stopPropagation();
+    if(!confirm("⚠️ آیا از حذف عکس این رسید مطمئن هستید؟")) return;
+    
+    try {
+        await fetch(`${DB_URL}/api/upload-receipt?company=${companyPrefix}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ docId: String(docId), imageBase64: "" })
+        });
+    } catch(e) {}
+
+    historyLog.forEach(log => { 
+        if(String(log.docId) === String(docId)) { 
+            log.receiptFile = null; 
+            log.receiptImage = null; 
+            log.receiptType = null; 
+            log.deliveryDate = null; 
+        } 
+    });
+    
+    saveData();
+    generateCardex();
+    alert("✅ عکس رسید با موفقیت حذف شد.");
+}
+        function cancelTransaction(docId, event) {
+            if(event) event.stopPropagation();
+            if(!confirm("⚠️ آیا از ابطال و حذف کامل این سند مطمئن هستید؟ موجودی کالاها به حالت قبل برمی‌گردد.")) return;
+            const beforeCount = historyLog.length;
+            historyLog = historyLog.filter(t => String(t.docId) !== String(docId));
+            if (historyLog.length === beforeCount) {
+                alert("❌ سند موردنظر پیدا نشد.");
+                return;
+            }
+            // ثبت فوری تغییر در حافظه محلی تا یک همگام‌سازی قدیمی نتواند سند باطل‌شده را برگرداند.
+            localMutationRevision++;
+            rebuildInventory();
+            createLocalSafetyBackup();
+            updateLocalCacheOnly();
+            renderInventory();
+            generateCardex();
+            try {
+                saveData();
+                alert("✅ سند با موفقیت باطل شد و از موجودی حذف شد.");
+            } catch (e) {
+                alert("⚠️ سند محلی باطل شد، اما ارسال نهایی به سرور انجام نشد. لطفاً وضعیت اتصال را بررسی کنید.");
+            }
+        }
+
+    function editTransaction(docId, event) {
+    if(event) event.stopPropagation();
+    if(!confirm("✏️ برای ویرایش، این سند ابتدا باطل شده و اقلام آن به فرم ثبت منتقل می‌شود تا پس از تغییر، دوباره ذخیره کنید. موافقید؟")) return;
+    
+    let docs = historyLog.filter(t => String(t.docId) === String(docId));
+    if(!docs.length) {
+        showScanError('اطلاعات این حواله پیدا نشد. لطفاً صفحه را تازه‌سازی کنید و دوباره تلاش کنید.');
+        return;
+    }
+    
+    let master = docs[0];
+    let type = master.type;
+    
+    // ۱. پاکسازی کامل لیست‌های موقت برای جلوگیری از تکثیر اقلام
+    draftEntryItems = [];
+    draftExitItems = [];
+    outRequirements = [];
+
+    // ۲. فیلتر کردن اقلام در صورتی که قبلاً دوبل شده باشند
+    let uniqueDocs = [];
+    let seenKeys = new Set();
+    docs.forEach(item => {
+        let key = `${item.pCode}|${item.batch}|${item.qtyCarton}|${item.qtyLoose}|${item.totalPieces}|${item.warehouse}`;
+        if(!seenKeys.has(key)) {
+            seenKeys.add(key);
+            uniqueDocs.push(item);
+        }
+    });
+    
+    if(type === 'ورود' || type === 'اول دوره') {
+        editingEntryDocId = docId;
+        document.querySelector(`input[name="entryDocType"][value="${type}"]`).checked = true;
+        toggleEntryType();
+        document.getElementById('inOfficeDoc').value = master.officeDoc === 'بدون شماره' ? '' : master.officeDoc;
+        document.getElementById('inSender').value = master.ref;
+        
+        selectCS('inWarehouseSelect', master.warehouse, master.warehouse);
+        
+        uniqueDocs.forEach(item => {
+            draftEntryItems.push({ raw: item.rawBarcode || "", pCode: item.pCode, batch: item.batch, qtyCarton: item.qtyCarton, qtyLoose: item.qtyLoose, totalPieces: item.totalPieces, name: productsMap[item.pCode], weight: item.weight, units: item.units, wh: item.warehouse }); 
+        });
+        renderDrafts();
+        openTab('tab-entry', document.getElementById('tabBtnEntry'));
+    } else {
+        editingExitDocId = docId;
+        document.getElementById('outOfficeDoc').value = master.officeDoc === 'بدون شماره' ? '' : master.officeDoc;
+        
+        let cust = master.ref.includes(' -> ') ? master.ref.split(' -> ')[1] : master.ref;
+        document.getElementById('outCustomer').value = cust;
+        
+        selectCS('outWarehouseSelect', master.warehouse, master.warehouse);
+        
+        uniqueDocs.forEach(item => {
+            draftExitItems.push({ raw: item.rawBarcode || "", pCode: item.pCode, batch: item.batch, qtyCarton: item.qtyCarton, qtyLoose: item.qtyLoose, totalPieces: item.totalPieces, name: productsMap[item.pCode], wh: item.warehouse, units: productsUnitsMap[item.pCode] || 1 }); 
+        });
+        
+        let scanNowToggle = document.getElementById('outScanNowToggle');
+        if(scanNowToggle) scanNowToggle.checked = true;
+        toggleExitScanMode();
+
+        renderDrafts();
+        openTab('tab-exit', document.getElementById('tabBtnExit'));
+    }
+    
+    // ۳. حذف محلی و ارسال دستور حذف به سرور تا نسخه قدیمی در D1 باقی نماند
+    historyLog = historyLog.filter(t => String(t.docId) !== String(docId));
+    rebuildInventory();
+    updateLocalCacheOnly();
+    renderInventory();
+    generateCardex();
+
+    fetch(`${DB_URL}/api/document?company=${companyPrefix}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ docId: String(docId) })
+    }).catch(e => console.warn("خطا در حذف سند قدیمی از سرور:", e));
+}
+   
+        
+        let currentDispatchDocId = null;
+        let dispatchReqs = {}; 
+        let html5QrCode_dispatch = null;
+
+        // ذخیره موقت پیشرفت بارگیری؛ تا Refresh یا بستن پنجره باعث از دست رفتن اسکن‌ها نشود.
+        function dispatchProgressKey(docId) {
+            return `${companyPrefix || 'default'}_dispatch_progress_${String(docId)}`;
+        }
+
+        function saveDispatchProgress() {
+            if (!currentDispatchDocId) return;
+            try {
+                localStorage.setItem(dispatchProgressKey(currentDispatchDocId), JSON.stringify({
+                    docId: String(currentDispatchDocId),
+                    scans: currentDispatchScans,
+                    savedAt: new Date().toISOString()
+                }));
+            } catch (e) { console.warn('ذخیره پیشرفت بارگیری انجام نشد:', e); }
+        }
+
+        function clearDispatchProgress(docId = currentDispatchDocId) {
+            if (!docId) return;
+            try { localStorage.removeItem(dispatchProgressKey(docId)); } catch (e) {}
+        }
+
+        function restoreDispatchProgress(docId) {
+            if (!docId) return false;
+            try {
+                const raw = localStorage.getItem(dispatchProgressKey(docId));
+                if (!raw) return false;
+                const saved = JSON.parse(raw);
+                if (!saved || String(saved.docId) !== String(docId) || !Array.isArray(saved.scans)) return false;
+
+                Object.values(dispatchReqs).forEach(r => {
+                    r.scanned = 0; r.scannedCartons = 0; r.scannedLoose = 0;
+                });
+
+                const restored = [];
+                const seenBarcodes = new Set();
+                for (const scan of saved.scans) {
+                    const pCode = String(scan?.pCode || '').trim();
+                    const rawBarcode = String(scan?.rawBarcode || '').trim();
+                    const pieces = Number(scan?.pieces || 0);
+                    const r = dispatchReqs[pCode];
+                    if (!r || pieces <= 0) continue;
+                    if (rawBarcode && !rawBarcode.startsWith('MANUAL-')) {
+                        if (seenBarcodes.has(rawBarcode)) continue;
+                        seenBarcodes.add(rawBarcode);
+                    }
+                    if (Number(r.scanned || 0) + pieces > Number(r.req || 0)) continue;
+                    r.scanned += pieces;
+                    r.scannedCartons += Number(scan.cartons || 0);
+                    r.scannedLoose += Number(scan.loose || 0);
+                    restored.push({
+                        pCode, batch: scan.batch || r.batch || 'نامشخص',
+                        rawBarcode: rawBarcode || `RESTORED-${Date.now()}-${restored.length}`,
+                        pieces, cartons: Number(scan.cartons || 0), loose: Number(scan.loose || 0)
+                    });
+                }
+                currentDispatchScans = restored;
+                renderDispatchTable();
+                updateDispatchScanSummary();
+                return restored.length > 0;
+            } catch (e) {
+                console.warn('بازیابی پیشرفت بارگیری انجام نشد:', e);
+                return false;
+            }
+        }
+
+        function openDispatchScanner(docId, event) {
+            try {
+                if(event && typeof event.stopPropagation === 'function') event.stopPropagation();
+
+                // شماره حواله ممکن است در داده‌های قدیمی به صورت عدد و در داده‌های جدید به صورت متن ذخیره شده باشد.
+                // مقایسه را عمداً به صورت متنی انجام می‌دهیم تا دکمه «اسکن اقلام در کامیون» همیشه سند را پیدا کند.
+                const targetDocId = String(docId ?? '').trim();
+                if(!targetDocId) {
+                    showScanError('شماره حواله نامعتبر است.');
+                    return;
+                }
+
+                const docs = Array.isArray(historyLog)
+                    ? historyLog.filter(t => String(t.docId ?? '').trim() === targetDocId)
+                    : [];
+
+                if(!docs.length) {
+                    showScanError(`حواله ${targetDocId} در اطلاعات سیستم پیدا نشد. صفحه را یک بار تازه‌سازی کنید و دوباره امتحان کنید.`);
+                    return;
+                }
+
+                currentDispatchDocId = docs[0].docId;
+                currentDispatchScans = [];
+                dispatchReqs = {};
+
+                docs.forEach(item => {
+                    const key = String(item.pCode ?? '').trim();
+                    if(!key) return;
+                    if(!dispatchReqs[key]) {
+                        dispatchReqs[key] = {
+                            pCode: key,
+                            batch: item.batch || 'نامشخص',
+                            name: productsMap[key] || key,
+                            req: 0,
+                            scanned: 0,
+                            scannedCartons: 0,
+                            scannedLoose: 0
+                        };
+                    }
+                    dispatchReqs[key].req += Number(item.totalPieces) || 0;
+                });
+
+                restoreDispatchProgress(targetDocId);
+
+                const label = document.getElementById('dispatchDocIdLabel');
+                const barcode = document.getElementById('dispatchBarcode');
+                const loose = document.getElementById('dispatchQtyLoose');
+                const manualCarton = document.getElementById('dispatchQtyManualCarton');
+                const modal = document.getElementById('dispatch-modal');
+
+                if(!modal || !barcode) {
+                    showScanError('پنجره اسکن در این نسخه از برنامه پیدا نشد.');
+                    return;
+                }
+
+                if(label) label.innerText = targetDocId;
+                barcode.value = '';
+                if(loose) loose.value = 0;
+                if(manualCarton) manualCarton.value = 0;
+                updateLiveInfoDispatch(false, '');
+                renderDispatchTable();
+                modal.style.display = 'flex';
+                setTimeout(() => { try { barcode.focus(); } catch(e) {} }, 300);
+            } catch(err) {
+                console.error('openDispatchScanner error:', err);
+                showScanError('خطا در باز کردن پنجره اسکن: ' + (err.message || err));
+            }
+        }
+
+        function stopDispatchCamera() {
+            try {
+                if(html5QrCode_dispatch) {
+                    try { html5QrCode_dispatch.stop().catch(e=>{}); } catch(e){}
+                    try { html5QrCode_dispatch.clear(); } catch(e){}
+                }
+            } catch(e) {}
+            document.getElementById('dispatchCameraContainer').style.display = 'none';
+        }
+
+        function closeDispatchScanner() {
+            if (currentDispatchDocId && currentDispatchScans.length) saveDispatchProgress();
+            stopDispatchCamera();
+            document.getElementById('dispatch-modal').style.display = 'none';
+            currentDispatchDocId = null;
+            currentDispatchScans = [];
+        }
+
+        function renderDispatchTable() {
+            let tbody = document.getElementById('dispatchTableBody');
+            let html = '';
+            let allDone = true;
+            for(let key in dispatchReqs) {
+                let r = dispatchReqs[key];
+                let isDone = r.scanned >= r.req;
+                if(!isDone) allDone = false;
+                let units = parseInt(productsUnitsMap[r.pCode]) || 1;
+                let reqCartons = Math.floor(r.req / units);
+                let reqLoose = r.req % units;
+                let scannedCartons = r.scannedCartons || 0;
+                let scannedLoose = r.scannedLoose || 0;
+                let color = isDone ? 'color:var(--success);' : 'color:var(--danger);';
+                let bg = isDone ? 'background:#ecfdf5;' : '';
+                // فقط کالاهایی که واقعاً خرده موردنیاز دارند، ردیف خرده نشان می‌دهند.
+                let looseText = reqLoose > 0 ? `<div style="margin-top:3px;font-size:11px;color:#b45309;font-weight:900;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:4px 6px;">🟠 خرده موردنیاز: ${reqLoose.toLocaleString('fa-IR')} عدد | خرده اسکن‌شده: ${scannedLoose.toLocaleString('fa-IR')} عدد | خرده باقی‌مانده: ${Math.max(0, reqLoose - scannedLoose).toLocaleString('fa-IR')} عدد</div>` : '';
+                html += `<tr style="${bg}">
+                    <td style="text-align:right; font-weight:bold; line-height:1.5;">
+                        ${r.name}<br>
+                        <span style="font-size:10px; color:var(--warning); background:#fffbeb; padding:2px 4px; border-radius:4px; border:1px solid #fde68a;">بچ: ${r.batch}</span>
+                        ${looseText}
+                    </td>
+                    <td style="font-weight:bold; font-size:15px;" dir="rtl">${reqCartons.toLocaleString('fa-IR')} کارتن${reqLoose > 0 ? `<div style="font-size:11px;color:#b45309;margin-top:2px;">+ ${reqLoose.toLocaleString('fa-IR')} خرده</div>` : ''}</td>
+                    <td style="font-weight:bold; ${color} font-size:15px;" dir="rtl">${scannedCartons.toLocaleString('fa-IR')} کارتن${reqLoose > 0 ? `<div style="font-size:11px;color:var(--success);margin-top:2px;">+ ${scannedLoose.toLocaleString('fa-IR')} خرده</div>` : ''}</td>
+                </tr>`;
+            }
+            tbody.innerHTML = html;
+            let manualSel = document.getElementById('dispatchManualCartonItem');
+            if(manualSel) {
+                let prev = manualSel.value;
+                manualSel.innerHTML = '<option value="">انتخاب کالا</option>';
+                Object.keys(dispatchReqs).forEach(k => {
+                    let r=dispatchReqs[k];
+                    let units=parseInt(productsUnitsMap[r.pCode]) || 1;
+                    let remainingPieces=Math.max(0,(parseInt(r.req)||0)-(parseInt(r.scanned)||0));
+                    let remainingCartons=Math.floor(remainingPieces/units);
+                    if(remainingCartons > 0) manualSel.innerHTML += `<option value="${k}">${r.name} — ${r.pCode} | ${remainingCartons} کارتن</option>`;
+                });
+                if(prev && dispatchReqs[prev]) manualSel.value=prev;
+            }
+            let looseSel = document.getElementById('dispatchManualLooseItem');
+            if(looseSel) {
+                let prevLoose = looseSel.value;
+                looseSel.innerHTML = '<option value="">انتخاب کالا (فقط دارای خرده)</option>';
+                Object.keys(dispatchReqs).forEach(k => {
+                    let r=dispatchReqs[k];
+                    let units=parseInt(productsUnitsMap[r.pCode]) || 1;
+                    let remainingPieces=Math.max(0,(parseInt(r.req)||0)-(parseInt(r.scanned)||0));
+                    let remainingLoose=remainingPieces % units;
+                    if(remainingLoose > 0) looseSel.innerHTML += `<option value="${k}">${r.name} — ${r.pCode} | خرده باقی‌مانده: ${remainingLoose}</option>`;
+                });
+                if(prevLoose && dispatchReqs[prevLoose]) looseSel.value=prevLoose;
+            }
+            document.getElementById('btnFinalizeDispatch').style.display = allDone ? 'block' : 'none';
+        }
+
+        function updateLiveInfoDispatch(isError, msg) {
+            let d = document.getElementById('dispatchLiveInfo');
+            d.innerText = msg;
+            d.style.color = isError ? 'var(--danger)' : '#8b5cf6';
+            d.style.background = isError ? '#fff1f2' : '#f5f3ff';
+            d.style.border = isError ? '1px solid #fecaca' : '1px solid #ddd6fe';
+            d.style.padding = '6px 8px';
+            d.style.borderRadius = '7px';
+            if(isError) {
+                d.animate([{transform:'translateX(0)'},{transform:'translateX(-4px)'},{transform:'translateX(4px)'},{transform:'translateX(0)'}], {duration:220});
+            }
+        }
+
+        function updateDispatchScanSummary() {
+            let required = Object.values(dispatchReqs || {}).reduce((sum,r) => { let u=parseInt(productsUnitsMap[r.pCode])||1; return sum + Math.floor((parseInt(r.req)||0)/u); }, 0);
+            let scanned = Object.values(dispatchReqs || {}).reduce((sum,r) => sum + (parseInt(r.scannedCartons)||0), 0);
+            let rem = Math.max(0, required - scanned);
+            let looseRem = Object.values(dispatchReqs || {}).reduce((sum,r) => { let u=parseInt(productsUnitsMap[r.pCode])||1; let reqLoose=(parseInt(r.req)||0)%u; return sum + Math.max(0, reqLoose-(parseInt(r.scannedLoose)||0)); }, 0);
+            let a=document.getElementById('dispatchScannedCount'), b=document.getElementById('dispatchRequiredCount'), c=document.getElementById('dispatchRemainingCount');
+            if(a) a.innerText=scanned.toLocaleString('fa-IR');
+            if(b) b.innerText=required.toLocaleString('fa-IR');
+            if(c) { c.innerText=rem.toLocaleString('fa-IR'); c.style.color=rem===0?'var(--success)':'var(--danger)'; }
+            let ls=document.getElementById('dispatchLooseSummary'); if(ls){ ls.style.display=looseRem>0?'inline':'none'; let b=ls.querySelector('b'); if(b)b.innerText=looseRem.toLocaleString('fa-IR'); }
+        }
+
+        function getDispatchRequiredLooseForSelected(){
+            const selected = document.getElementById('dispatchManualLooseItem')?.value || '';
+            if(selected && dispatchReqs && dispatchReqs[selected]) {
+                const r=dispatchReqs[selected];
+                const units=parseInt(productsUnitsMap[r.pCode]) || 1;
+                const remainingPieces=Math.max(0,(parseInt(r.req)||0)-(parseInt(r.scanned)||0));
+                return remainingPieces % units;
+            }
+            const raw = (document.getElementById('dispatchBarcode')?.value || '').trim();
+            if(raw && dispatchReqs){
+                const pCode = raw.length >= 6 && !raw.startsWith('M-') ? raw.substring(0,6) : raw;
+                const possible = Object.keys(dispatchReqs).find(k => {
+                    const r=dispatchReqs[k];
+                    const units=parseInt(productsUnitsMap[r.pCode]) || 1;
+                    const remainingPieces=Math.max(0,(parseInt(r.req)||0)-(parseInt(r.scanned)||0));
+                    return r.pCode===pCode && (remainingPieces % units)>0;
+                });
+                if(possible){
+                    const r=dispatchReqs[possible];
+                    const units=parseInt(productsUnitsMap[r.pCode]) || 1;
+                    const remainingPieces=Math.max(0,(parseInt(r.req)||0)-(parseInt(r.scanned)||0));
+                    return remainingPieces % units;
+                }
+            }
+            return 0;
+        }
+
+      function validateDispatchLooseInput(el) {
+            if (!el) return;
+            let value = parseInt(el.value) || 0;
+            if (value < 0) value = 0;
+            el.value = value;
+        }
+
+        let dispatchScanTimer = null;
+        let dispatchLastProcessed = '';
+        function processDispatchHardwareInput(force=false) {
+            const input = document.getElementById('dispatchBarcode');
+            if(!input) return;
+            const txt = input.value.trim();
+            if(!txt) return;
+            // بارکدخوان‌های سخت‌افزاری گاهی Enter نمی‌فرستند؛ بعد از توقف کوتاه ورودی هم اسکن را ثبت می‌کنیم.
+            if(!force && txt.length < 6) return;
+            if(txt === dispatchLastProcessed) return;
+            dispatchLastProcessed = txt;
+            const ok = processDispatchScan(txt);
+            if(ok !== false) {
+                input.value='';
+                const loose=document.getElementById('dispatchQtyLoose'); if(loose) loose.value=0;
+                const mc=document.getElementById('dispatchQtyManualCarton'); if(mc) mc.value=0;
+            }
+            setTimeout(()=>{ dispatchLastProcessed=''; input.focus(); }, 500);
+        }
+        function handleDispatchBarcodeInput() {
+            clearTimeout(dispatchScanTimer);
+            dispatchScanTimer=setTimeout(()=>processDispatchHardwareInput(false), 350);
+        }
+        function handleDispatchHardwareScanner(e) {
+            if(e && e.key === 'Enter') {
+                e.preventDefault();
+                e.stopPropagation();
+                clearTimeout(dispatchScanTimer);
+                processDispatchHardwareInput(true);
+            }
+        }
+
+        function registerDispatchLoose() {
+            const looseInput = document.getElementById('dispatchQtyLoose');
+            const raw = (document.getElementById('dispatchBarcode')?.value || '').trim();
+            const l = parseInt(looseInput?.value) || 0;
+            if(!raw) { showScanError('ابتدا بارکد همین کالا را اسکن کنید، سپس مقدار خرده را وارد و ثبت کنید.'); return; }
+            if(l <= 0) { showScanError('مقدار خرده را وارد کنید.'); return; }
+            const pCode = raw.length >= 6 && !raw.startsWith('M-') ? raw.substring(0,6) : raw;
+            const key = Object.keys(dispatchReqs || {}).find(k => dispatchReqs[k].pCode === pCode && (dispatchReqs[k].scanned||0) < (dispatchReqs[k].req||0));
+            if(!key) { showScanError('این کالا در حواله فعلی وجود ندارد یا مقدار آن قبلاً کامل شده است.'); return; }
+            const r = dispatchReqs[key];
+            const units = parseInt(productsUnitsMap[r.pCode]) || 1;
+            const remainingPieces = Math.max(0, (parseInt(r.req)||0) - (parseInt(r.scanned)||0));
+            const remainingLoose = remainingPieces % units;
+            if(remainingLoose <= 0) { showScanError('برای این قلم خرده موردنیازی باقی نمانده است.'); return; }
+            if(l !== remainingLoose) { showScanError(`مقدار خرده باید دقیقاً ${remainingLoose.toLocaleString('fa-IR')} عدد باشد.`); return; }
+            r.scanned += l; r.scannedLoose = (r.scannedLoose||0) + l;
+            currentDispatchScans.push({pCode:r.pCode,batch:r.batch||'نامشخص',rawBarcode:raw,pieces:l,cartons:0,loose:l});
+            saveDispatchProgress();
+            looseInput.value = 0;
+            document.getElementById('dispatchBarcode').value = '';
+            playBeep('success');
+            updateLiveInfoDispatch(false, `✅ ${l.toLocaleString('fa-IR')} خرده از ${r.name} ثبت شد.`);
+            renderDispatchTable(); updateDispatchScanSummary();
+            document.getElementById('dispatchBarcode').focus();
+        }
+
+        function registerManualDispatchLoose() {
+            const sel=document.getElementById('dispatchManualLooseItem');
+            const qtyInput=document.getElementById('dispatchQtyManualLoose');
+            const key=sel?.value || '';
+            const qty=parseInt(qtyInput?.value) || 0;
+            if(!key || !dispatchReqs[key]) {
+                updateLiveInfoDispatch(true,'❌ ابتدا کالای دارای خرده را انتخاب کنید.');
+                showScanError('برای ثبت خرده، ابتدا کالا را از لیست انتخاب کنید.');
+                return;
+            }
+            const r=dispatchReqs[key];
+            const units=parseInt(productsUnitsMap[r.pCode]) || 1;
+            const remainingPieces=Math.max(0,(parseInt(r.req)||0)-(parseInt(r.scanned)||0));
+            const remainingLoose=remainingPieces % units;
+            if(remainingLoose<=0) {
+                updateLiveInfoDispatch(true,'❌ برای این کالا خرده‌ای باقی نمانده است.');
+                showScanError('برای این کالا خرده موردنیازی باقی نمانده است.');
+                return;
+            }
+            if(qty !== remainingLoose) {
+                updateLiveInfoDispatch(true,`❌ فقط ${remainingLoose.toLocaleString('fa-IR')} عدد خرده باقی مانده است.`);
+                showScanError(`مقدار خرده باید دقیقاً ${remainingLoose.toLocaleString('fa-IR')} عدد باشد.`);
+                return;
+            }
+            r.scanned=(r.scanned||0)+qty;
+            r.scannedLoose=(r.scannedLoose||0)+qty;
+            currentDispatchScans.push({pCode:r.pCode,batch:r.batch||'بدون لیبل',rawBarcode:'MANUAL-LOOSE',pieces:qty,cartons:0,loose:qty});
+            saveDispatchProgress();
+            qtyInput.value=0;
+            playBeep('success');
+            updateLiveInfoDispatch(false,`✅ ${qty.toLocaleString('fa-IR')} خرده برای ${r.name} ثبت شد.`);
+            renderDispatchTable();
+            updateDispatchScanSummary();
+            sel.focus();
+        }
+
+        function registerManualDispatchCartons() {
+            let qty = parseInt(document.getElementById('dispatchQtyManualCarton')?.value) || 0;
+            if(qty <= 0) {
+                updateLiveInfoDispatch(true, '❌ تعداد کارتن دستی را وارد کنید.');
+                showScanError('تعداد کارتن بدون لیبل وارد نشده است.');
+                return;
+            }
+            let loose = parseInt(document.getElementById('dispatchQtyLoose')?.value) || 0;
+            if(loose > 0) {
+                updateLiveInfoDispatch(true, '❌ همزمان کارتن دستی و خرده قابل ثبت نیست.');
+                showScanError('برای ثبت خرده، کادر کارتن بدون لیبل باید صفر باشد.');
+                return;
+            }
+
+            let key = document.getElementById('dispatchManualCartonItem')?.value || '';
+            if(!key || !dispatchReqs[key]) {
+                updateLiveInfoDispatch(true, '❌ کالا را برای کارتن بدون لیبل انتخاب کنید.');
+                showScanError('ابتدا کالای مربوط به کارتن بدون لیبل را انتخاب کنید.');
+                return;
+            }
+            let r=dispatchReqs[key];
+            if((r.scanned||0) >= (r.req||0)) {
+                updateLiveInfoDispatch(true, '❌ این قلم قبلاً تکمیل شده است.');
+                showScanError('مقدار موردنیاز این کالا قبلاً کامل شده است.');
+                return;
+            }
+            let units=parseInt(productsUnitsMap[r.pCode]) || 1;
+            let remainingPieces=(r.req||0)-(r.scanned||0);
+            let remainingCartons=Math.floor(remainingPieces/units);
+            let remainingLoose=remainingPieces%units;
+            if(qty > remainingCartons || qty <= 0) {
+                updateLiveInfoDispatch(true, `❌ حداکثر ${remainingCartons.toLocaleString('fa-IR')} کارتن قابل ثبت است.`);
+                showScanError(`تعداد کارتن دستی بیشتر از مقدار باقی‌مانده است.\nحداکثر ${remainingCartons.toLocaleString('fa-IR')} کارتن باقی مانده.`);
+                return;
+            }
+            r.scanned=(r.scanned||0)+(qty*units);
+            r.scannedCartons=(r.scannedCartons||0)+qty;
+            currentDispatchScans.push({pCode:r.pCode,batch:r.batch||'بدون لیبل',rawBarcode:'MANUAL-CARTON',pieces:qty*units,cartons:qty,loose:0});
+            saveDispatchProgress();
+            document.getElementById('dispatchQtyManualCarton').value=0;
+            playBeep('success');
+            updateLiveInfoDispatch(false, `✅ ${qty.toLocaleString('fa-IR')} کارتن بدون لیبل برای ${r.name} ثبت شد.`);
+            renderDispatchTable();
+            updateDispatchScanSummary();
+            document.getElementById('dispatchBarcode').focus();
+        }
+
+  function processDispatchScan(raw) {
+    raw = String(raw ?? '').trim();
+    if(!raw) return false;
+
+    // ۱. بررسی بارکد تکراری (در صورتی که قبلاً در این حواله اسکن شده باشد)
+    if (!raw.startsWith('MANUAL-')) {
+        const isDuplicate = currentDispatchScans.some(s => s.rawBarcode === raw);
+        if (isDuplicate) {
+            updateLiveInfoDispatch(true, `⛔ بارکد تکراری است! این کارتن قبلاً اسکن شده.`);
+            showScanError(`این بارکد تکراری است و قبلاً در این حواله اسکن شده است!\nبارکد: ${raw}`);
+            return false;
+        }
+    }
+
+    // بارکدهای معمولی: ۶ رقم اول = کد کالا و ۳ رقم بعد = بچ
+    const pCode = raw.startsWith('M-') ? raw : (raw.length >= 6 ? raw.substring(0, 6) : raw);
+    const batch = raw.startsWith('M-') ? 'نامشخص' : (raw.length >= 9 ? raw.substring(6, 9) : 'نامشخص');
+    const normalizedPCode = String(pCode).trim();
+
+    const keys = Object.keys(dispatchReqs || {});
+    let key = keys.find(k => String(k).trim() === normalizedPCode &&
+        Number(dispatchReqs[k]?.scanned || 0) < Number(dispatchReqs[k]?.req || 0));
+
+    if(!key) {
+        key = keys.find(k => String(k).trim() === raw &&
+            Number(dispatchReqs[k]?.scanned || 0) < Number(dispatchReqs[k]?.req || 0));
+    }
+
+    if(!key) {
+        const anyPCode = keys.some(k => String(dispatchReqs[k]?.pCode ?? '').trim() === normalizedPCode);
+        if(anyPCode) {
+            updateLiveInfoDispatch(true, `⚠️ تعداد کالای ${productsMap[normalizedPCode] || normalizedPCode} قبلاً تکمیل شده!`);
+            showScanError(`تعداد کالای «${productsMap[normalizedPCode] || normalizedPCode}» قبلاً کامل شده است.\nاسکن بعدی را انجام دهید.`);
+        } else {
+            updateLiveInfoDispatch(true, `❌ کالای ${normalizedPCode} در این حواله وجود ندارد!`);
+            showScanError(`این بارکد در حواله فعلی وجود ندارد.\nکد خوانده‌شده: ${normalizedPCode}`);
+        }
+        return false;
+    }
+
+    const r = dispatchReqs[key];
+    const units = Math.max(1, parseInt(productsUnitsMap[String(r.pCode).trim()]) || 1);
+    const scanned = Number(r.scanned || 0);
+    const req = Number(r.req || 0);
+
+    if(scanned >= req) {
+        updateLiveInfoDispatch(true, `⚠️ تعداد کالای ${r.name} قبلاً تکمیل شده!`);
+        showScanError(`تعداد کالای «${r.name}» قبلاً تکمیل شده است.`);
+        return false;
+    }
+
+    const looseInput = document.getElementById('dispatchQtyLoose');
+    let l = parseInt(looseInput?.value) || 0;
+    if(l < 0) l = 0;
+
+    const c = l > 0 ? 0 : 1;
+    const addedPieces = l > 0 ? l : units;
+    const remainingPieces = Math.max(0, req - scanned);
+
+    if(l > 0) {
+        const remainingLoose = remainingPieces % units;
+        if(remainingLoose <= 0 || l !== remainingLoose) {
+            if(looseInput) {
+                looseInput.setCustomValidity(`فقط ${Math.max(0, remainingLoose)} عدد خرده موردنیاز است.`);
+                looseInput.style.borderColor = '#dc2626';
+            }
+            updateLiveInfoDispatch(true, `❌ فقط ${Math.max(0, remainingLoose).toLocaleString('fa-IR')} عدد خرده موردنیاز است.`);
+            showScanError(`تعداد خرده اشتباه است.\nباید دقیقاً ${Math.max(0, remainingLoose).toLocaleString('fa-IR')} عدد خرده ثبت شود.`);
+            return false;
+        }
+    }
+
+    if(addedPieces > remainingPieces) {
+        updateLiveInfoDispatch(true, `⚠️ اسکن بیشتر از سفارش است! (فقط ${remainingPieces} عدد باقی مانده)`);
+        showScanError(`این اسکن بیشتر از مقدار سفارش است.\nفقط ${remainingPieces} عدد باقی مانده است.`);
+        return false;
+    }
+
+    r.batch = batch;
+    r.scanned = scanned + addedPieces;
+    r.scannedCartons = Number(r.scannedCartons || 0) + c;
+    r.scannedLoose = Number(r.scannedLoose || 0) + (l > 0 ? l : 0);
+
+    currentDispatchScans.push({
+        pCode: String(r.pCode).trim(),
+        batch: batch,
+        rawBarcode: raw,
+        pieces: addedPieces,
+        cartons: c,
+        loose: l > 0 ? l : 0
+    });
+
+    saveDispatchProgress();
+
+    if(looseInput) {
+        looseInput.value = 0;
+        looseInput.setCustomValidity('');
+        looseInput.style.borderColor = '#8b5cf6';
+    }
+
+    playBeep('success');
+    updateLiveInfoDispatch(false, c
+        ? `✅ ۱ کارتن ${r.name} (بچ: ${batch}) اسکن شد.`
+        : `✅ ${l.toLocaleString('fa-IR')} خرده از ${r.name} ثبت شد (بچ: ${batch}).`);
+    renderDispatchTable();
+    updateDispatchScanSummary();
+    return true;
+}
+
+    let isDispatchScanning = false;
+let lastCameraScanTime = 0;
+
+function startDispatchCamera() {
+    document.getElementById('dispatchCameraContainer').style.display = 'block';
+    if (html5QrCode_dispatch) {
+        try { html5QrCode_dispatch.stop().catch(()=>{}); } catch(e){}
+    }
+    html5QrCode_dispatch = new Html5Qrcode("dispatch-reader"); 
+    isDispatchScanning = false;
+    
+    html5QrCode_dispatch.start(
+        { facingMode: "environment" }, 
+        { fps: 15, qrbox: { width: 250, height: 100 } }, 
+        (txt) => { 
+            const now = Date.now();
+            // وقفه ۱.۲ ثانیه‌ای هوشمند برای جلوگیری از اسکن چندباره یک فریم یکسان
+            if (isDispatchScanning || (now - lastCameraScanTime < 1200)) return;
+            
+            isDispatchScanning = true;
+            lastCameraScanTime = now;
+            
+            document.getElementById('dispatchBarcode').value = txt; 
+            const ok = processDispatchScan(txt);
+            
+            if (ok === false) {
+                // فقط در صورت بروز خطا، دوربین بسته شده و پیام خطا ظاهر می‌شود
+                stopDispatchCamera();
+            } else {
+                // در صورت اسکن موفق، کادر پاک شده و دوربین برای کارتن بعدی باز می‌ماند
+                document.getElementById('dispatchBarcode').value = '';
+                
+                // بررسی تکمیل تمام کارتن‌های حواله
+                const allDone = Object.values(dispatchReqs || {}).every(r => (r.scanned || 0) >= (r.req || 0));
+                if (allDone) {
+                    stopDispatchCamera();
+                    updateLiveInfoDispatch(false, "🎉 تمامی اقلام حواله با موفقیت اسکن و تکمیل گردید.");
+                }
+            }
+            
+            setTimeout(() => { isDispatchScanning = false; }, 800);
+        }, 
+        (err) => {}
+    ).catch(() => { 
+        showScanError("دوربین اسکنر باز نشد.\nمجوز دسترسی به دوربین را بررسی کنید."); 
+        stopDispatchCamera(); 
+    }); 
+}
+
+ function finalizeDispatchDoc() {
+            let oldItems = historyLog.filter(log => String(log.docId) === String(currentDispatchDocId));
+            if(!oldItems.length) { alert('❌ حواله پیدا نشد یا قبلاً نهایی شده است.'); return; }
+
+            const problems = [];
+            Object.keys(dispatchReqs || {}).forEach(key => {
+                const r = dispatchReqs[key];
+                const req = Number(r.req || 0);
+                const scanned = Number(r.scanned || 0);
+                if (scanned !== req) problems.push(`${r.name || key}: موردنیاز ${req} عدد، اسکن‌شده ${scanned} عدد`);
+            });
+            if (!Array.isArray(currentDispatchScans) || currentDispatchScans.length === 0) {
+                problems.push('هیچ اسکن ثبت‌شده‌ای برای این حواله وجود ندارد.');
+            }
+            if (problems.length) {
+                alert('⛔ تأیید نهایی متوقف شد.\n\n' + problems.slice(0,10).join('\n'));
+                renderDispatchTable();
+                return;
+            }
+            let master = oldItems[0];
+            
+            historyLog = historyLog.filter(log => String(log.docId) !== String(currentDispatchDocId));
+            
+            let groupedScans = {};
+            currentDispatchScans.forEach(scan => {
+                let key = scan.rawBarcode; 
+                if(!groupedScans[key]) groupedScans[key] = { pCode: scan.pCode, batch: scan.batch, rawBarcode: scan.rawBarcode, pieces: 0 };
+                groupedScans[key].pieces += scan.pieces;
+            });
+            
+            Object.values(groupedScans).forEach(scan => {
+                let units = parseInt(productsUnitsMap[scan.pCode]) || 1;
+                let c = Math.floor(scan.pieces / units);
+                let l = scan.pieces % units;
+                
+                historyLog.push({
+                    docId: currentDispatchDocId,
+                    officeDoc: master.officeDoc,
+                    date: master.date,
+                    type: 'خروج',
+                    pCode: scan.pCode,
+                    batch: scan.batch,
+                    rawBarcode: scan.rawBarcode,
+                    qtyCarton: c,
+                    qtyLoose: l,
+                    totalPieces: scan.pieces,
+                    warehouse: master.warehouse,
+                    ref: master.ref,
+                    operator: master.operator,
+                    dispatchStatus: 'done',
+                    dispatchDate: new Date().toLocaleString('fa-IR'),
+                    receiptFile: master.receiptFile || null,
+                    receiptType: master.receiptType || null,
+                    deliveryDate: master.deliveryDate || null
+                });
+            });
+            
+            clearDispatchProgress(currentDispatchDocId);
+            saveData();
+            generateCardex();
+            closeDispatchScanner();
+            alert("🎉 بارگیری با موفقیت تایید شد و بارکدهای واقعی جایگزین گردید!");
+        }
+
+        function bypassAndFinalizeDispatch() {
+            if (!currentDispatchDocId) {
+                alert("❌ شماره حواله معتبر نیست.");
+                return;
+            }
+            if (!currentUser || currentUser.role !== 'admin') {
+                alert('⛔ تأیید مستقیم بدون اسکن فقط برای مدیر مجاز است.');
+                return;
+            }
+            const reason = prompt('علت تأیید مستقیم بدون اسکن را وارد کنید:');
+            if (!reason || !reason.trim()) {
+                alert('⛔ ثبت علت الزامی است.');
+                return;
+            }
+            if (!confirm("⚠️ آیا مطمئن هستید که این فاکتور نیاز به اسکن بارکد ندارد و می‌خواهید مستقیماً به وضعیت «ارسال شده» تغییر کند؟")) return;
+
+            const targetIdStr = String(currentDispatchDocId).trim();
+            const nowStr = new Date().toLocaleString('fa-IR');
+            let updated = false;
+
+            historyLog.forEach(log => {
+                if (String(log.docId).trim() === targetIdStr) {
+                    log.dispatchStatus = 'done';
+                    log.dispatchDate = nowStr;
+                    log.dispatchBypassReason = reason.trim();
+                    if (!log.rawBarcode || log.rawBarcode === 'سفارش ثبت شده') {
+                        log.rawBarcode = 'ارسال مستقیم (بدون اسکن)';
+                    }
+                    if (!log.batch || log.batch === 'در انتظار') {
+                        log.batch = 'نامشخص';
+                    }
+                    updated = true;
+                }
+            });
+
+            if (updated) {
+                clearDispatchProgress(currentDispatchDocId);
+                saveData();
+                generateCardex();
+                closeDispatchScanner();
+                alert("✅ حواله با موفقیت تایید و وضعیت آن به «ارسال شده» تغییر یافت.");
+            } else {
+                alert("❌ اطلاعات این حواله در سیستم یافت نشد.");
+            }
+        }
+        // ---------------------------------
+// ---------------------------------
+let photoStream = null;
+let photoDocId = null;
+let currentReceiptImages = [];
+let currentReceiptPageIndex = 0;
+let currentRotation = 0;
+
+function openPhotoCamera(docId) {
+    photoDocId = docId;
+    document.getElementById('photo-modal').style.display = 'flex';
+    let preview = document.getElementById('cameraPreviewContainer');
+    let btnCam = document.getElementById('btnCaptureCamera');
+    
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({ 
+            video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } } 
+        })
+        .then(stream => {
+            photoStream = stream;
+            let video = document.getElementById('photo-video');
+            if(video) {
+                video.srcObject = stream;
+                video.onloadedmetadata = () => video.play();
+                if(preview) preview.style.display = 'block';
+                if(btnCam) btnCam.style.display = 'block';
+            }
+        })
+        .catch(() => {
+            if(preview) preview.style.display = 'none';
+            if(btnCam) btnCam.style.display = 'none';
+        });
+    } else {
+        if(preview) preview.style.display = 'none';
+        if(btnCam) btnCam.style.display = 'none';
+    }
+}
+
+function stopPhotoCamera() {
+    if(photoStream) { 
+        photoStream.getTracks().forEach(t => t.stop()); 
+        photoStream = null;
+    }
+    document.getElementById('photo-modal').style.display = 'none';
+}
+
+function compressImageFile(file) {
+    return new Promise((resolve) => {
+        let reader = new FileReader();
+        reader.onload = function(e) {
+            let img = new Image();
+            img.onload = function() {
+                let canvas = document.createElement('canvas');
+                let ctx = canvas.getContext('2d');
+                let maxW = 1200;
+                let scale = Math.min(1, maxW / img.width);
+                canvas.width = img.width * scale;
+                canvas.height = img.height * scale;
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                resolve(canvas.toDataURL('image/jpeg', 0.65));
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+// ذخیره عکس‌های اولیه انتخاب‌شده از گالری
+// توابع کنترل نوار درصد پیشرفت
+function showUploadProgress(percent, titleText = "در حال ارسال سند به سرور...") {
+    const overlay = document.getElementById('upload-progress-overlay');
+    const pBar = document.getElementById('uploadProgressBar');
+    const pText = document.getElementById('uploadProgressPercent');
+    const pTitle = document.getElementById('uploadProgressTitle');
+    
+    if (overlay) overlay.style.display = 'flex';
+    if (pTitle) pTitle.innerText = titleText;
+    if (pBar) pBar.style.width = Math.min(100, Math.max(0, percent)) + '%';
+    if (pText) pText.innerText = Math.min(100, Math.max(0, percent)).toLocaleString('fa-IR') + '٪';
+}
+
+function hideUploadProgress() {
+    const overlay = document.getElementById('upload-progress-overlay');
+    if (overlay) overlay.style.display = 'none';
+}
+
+// پردازش و فشرده‌سازی عکس یا تبدیل PDF به DataURL
+function processSingleFile(file) {
+    return new Promise((resolve, reject) => {
+        const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+        
+        if (isPdf) {
+            if (file.size > 20 * 1024 * 1024) {
+                return reject(new Error(`حجم فایل PDF [${file.name}] بیشتر از حد مجاز ۲۰ مگابایت است.`));
+            }
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target.result);
+            reader.onerror = () => reject(new Error('خطا در خواندن فایل PDF'));
+            reader.readAsDataURL(file);
+        } else {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    const maxW = 1280;
+                    const scale = Math.min(1, maxW / img.width);
+                    canvas.width = img.width * scale;
+                    canvas.height = img.height * scale;
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    resolve(canvas.toDataURL('image/jpeg', 0.68));
+                };
+                img.onerror = () => resolve(e.target.result);
+                img.src = e.target.result;
+            };
+            reader.onerror = () => reject(new Error('خطا در خواندن تصویر'));
+            reader.readAsDataURL(file);
+        }
+    });
+}
+
+async function handleReceiptFilesSelected(event) {
+    let files = Array.from(event.target.files || []);
+    if(!files.length) return;
+    
+    showUploadProgress(10, "در حال آماده‌سازی و پردازش فایل‌ها...");
+    stopPhotoCamera();
+
+    try {
+        let processedList = [];
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const dataUrl = await processSingleFile(file);
+            processedList.push(dataUrl);
+            const prepProgress = 10 + Math.round(((i + 1) / files.length) * 25);
+            showUploadProgress(prepProgress, `آماده‌سازی فایل ${i + 1} از ${files.length}...`);
+        }
+        await uploadReceiptFilesWithProgress(photoDocId, processedList);
+    } catch (err) {
+        hideUploadProgress();
+        alert("❌ خطا: " + err.message);
+    } finally {
+        event.target.value = '';
+    }
+}
+
+async function handleAppendReceiptFiles(event) {
+    let files = Array.from(event.target.files || []);
+    if(!files.length) return;
+    
+    showUploadProgress(10, "در حال افزودن به اسناد...");
+
+    try {
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const dataUrl = await processSingleFile(file);
+            currentReceiptImages.push(dataUrl);
+        }
+        await uploadReceiptFilesWithProgress(photoDocId, currentReceiptImages);
+        showReceiptPage(currentReceiptImages.length - 1);
+    } catch (err) {
+        hideUploadProgress();
+        alert("❌ خطا در افزودن فایل: " + err.message);
+    } finally {
+        event.target.value = '';
+    }
+}
+
+// ارسال داده با محاسبه دقیق درصد آپلود کلاینت به سرور
+function uploadReceiptFilesWithProgress(docId, filesArray) {
+    return new Promise((resolve, reject) => {
+        showUploadProgress(35, "در حال ارسال فایل به سرور ابری...");
+        
+        const payload = {
+            docId: String(docId),
+            imageBase64: JSON.stringify(filesArray),
+            images: filesArray
+        };
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', `${DB_URL}/api/upload-receipt?company=${companyPrefix}`, true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+
+        xhr.upload.onprogress = function(e) {
+            if (e.lengthComputable) {
+                const uploadPercent = 35 + Math.round((e.loaded / e.total) * 60);
+                showUploadProgress(Math.min(96, uploadPercent), `در حال ارسال اطلاعات (${Math.round((e.loaded / 1024 / 1024) * 10) / 10} MB)...`);
+            }
+        };
+
+        xhr.onload = function() {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                showUploadProgress(100, "✅ ذخیره‌سازی با موفقیت انجام شد.");
+                
+                let nowStr = new Date().toLocaleString('fa-IR');
+                historyLog.forEach(log => { 
+                    if(String(log.docId) === String(docId)) { 
+                        log.receiptFile = "D1_STORED"; 
+                        log.receiptType = filesArray.some(f => typeof f === 'string' && f.startsWith('data:application/pdf')) ? 'pdf' : 'image'; 
+                        log.deliveryDate = nowStr; 
+                    } 
+                });
+                saveData(); 
+                generateCardex();
+                
+                setTimeout(() => {
+                    hideUploadProgress();
+                    alert(`✅ تعداد ${filesArray.length} فایل/برگه با موفقیت ذخیره شد.`);
+                    resolve(true);
+                }, 400);
+            } else {
+                hideUploadProgress();
+                reject(new Error(`خطای سرور: HTTP ${xhr.status}`));
+            }
+        };
+
+        xhr.onerror = function() {
+            hideUploadProgress();
+            reject(new Error("عدم برقراری ارتباط با سرور. وضعیت اتصال اینترنت را بررسی کنید."));
+        };
+
+        xhr.send(JSON.stringify(payload));
+    });
+}
+
+// نمایش رسید (پشتیبانی هوشمند از PDF و عکس)
+// نمایش رسید (پشتیبانی هوشمند از PDF و عکس)
+async function viewReceipt(docId) { 
+    photoDocId = docId;
+    resetZoom();
+    document.getElementById('receipt-modal').style.display = 'flex';
+    
+    const imgEl = document.getElementById('receiptImageDisplay');
+    const pdfEl = document.getElementById('receiptPdfDisplay');
+    if (imgEl) imgEl.src = '';
+    if (pdfEl) pdfEl.src = '';
+
+    try {
+        const res = await fetch(`${DB_URL}/api/get-receipt?company=${companyPrefix}&docId=${docId}`);
+        const data = await res.json();
+        
+        let list = [];
+        if (data.images && Array.isArray(data.images)) {
+            list = data.images;
+        } else if (data.image) {
+            try {
+                let parsed = JSON.parse(data.image);
+                list = Array.isArray(parsed) ? parsed : [data.image];
+            } catch(e) {
+                list = [data.image];
+            }
+        }
+        
+        currentReceiptImages = list.filter(item => typeof item === 'string' && (item.startsWith('data:image') || item.startsWith('data:application/pdf') || item.startsWith('http') || item.startsWith('https')));
+        
+        if(!currentReceiptImages.length) {
+            alert("رسیدی برای این سند در سرور یافت نشد.");
+            document.getElementById('receipt-modal').style.display = 'none';
+            return;
+        }
+
+        currentReceiptPageIndex = 0;
+        showReceiptPage(0);
+    } catch(e) {
+        alert("خطا در دریافت سند: " + e.message);
+        document.getElementById('receipt-modal').style.display = 'none';
+    }
+}
+function showReceiptPage(index) {
+    if(index < 0 || index >= currentReceiptImages.length) return;
+    currentReceiptPageIndex = index;
+    const content = currentReceiptImages[index];
+    const imgEl = document.getElementById('receiptImageDisplay');
+    const pdfEl = document.getElementById('receiptPdfDisplay');
+    const dlBtn = document.getElementById('btnDownloadPdf');
+    
+    // تشخیص نوع فایل بر اساس فرمت یا لینک
+    const isPdf = typeof content === 'string' && (content.startsWith('data:application/pdf') || content.toLowerCase().endsWith('.pdf'));
+
+    if (isPdf) {
+        if (imgEl) imgEl.style.display = 'none';
+        if (pdfEl) {
+            pdfEl.style.display = 'block';
+            if (content.startsWith('data:')) {
+                try {
+                    let arr = content.split(',');
+                    let bstr = atob(arr.length > 1 ? arr[1] : arr[0]);
+                    let n = bstr.length;
+                    let u8arr = new Uint8Array(n);
+                    for (let i = 0; i < n; i++) u8arr[i] = bstr.charCodeAt(i);
+                    pdfEl.src = URL.createObjectURL(new Blob([u8arr], { type: 'application/pdf' }));
+                } catch(e) { pdfEl.src = content; }
+            } else {
+                pdfEl.src = content;
+            }
+        }
+        if (dlBtn) {
+            dlBtn.style.display = 'inline-flex';
+            dlBtn.href = content;
+            dlBtn.download = `Document_${photoDocId || 'file'}.pdf`;
+        }
+    } else {
+        if (pdfEl) { pdfEl.style.display = 'none'; pdfEl.src = ''; }
+        if (imgEl) { imgEl.style.display = 'block'; imgEl.src = content; }
+        if (dlBtn) { dlBtn.style.display = 'none'; }
+    }
+
+    document.getElementById('receiptPageCounter').innerText = `برگه ${index + 1} از ${currentReceiptImages.length}${isPdf ? ' (PDF)' : ''}`;
+    resetZoom();
+}
+
+function changeReceiptPage(step) {
+    let next = currentReceiptPageIndex + step;
+    if(next >= 0 && next < currentReceiptImages.length) {
+        showReceiptPage(next);
+    }
+}
+
+function printReceiptImage() {
+    if(!currentReceiptImages.length) return alert("تصویری برای چاپ وجود ندارد.");
+    let printArea = document.getElementById('printArea');
+    if(!printArea) return;
+    
+    let pagesHtml = currentReceiptImages.map((imgSrc, idx) => `
+        <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; width:100%; height:98vh; page-break-after:always; page-break-inside:avoid;">
+            <div style="font-size:12px; font-weight:bold; margin-bottom:8px;">سند ${photoDocId} — صفحه ${idx + 1} از ${currentReceiptImages.length}</div>
+            <img src="${imgSrc}" style="max-width:95%; max-height:90vh; object-fit:contain; transform:rotate(${currentRotation}deg);">
+        </div>
+    `).join('');
+
+    printArea.innerHTML = pagesHtml;
+    window.print();
+}
+
+function applyReceiptTransform() {
+    let img = document.getElementById('receiptImageDisplay');
+    if(img) img.style.transform = `scale(${currentZoom}) rotate(${currentRotation}deg)`;
+}
+
+function rotateReceipt(step = 90) {
+    currentRotation = (currentRotation + step) % 360;
+    applyReceiptTransform();
+}
+
+function zoomReceipt(step) {
+    currentZoom += step;
+    if(currentZoom < 0.4) currentZoom = 0.4;
+    if(currentZoom > 4) currentZoom = 4;
+    applyReceiptTransform();
+}
+
+function resetZoom() {
+    currentZoom = 1;
+    currentRotation = 0;
+    applyReceiptTransform();
+}
+
+function handleZoomWheel(e) {
+    e.preventDefault();
+    zoomReceipt(e.deltaY < 0 ? 0.15 : -0.15);
+}
+
+// --- توابع پیش‌نمایش و چاپ فاکتور سیستم ---
+function printFactor() {
+    const source = document.getElementById('factorContent');
+    if(!source || !source.innerHTML) return alert('محتوای سند برای چاپ پیدا نشد.');
+    const target = document.getElementById('printArea');
+    if(target) {
+        target.innerHTML = source.innerHTML;
+    }
+    window.print();
+}
+
+function viewSystemFactor(docId) { 
+    try {
+        const targetId = String(docId ?? '').trim();
+        const docs = Array.isArray(historyLog) 
+            ? historyLog.filter(t => String(t?.docId ?? '').trim() === targetId) 
+            : [];
+
+        if(!docs.length) {
+            alert(`❌ سند شماره ${targetId} در سیستم یافت نشد.`);
+            return;
+        }
+
+        const master = docs[0]; 
+        const printTitle = master.type === 'خروج' ? 'حواله خروج کالا' : (master.type === 'ورود' ? 'رسید ورود کالا' : 'سند اول دوره');
+        const senderOrReceiverTitle = master.type === 'خروج' ? 'مشتری / مقصد' : 'تامین‌کننده / مبدأ';
+        
+        let tableRows = ''; 
+        let tC = 0, tL = 0, tP = 0, tW = 0; 
+
+        docs.forEach((item, idx) => { 
+            const c = Number(item.qtyCarton) || 0;
+            const l = Number(item.qtyLoose) || 0;
+            const tp = Number(item.totalPieces) || 0;
+            const pCode = String(item.pCode ?? '').trim();
+            const w = getWeight(pCode, tp);
+
+            tC += c; 
+            tL += l; 
+            tP += tp; 
+            tW += w;
+
+            tableRows += `
+                <tr>
+                    <td style="border:1.5px solid var(--border); padding:8px; text-align:center;">${idx + 1}</td>
+                    <td style="border:1.5px solid var(--border); padding:8px; text-align:center;">${pCode}</td>
+                    <td style="border:1.5px solid var(--border); padding:8px; text-align:right; font-weight:bold;">${escapeHtml(productsMap[pCode] || pCode)}</td>
+                    <td style="border:1.5px solid var(--border); padding:8px; text-align:center; font-weight:bold;">${item.warehouse || '—'}</td>
+                    <td style="border:1.5px solid var(--border); padding:8px; text-align:center;">${c}</td>
+                    <td style="border:1.5px solid var(--border); padding:8px; text-align:center;">${l}</td>
+                    <td style="border:1.5px solid var(--border); padding:8px; text-align:center; font-weight:900; color:var(--primary);">${tp}</td>
+                    <td style="border:1.5px solid var(--border); padding:8px; text-align:center;">${w.toFixed(2)} kg</td>
+                </tr>`; 
+        });
+
+        const html = `
+            <div style="direction:rtl; font-family:Tahoma, Arial; color:var(--dark); font-size:13px;">
+                <div style="display:flex; justify-content:space-between; border-bottom: 2px solid var(--dark); padding-bottom: 15px; margin-bottom: 15px;">
+                    <div style="text-align:right;">
+                        <h2 style="margin:0; font-size:20px; font-weight:900;">${companyNameStr || 'سیستم انبارداری'}</h2>
+                        <h3 style="margin:6px 0 0 0; font-size:14px; color:var(--text-muted);">${printTitle}</h3>
+                    </div>
+                    <div style="text-align:left; font-size:12px; line-height:1.6;">
+                        <div><b>شماره سند:</b> <span style="color:var(--primary); font-size:14px;">${master.docId}</span></div>
+                        <div><b>تاریخ:</b> ${(master.date || '').split('،')[0]}</div>
+                    </div>
+                </div>
+                <div style="display:flex; justify-content:space-between; background:var(--bg-color); padding:12px; border-radius:8px; margin-bottom: 15px; font-size:12px; border:1px solid var(--border);">
+                    <div><b>فاکتور مرجع:</b> ${master.officeDoc || 'بدون شماره'} <br> <b style="margin-top:4px; display:inline-block;">کاربر ثبت:</b> ${master.operator || 'سیستم'}</div>
+                    <div style="text-align:left;"><b>${senderOrReceiverTitle}:</b> ${master.ref || '—'} <br> <b style="margin-top:4px; display:inline-block;">انبار:</b> ${master.warehouse || '—'}</div>
+                </div>
+                <table style="width: 100%; border-collapse: collapse; font-size:13px; margin-bottom:15px; background:#fff;">
+                    <thead>
+                        <tr style="background:#e2e8f0;">
+                            <th style="border:1.5px solid var(--border); padding:8px;">ردیف</th>
+                            <th style="border:1.5px solid var(--border); padding:8px;">کد کالا</th>
+                            <th style="border:1.5px solid var(--border); padding:8px;">نام کالا</th>
+                            <th style="border:1.5px solid var(--border); padding:8px;">انبار</th>
+                            <th style="border:1.5px solid var(--border); padding:8px;">کارتن</th>
+                            <th style="border:1.5px solid var(--border); padding:8px;">خرد</th>
+                            <th style="border:1.5px solid var(--border); padding:8px;">کل (عدد)</th>
+                            <th style="border:1.5px solid var(--border); padding:8px;">وزن</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${tableRows}
+                        <tr style="background:#f8fafc;">
+                            <td colspan="4" style="border:1.5px solid var(--border); padding:10px; text-align:left; font-weight:900; font-size:14px;">جمع کل:</td>
+                            <td style="border:1.5px solid var(--border); padding:10px; text-align:center; font-weight:900; font-size:14px;">${tC}</td>
+                            <td style="border:1.5px solid var(--border); padding:10px; text-align:center; font-weight:900; font-size:14px;">${tL}</td>
+                            <td style="border:1.5px solid var(--border); padding:10px; text-align:center; font-weight:900; font-size:15px; color:var(--primary);">${tP}</td>
+                            <td style="border:1.5px solid var(--border); padding:10px; text-align:center; font-weight:900; font-size:14px;">${tW.toFixed(2)} kg</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div style="display:flex; justify-content:space-between; margin-top:40px; padding:0 20px; font-size:12px; font-weight:bold; color:var(--text-muted);">
+                    <div>امضای تحویل‌دهنده:</div>
+                    <div>امضای گیرنده:</div>
+                </div>
+            </div>
+        `;
+
+        document.getElementById('factorContent').innerHTML = html;
+        document.getElementById('factor-modal').style.display = 'flex';
+    } catch(err) {
+        alert("خطا در نمایش فاکتور: " + err.message);
+    }
+}
+        function addRequirement() { 
+            let wh = document.getElementById('outWarehouseSelect').value;
+            if(!wh) { playBeep('error'); return alert("ابتدا انبار مبدأ (بارگیری) را مشخص کنید."); }
+            
+            let rawVal = document.getElementById('reqProductSelect').value;
+            let pCode = rawVal.split(' - ')[0].trim();
+            let reqP = parseInt(document.getElementById('reqTotalPieces').value) || 0; 
+            
+            if(!pCode || !productsMap[pCode]) {
+                playBeep('error');
+                return alert("❌ کد یا نام کالا اشتباه است! لطفاً از لیست پیشنهادی یک کالای معتبر انتخاب کنید."); 
+            }
+            if(reqP <= 0) {
+                playBeep('error');
+                return alert("❌ تعداد سفارش را به درستی وارد کنید."); 
+            }
+            
+            let totalStock = getActualStock(pCode, wh);
+
+            let existing = outRequirements.find(r => r.pCode === pCode); 
+            let currentReq = existing ? existing.reqPieces : 0;
+            
+            if((currentReq + reqP) > totalStock) {
+                playBeep('error');
+                return alert(`❌ موجودی ناکافی در انبار ${wh}!\nموجودی کل این کالا: ${totalStock} عدد\nسفارش شما تا الان: ${currentReq + reqP} عدد`);
+            }
+
+            if(existing) existing.reqPieces += reqP; 
+            else outRequirements.push({ pCode: pCode, name: productsMap[pCode], uPerCarton: parseInt(productsUnitsMap[pCode]) || 1, reqPieces: reqP, scannedPieces: 0, wh: wh }); 
+            
+            document.getElementById('reqProductSelect').value = ''; 
+            document.getElementById('reqTotalPieces').value = ''; 
+            
+            let dl = document.getElementById('dl-prods');
+            if(dl) dl.style.display = 'none';
+
+            renderRequirements(); 
+            playBeep('success');
+            document.getElementById('reqProductSelect').focus();
+        }
+
+        function renderRequirements(){
+            let container=document.getElementById('reqListContainer'),totalDiv=document.getElementById('reqListTotal');
+            if(!outRequirements.length){container.innerHTML='';if(totalDiv)totalDiv.style.display='none';return;}
+            let tC=0,tL=0,tP=0,tW=0;
+            container.innerHTML=outRequirements.map((req,idx)=>{
+                let c=Math.floor(req.reqPieces/req.uPerCarton),l=req.reqPieces%req.uPerCarton;tC+=c;tL+=l;tP+=req.reqPieces;tW+=getWeight(req.pCode,req.reqPieces);
+                return `<div class="req-item"><div style="flex:1;"><b>${req.name}</b><br><span class="qty-primary">${getPersianQtyStr(c,l)}</span> <span class="qty-secondary">| کل: ${req.reqPieces} عدد</span> <span class="qty-weight">${formatWeight(getWeight(req.pCode,req.reqPieces))}</span>
+                <div style="margin-top:6px;"><span style="font-size:10px;font-weight:900;">انبار مبدأ: </span><select class="item-wh-select" onchange="const old=outRequirements[${idx}].wh; this.value=this.value; outRequirements[${idx}].wh=this.value; if(getActualStock(outRequirements[${idx}].pCode,this.value)<outRequirements[${idx}].reqPieces){alert('⛔ موجودی این کالا در انبار انتخابی کافی نیست.'); outRequirements[${idx}].wh=old||document.getElementById('outWarehouseSelect').value;} renderRequirements();">${warehouseOptions(req.wh||document.getElementById('outWarehouseSelect').value)}</select></div>
+                <span style="font-size:11px;color:var(--text-muted);">اسکن شده: <b style="color:var(--danger);">${req.scannedPieces}</b> عدد</span></div>
+                <button style="width:auto;padding:4px 8px;font-size:11px;background:var(--danger);color:#fff;" onclick="outRequirements.splice(${idx},1);renderRequirements();">حذف</button></div>`;
+            }).join('');
+            totalDiv.style.display='block';totalDiv.innerHTML=`<span class="qty-primary">جمع: ${tC} کارتن</span> | <span class="qty-secondary">${tL} عدد خرد</span> | <span class="qty-secondary">کل: ${tP} عدد</span> <span class="qty-weight">| وزن: ${tW.toFixed(2)} kg</span>`;
+        }
+
+        function toggleExitScanMode() {
+            let isScanNow = document.getElementById('outScanNowToggle').checked;
+            document.getElementById('exitScanSection').style.display = isScanNow ? 'block' : 'none';
+        }
+
+        function startScanner(inputId) { 
+            document.getElementById('scanner-modal').style.display = 'flex'; 
+            html5QrCode_cam = new Html5Qrcode("reader"); 
+            html5QrCode_cam.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 100 } }, (txt) => { 
+                document.getElementById(inputId).value = txt; 
+                stopScanner(); 
+                parseLiveBarcode(inputId==='inBarcode'?'in':'out'); 
+                if(document.getElementById(inputId.replace('Barcode','') + 'AutoAdd') && document.getElementById(inputId.replace('Barcode','') + 'AutoAdd').checked) {
+                    if(inputId==='inBarcode') addToEntryDraft(true); else addToExitDraft(true);
+                }
+            }, (err) => {}).catch(() => { alert("خطای دوربین"); stopScanner(); }); 
+        }
+
+        function stopScanner() { 
+            if(html5QrCode_cam) html5QrCode_cam.stop().then(() => html5QrCode_cam.clear()); 
+            document.getElementById('scanner-modal').style.display = 'none'; 
+        }
+
+        function parseLiveBarcode(mode) { 
+            let raw = document.getElementById(mode + 'Barcode').value.trim(); 
+            if(raw.length > 0) {
+                let pCode = raw.length >= 6 && !raw.startsWith('M-') ? raw.substring(0, 6) : raw; 
+                let batch = raw.length >= 9 && !raw.startsWith('M-') ? raw.substring(6, 9) : "نامشخص"; 
+                
+                if (productsMap[pCode]) {
+                    updateLiveInfo(mode, false, `✅ یافت شد - کد: ${pCode} | بچ: ${batch}`);
+                    if(mode === 'in') { 
+                        document.getElementById('inName').value = productsMap[pCode]; 
+                        document.getElementById('inUnitsPerCarton').value = productsUnitsMap[pCode] || ''; 
+                        document.getElementById('inWeight').value = productsWeightMap[pCode] || ''; 
+                    }
+                } else {
+                    updateLiveInfo(mode, true, `❌ کد کالا جدید است! فرم را کامل پر کنید.`);
+                    if(mode === 'in') { 
+                        document.getElementById('inName').value = ''; 
+                        document.getElementById('inUnitsPerCarton').value = ''; 
+                        document.getElementById('inWeight').value = ''; 
+                    }
+                }
+            } else { updateLiveInfo(mode, false, ''); }
+        }
+
+        function handleHardwareScanner(e, mode) { 
+            if(e.key === 'Enter') { 
+                e.preventDefault(); 
+                parseLiveBarcode(mode); 
+                let raw = document.getElementById(mode + 'Barcode').value.trim();
+                let pCode = raw.length >= 6 && !raw.startsWith('M-') ? raw.substring(0, 6) : raw; 
+                
+                if(!productsMap[pCode] && mode === 'out') return; 
+                
+                if(document.getElementById(mode + 'AutoAdd') && document.getElementById(mode + 'AutoAdd').checked) {
+                    if(mode === 'in') addToEntryDraft(true); 
+                    else addToExitDraft(true); 
+                } else {
+                    if(mode === 'in') { document.getElementById('inCartonQty').focus(); document.getElementById('inCartonQty').select(); }
+                    else { document.getElementById('outCartonQty').focus(); document.getElementById('outCartonQty').select(); }
+                }
+            } 
+        }
+
+        function addToEntryDraft(isAuto = false) { 
+            try {
+                let wh = document.getElementById('inWarehouseSelect').value || "انبار مرکزی";
+                let rawBarcode = document.getElementById('inBarcode').value.trim(); 
+                let typedName = document.getElementById('inName').value.trim();
+                let pCode = rawBarcode.length >= 6 && !rawBarcode.startsWith('M-') ? rawBarcode.substring(0, 6) : rawBarcode; 
+                
+                if(!pCode && typedName) { pCode = "M-" + Math.floor(Math.random() * 9000 + 1000); } 
+                if(!pCode && !typedName) { 
+                    if(!isAuto) alert("لطفاً بارکد اسکن کنید یا حداقل نام کالا را به صورت دستی وارد کنید."); 
+                    return false; 
+                }
+                
+                let finalName = typedName || productsMap[pCode];
+                let typedUnits = parseInt(document.getElementById('inUnitsPerCarton').value);
+                let typedWeight = parseFloat(document.getElementById('inWeight').value);
+                
+                if (!productsMap[pCode]) {
+                    if (!finalName || isNaN(typedUnits)) {
+                        if(!isAuto) alert("❌ این کالا جدید است. برای تعریف آن حتماً باید «نام کالا» و «تعداد در کارتن» را به درستی وارد کنید.");
+                        playBeep('error');
+                        return false;
+                    }
+                }
+
+                let finalUnits = !isNaN(typedUnits) ? typedUnits : (productsUnitsMap[pCode] || 1);
+                let finalWeight = !isNaN(typedWeight) ? typedWeight : (productsWeightMap[pCode] || 0);
+                
+                let qtyC = parseInt(document.getElementById('inCartonQty').value) || 0;
+                let qtyL = parseInt(document.getElementById('inLooseQty').value) || 0;
+                let totalInput = parseInt(document.getElementById('inTotalPiecesOnly').value) || 0; 
+                
+                if(totalInput > 0) { 
+                    qtyC = Math.floor(totalInput / finalUnits); 
+                    qtyL = totalInput % finalUnits; 
+                } 
+                if(isAuto && qtyC === 0 && qtyL === 0 && totalInput === 0) qtyC = 1; 
+                if(qtyC === 0 && qtyL === 0) { if(!isAuto) alert("هیچ تعدادی وارد نشده است."); return false; } 
+                
+                let batch = rawBarcode.length >= 9 && !rawBarcode.startsWith('M-') ? rawBarcode.substring(6, 9) : "نامشخص";
+                let totalPieces = (qtyC * finalUnits) + qtyL; 
+                
+                draftEntryItems.push({ raw: rawBarcode, pCode, batch, qtyCarton: qtyC, qtyLoose: qtyL, totalPieces: totalPieces, name: finalName, weight: finalWeight, units: finalUnits, wh: wh }); 
+                
+                if (!productsMap[pCode]) { 
+                    productsMap[pCode] = finalName; 
+                    productsUnitsMap[pCode] = finalUnits; 
+                    productsWeightMap[pCode] = finalWeight; 
+                    saveData(); 
+                }
+                
+                document.getElementById('inBarcode').value = ''; document.getElementById('inName').value = ''; document.getElementById('inWeight').value = ''; document.getElementById('inUnitsPerCarton').value = ''; document.getElementById('inCartonQty').value = '1'; document.getElementById('inLooseQty').value = '0'; document.getElementById('inTotalPiecesOnly').value = ''; 
+                renderDrafts(); 
+                updateLiveInfo('in', false, `✅ ${finalName} به لیست اضافه شد`);
+                playBeep('success');
+                if(!isAuto) document.getElementById('inBarcode').focus(); 
+                return true; 
+            } catch(e) { console.error(e); alert("خطایی رخ داد: " + e.message); }
+        }
+        
+    function finalizeEntryDoc() { 
+            try {
+                if(!draftEntryItems.length) return alert("اقلام آماده ثبت خالی است."); 
+                let defaultWh = document.getElementById('inWarehouseSelect').value;
+                let docTypeEl = document.querySelector('input[name="entryDocType"]:checked');
+                if(!docTypeEl) return alert("نوع سند مشخص نیست!");
+                if(!draftEntryItems.every(item => item.wh || defaultWh)) return alert("برای همه اقلام انبار مقصد را مشخص کنید.");
+
+                let docType = docTypeEl.value; 
+                let currentDocId = editingEntryDocId ? editingEntryDocId : generateUniqueDocId(), dateStr = new Date().toLocaleString('fa-IR'); 
+
+                let newItems = draftEntryItems.map(item => ({ 
+                    docId: currentDocId, 
+                    officeDoc: document.getElementById('inOfficeDoc').value||"بدون شماره", 
+                    date: dateStr, 
+                    type: docType, 
+                    pCode: item.pCode, 
+                    batch: item.batch, 
+                    rawBarcode: item.raw, 
+                    qtyCarton: item.qtyCarton, 
+                    qtyLoose: item.qtyLoose, 
+                    totalPieces: item.totalPieces, 
+                    weight: item.weight, 
+                    units: item.units, 
+                    warehouse: item.wh || defaultWh, 
+                    ref: document.getElementById('inSender').value||"ثبت اولیه", 
+                    operator: currentUser?currentUser.name:"سیستم", 
+                    dispatchStatus: 'done' 
+                }));
+
+                // حذف رکوردهای قبلی این سند قبل از درج اقلام جدید (جلوگیری از تکرار اقلام)
+                historyLog = historyLog.filter(t => String(t.docId) !== String(currentDocId));
+                historyLog.push(...newItems);
+                saveData(); 
+                draftEntryItems = []; editingEntryDocId = null; 
+                ['inOfficeDoc','inBarcode','inName','inWeight','inUnitsPerCarton','inCartonQty','inLooseQty','inTotalPiecesOnly','inSender'].forEach(id=>{const el=document.getElementById(id); if(el) el.value = (id==='inCartonQty' ? '1' : (id==='inLooseQty' ? '0' : ''));});
+                const inInfo=document.getElementById('inBarcodeInfo'); if(inInfo) inInfo.innerText='';
+                renderDrafts();
+                alert("✅ سند ورود با موفقیت ثبت شد! پیش‌نمایش سند برای چاپ باز می‌شود.");
+                viewSystemFactor(currentDocId);
+            } catch(e) { console.error(e); alert("خطا در ثبت نهایی: " + e.message); }
+        }
+        function addToExitDraft(isAuto = false) { 
+            try {
+                let wh = document.getElementById('outWarehouseSelect').value;
+                if(!wh) return alert("انبار مبدأ انتخاب نشده است.");
+                
+                let rawBarcode = document.getElementById('outBarcode').value.trim(); 
+                if(!rawBarcode) { if(!isAuto) alert("کد کالا یا بارکد را وارد کنید."); return false; }
+
+                let pCode = rawBarcode.length >= 6 && !rawBarcode.startsWith('M-') ? rawBarcode.substring(0, 6) : rawBarcode; 
+                
+                if(!productsMap[pCode]) { 
+                    if(!isAuto) alert("❌ این کد کالا در سیستم تعریف نشده است! ابتدا باید آن را ورود بزنید."); 
+                    playBeep('error');
+                    updateLiveInfo('out', true, '❌ کالا در سیستم وجود ندارد!');
+                    document.getElementById('outBarcode').value = '';
+                    if(!isAuto) document.getElementById('outBarcode').focus();
+                    return false; 
+                }
+                
+                let units = parseInt(productsUnitsMap[pCode]) || 1; 
+                let qtyC = parseInt(document.getElementById('outCartonQty').value) || 0;
+                let qtyL = parseInt(document.getElementById('outLooseQty').value) || 0;
+                let totalOutInput = parseInt(document.getElementById('outTotalPiecesOnly').value) || 0; 
+                
+                if(totalOutInput > 0) { qtyC = Math.floor(totalOutInput / units); qtyL = totalOutInput % units; } 
+                if(isAuto && qtyC === 0 && qtyL === 0 && totalOutInput === 0) qtyC = 1; 
+                if(qtyC === 0 && qtyL === 0) { if(!isAuto) alert("تعداد خروج را مشخص کنید."); return false; }
+                
+                let batch = rawBarcode.length >= 9 && !rawBarcode.startsWith('M-') ? rawBarcode.substring(6, 9) : "نامشخص";
+                let addedPieces = (qtyC * units) + qtyL; 
+                
+                if (outRequirements.length > 0) { 
+                    let req = outRequirements.find(r => r.pCode === pCode); 
+                    if (!req || req.scannedPieces + addedPieces > req.reqPieces) { 
+                        updateLiveInfo('out', true, "⛔ خارج از سفارش!"); 
+                        if(!confirm("این کالا در لیست سفارش نیست یا بیشتر از مقدار سفارش است. آیا ادامه می‌دهید؟")) return false; 
+                    } 
+                } 
+                
+                let exactStock = getActualStock(pCode, wh), bestBatch = batch;
+                for(let k in inventory) {
+                    if(inventory[k].pCode === pCode && (inventory[k].stock[wh] || 0) > 0) { bestBatch = inventory[k].batch; break; }
+                }
+                let draftedPieces = getDraftExitStock(pCode, wh);
+                let availableStock = Math.max(0, exactStock - draftedPieces);
+                if (availableStock < addedPieces) {
+                    playBeep('error');
+                    updateLiveInfo('out', true, `⛔ موجودی کافی نیست. موجودی قابل خروج: ${availableStock} عدد`);
+                    alert(`⛔ اجازه خروج داده نشد!\n\nکالا: ${productsMap[pCode]}\nانبار: ${wh}\nموجودی قابل خروج: ${availableStock} عدد\nمقدار درخواستی: ${addedPieces} عدد`);
+                    return false;
+                }
+                batch = bestBatch || batch;
+                
+                draftExitItems.push({ raw: rawBarcode, pCode, batch, qtyCarton: qtyC, qtyLoose: qtyL, totalPieces: addedPieces, name: productsMap[pCode], wh, units }); 
+                
+                if (outRequirements.length > 0) { 
+                    let req = outRequirements.find(r => r.pCode === pCode);
+                    if(req) req.scannedPieces += addedPieces; 
+                    renderRequirements(); 
+                } 
+                
+                document.getElementById('outBarcode').value = ''; document.getElementById('outCartonQty').value = '1'; document.getElementById('outLooseQty').value = '0'; document.getElementById('outTotalPiecesOnly').value = ''; 
+                renderDrafts(); 
+                updateLiveInfo('out', false, `✅ کالا به لیست خروج اضافه شد`);
+                playBeep('success');
+                if(!isAuto) document.getElementById('outBarcode').focus(); 
+                return true; 
+            } catch(e) { console.error(e); alert("خطایی رخ داد: " + e.message); }
+        }
+        
+    function finalizeExitDoc() { 
+            try {
+                let cust = document.getElementById('outCustomer').value || "مشتری نامشخص";
+                let defaultWh = document.getElementById('outWarehouseSelect').value;
+                if(!defaultWh) return alert("انبار پیش‌فرض مبدأ انتخاب نشده است.");
+
+                let isScanNow = document.getElementById('outScanNowToggle').checked;
+                if (!isScanNow && Array.isArray(outRequirements) && outRequirements.length) {
+                    let reserved = {};
+                    for (let req of outRequirements) {
+                        let wh = req.wh || defaultWh, key = req.pCode + '|' + wh;
+                        let already = reserved[key] || 0;
+                        let available = Math.max(0, getActualStock(req.pCode, wh) - already);
+                        let requested = Number(req.reqPieces || 0);
+                        if (available < requested) {
+                            playBeep('error');
+                            return alert(`⛔ ثبت خروج متوقف شد!\nکالا: ${req.name || req.pCode}\nانبار: ${wh}\nموجودی قابل خروج: ${available} عدد\nدرخواست: ${requested} عدد`);
+                        }
+                        reserved[key] = already + requested;
+                    }
+                }
+                if (isScanNow && Array.isArray(draftExitItems) && draftExitItems.length) {
+                    let reserved = {};
+                    for (let item of draftExitItems) {
+                        let wh = item.wh || defaultWh, key = item.pCode + '|' + wh;
+                        let already = reserved[key] || 0;
+                        let available = Math.max(0, getActualStock(item.pCode, wh) - already);
+                        let requested = Number(item.totalPieces || 0);
+                        if (available < requested) {
+                            playBeep('error');
+                            return alert(`⛔ ثبت خروج متوقف شد!\nکالا: ${item.name || item.pCode}\nانبار: ${wh}\nموجودی قابل خروج: ${available} عدد\nدرخواست: ${requested} عدد`);
+                        }
+                        reserved[key] = already + requested;
+                    }
+                }
+
+                let currentDocId = editingExitDocId ? editingExitDocId : generateUniqueDocId();
+                let dateStr = new Date().toLocaleString('fa-IR'); 
+
+                // حذف رکوردهای قبلی این سند قبل از درج اقلام جدید
+                historyLog = historyLog.filter(t => String(t.docId) !== String(currentDocId));
+
+                if (!isScanNow) {
+                    if (outRequirements.length === 0) return alert("❌ هیچ کالایی در فرم (سفارش‌برداری) وارد نشده است!");
+                    if (!outRequirements.every(req => req.wh || defaultWh)) return alert("برای همه اقلام انبار مبدأ را مشخص کنید.");
+                    
+                    let outItems = outRequirements.map(req => { 
+                        let c = Math.floor(req.reqPieces / req.uPerCarton), l = req.reqPieces % req.uPerCarton;
+                        return {
+                            docId: currentDocId,
+                            officeDoc: document.getElementById('outOfficeDoc').value || "بدون شماره",
+                            date: dateStr,
+                            type: 'خروج',
+                            pCode: req.pCode,
+                            batch: "در انتظار",
+                            rawBarcode: "سفارش ثبت شده",
+                            qtyCarton: c,
+                            qtyLoose: l,
+                            totalPieces: req.reqPieces,
+                            warehouse: req.wh || defaultWh,
+                            ref: cust,
+                            operator: currentUser ? currentUser.name : "نامشخص",
+                            dispatchStatus: 'pending'
+                        };
+                    });
+
+                    historyLog.push(...outItems);
+                    saveData(); 
+                    alert("✅ فاکتور صادر و موجودی کسر شد! پیش‌نمایش سند برای چاپ باز می‌شود.");
+                } else {
+                    if(!draftExitItems.length) return alert("❌ هیچ کالایی اسکن و وارد لیست نشده است."); 
+                    if (outRequirements.length > 0 && outRequirements.some(r => r.scannedPieces < r.reqPieces)) {
+                        if(!confirm("⚠️ لیست سفارش به طور کامل اسکن نشده است! آیا می‌خواهید حواله را ثبت نهایی کنید؟")) return; 
+                    }
+
+                    let outItems = draftExitItems.map(item => ({
+                        docId: currentDocId,
+                        officeDoc: document.getElementById('outOfficeDoc').value || "بدون شماره",
+                        date: dateStr,
+                        type: 'خروج',
+                        pCode: item.pCode,
+                        batch: item.batch,
+                        rawBarcode: item.raw,
+                        qtyCarton: item.qtyCarton,
+                        qtyLoose: item.qtyLoose,
+                        totalPieces: item.totalPieces,
+                        warehouse: item.wh || defaultWh,
+                        ref: cust,
+                        operator: currentUser ? currentUser.name : "نامشخص",
+                        dispatchStatus: 'done'
+                    }));
+
+                    historyLog.push(...outItems);
+                    saveData(); 
+                    alert("✅ حواله خروج با موفقیت اسکن، صادر و نهایی شد! پیش‌نمایش سند برای چاپ باز می‌شود.");
+                }
+
+                draftExitItems = []; 
+                editingExitDocId = null; 
+                outRequirements = [];
+                ['outOfficeDoc','outCustomer','outBarcode','outCartonQty','outLooseQty','outTotalPiecesOnly','reqTotalPieces'].forEach(id=>{
+                    const el = document.getElementById(id); 
+                    if(el) el.value = (id==='outCartonQty' ? '1' : (id==='outLooseQty' ? '0' : ''));
+                });
+                const outInfo = document.getElementById('outBarcodeInfo'); 
+                if(outInfo) outInfo.innerText = '';
+                const reqSel = document.getElementById('reqProductSelect'); 
+                if(reqSel) reqSel.value = '';
+                
+                renderRequirements(); 
+                renderDrafts();
+                viewSystemFactor(currentDocId);
+            } catch(e) { 
+                console.error(e); 
+                alert("خطا در صدور حواله: " + e.message); 
+            }
+        }
+        function warehouseOptions(selected) {
+            return (sysSettings.warehouses || []).map(w => `<option value="${String(w).replace(/"/g,'&quot;')}" ${w===selected?'selected':''}>${w}</option>`).join('');
+        }
+
+async function syncNewDocumentToServer(docItems) {
+    if (!companyPrefix || !navigator.onLine || !docItems || !docItems.length) return;
+    try {
+        await fetch(`${DB_URL}/api/append-doc?company=${companyPrefix}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ items: docItems })
+        });
+    } catch (e) {
+        console.warn('ذخیره همزمان سرور:', e);
+    }
+}
         function renderDrafts() { 
             try {
-                if(companyPrefix) {
+if(companyPrefix) {
                     localStorage.setItem(companyPrefix + '_draftEntry', JSON.stringify(draftEntryItems));
                     localStorage.setItem(companyPrefix + '_draftExit', JSON.stringify({ items: draftExitItems, reqs: outRequirements }));
-                }
+}
                 let inList=document.getElementById('entryDraftList'), inC=0,inL=0,inW=0,inTP=0;
                 inList.innerHTML=draftEntryItems.map((i,idx)=>{
                     inC+=i.qtyCarton;inL+=i.qtyLoose;inTP+=i.totalPieces;let w=getWeight(i.pCode,i.totalPieces);inW+=w;
@@ -2978,8 +4704,9 @@ function loadDropdowns() {
         if(dDisp) dDisp.innerHTML = (dWhVal === 'all' ? 'همه انبارها' : dWhVal) + ' <span style="font-size:10px;">▼</span>';
     }
 }
-
-// کدهای ارتقاء یافته برای اتصال به سیستم ابری جدید و جلوگیری از هنگ کردن
+</script>
+<!-- کدهای ارتقاء یافته برای اتصال به سیستم ابری جدید و جلوگیری از هنگ کردن -->
+<script>
     // ۱. آپلود با FormData (ارسال مستقیم باینری)
     window.handleReceiptFilesSelected = async function(event) {
         let files = Array.from(event.target.files || []);
@@ -3039,12 +4766,7 @@ function loadDropdowns() {
     };
 
     // ۲. سیستم هوشمند صف آفلاین (مستقل به تفکیک شرکت)
-    try {
-        window.offlineDocQueue = JSON.parse(localStorage.getItem('anbar_offline_docs') || '[]');
-        if(!Array.isArray(window.offlineDocQueue)) window.offlineDocQueue = [];
-    } catch(e) {
-        window.offlineDocQueue = [];
-    }
+    window.offlineDocQueue = JSON.parse(localStorage.getItem('anbar_offline_docs') || '[]');
     window.saveOfflineQueue = () => localStorage.setItem('anbar_offline_docs', JSON.stringify(window.offlineDocQueue));
 
     window.processOfflineQueue = async function() {
@@ -3122,12 +4844,8 @@ function loadDropdowns() {
                         });
                     }
 
-                    ensureDefaultUsers(); rebuildInventory(); updateLocalCacheOnly();
-                    if(typeof updateTodayCounter === 'function') updateTodayCounter();
-                    
-                    if(document.getElementById('view-login-main')?.style.display === 'block') {
-                        renderLoginButtons();
-                    }
+                   ensureDefaultUsers(); rebuildInventory(); updateLocalCacheOnly();
+if(typeof updateTodayCounter === 'function') updateTodayCounter();
                 }
                 if (currentUser) {
                     if (currentUser.role !== 'loader') loadDropdowns();
@@ -3160,12 +4878,15 @@ function loadDropdowns() {
         }).catch(e => console.warn("خطا در همگام‌سازی تنظیمات:", e));
     };
 
-    // ۵. شمارنده زنده اسناد (فاکتورهای یکتا) ثبت شده امروز
+    // ۵. ارسال سند به سرور با پاکسازی نسخه قدیمی قبل از ثبت مجدد
+   // شمارنده زنده اسناد ثبت شده امروز در دیتابیس
+     // شمارنده زنده اسناد (فاکتورهای) ثبت شده امروز در دیتابیس
     window.updateTodayCounter = function() {
         try {
             const todayStr = new Date().toLocaleDateString('fa-IR');
             const todayLogs = historyLog.filter(log => log.date && log.date.includes(todayStr));
             
+            // استفاده از Set برای شمارش فاکتورهای یکتا (حذف اقلام تکراری یک فاکتور)
             const uniqueDocIds = new Set();
             todayLogs.forEach(log => {
                 if (log.docId) {
@@ -3180,7 +4901,7 @@ function loadDropdowns() {
         }
     };
 
-    // ۶. ارسال قطعی و سخت‌گیرانه (تأیید کد 200)
+    // ۵. ارسال قطعی و سخت‌گیرانه (تأیید کد 200)
     window.syncSingleDocToServerStrict = async function(docId, docItems) {
         const payload = {
             companyTarget: companyPrefix,
@@ -3211,7 +4932,6 @@ function loadDropdowns() {
         return true; 
     };
 
-    // ۷. ثبت نهایی ورود
     window.finalizeEntryDoc = async function() {
         if(!draftEntryItems.length) return alert("اقلام آماده ثبت خالی است.");
         let docTypeEl = document.querySelector('input[name="entryDocType"]:checked');
@@ -3235,9 +4955,11 @@ function loadDropdowns() {
         }));
 
         try {
+            // منتظر تایید 200 از سرور می‌ماند
             await syncSingleDocToServerStrict(currentDocId, newItems);
             hideUploadProgress();
 
+            // فقط در صورت تایید سرور، اطلاعات روی گوشی ثبت و فرم پاک می‌شود
             historyLog = historyLog.filter(t => String(t.docId) !== String(currentDocId));
             historyLog.push(...newItems);
             saveData(); 
@@ -3256,7 +4978,6 @@ function loadDropdowns() {
         }
     };
 
-    // ۸. ثبت نهایی خروج
     window.finalizeExitDoc = async function() {
         let cust = document.getElementById('outCustomer').value || "مشتری نامشخص";
         let defaultWh = document.getElementById('outWarehouseSelect').value;
@@ -3292,6 +5013,7 @@ function loadDropdowns() {
         }
 
         try {
+            // منتظر تایید قطعی 200
             await syncSingleDocToServerStrict(currentDocId, newItems);
             hideUploadProgress();
 
@@ -3315,8 +5037,7 @@ function loadDropdowns() {
             alert("❌ خطا در ثبت دیتابیس: " + e.message + "\n\nاطلاعات فرم پاک نشد! لطفاً پس از رفع مشکل مجدداً دکمه ثبت نهایی را بزنید.");
         }
     };
-
-    // ۹. حذف عکس رسید
+    // ۶. حذف عکس رسید
     window.deleteReceipt = async function(docId, event) {
         if(event) event.stopPropagation();
         if(!confirm("⚠️ آیا از حذف عکس این رسید مطمئن هستید؟")) return;
@@ -3339,7 +5060,7 @@ function loadDropdowns() {
         } catch(e) { alert("خطا در حذف عکس (شاید آفلاین هستید): " + e.message); }
     };
 
-    // ۱۰. ابطال سند
+    // ۷. ابطال سند
     window.cancelTransaction = async function(docId, event) {
         if(event) event.stopPropagation();
         if(!confirm("⚠️ آیا از ابطال و حذف کامل این سند مطمئن هستید؟ موجودی کالاها به حالت قبل برمی‌گردد.")) return;
@@ -3358,7 +5079,7 @@ function loadDropdowns() {
         } catch (e) { alert("⚠️ برای حذف کامل سند باید به اینترنت متصل باشید."); }
     };
 
-    // ۱۱. نهایی‌سازی اسکن بارگیری کامیون
+    // ۸. نهایی‌سازی اسکن بارگیری کامیون
     const originalFinalizeDispatch = window.finalizeDispatchDoc;
     window.finalizeDispatchDoc = async function() {
         const targetDocId = currentDispatchDocId;
@@ -3367,7 +5088,7 @@ function loadDropdowns() {
             let updatedDocs = historyLog.filter(log => String(log.docId) === String(targetDocId));
             if(updatedDocs.length > 0) {
                 updatedDocs.forEach(d => { d.dispatchStatus = 'done'; d.dispatchDate = new Date().toLocaleString('fa-IR'); });
-                await syncSingleDocToServerStrict(targetDocId, updatedDocs);
+                await syncSingleDocToServer(targetDocId, updatedDocs);
             }
         }
     };
@@ -3380,12 +5101,12 @@ function loadDropdowns() {
             let updatedDocs = historyLog.filter(log => String(log.docId) === String(targetDocId));
             if(updatedDocs.length > 0) {
                 updatedDocs.forEach(d => { d.dispatchStatus = 'done'; d.dispatchDate = new Date().toLocaleString('fa-IR'); });
-                await syncSingleDocToServerStrict(targetDocId, updatedDocs);
+                await syncSingleDocToServer(targetDocId, updatedDocs);
             }
         }
     };
 
-    // ۱۲. سفارش‌برداری خروج
+    // ۹. سفارش‌برداری خروج
     window.addRequirement = function() { 
         let wh = document.getElementById('outWarehouseSelect').value;
         if(!wh) { playBeep('error'); return alert("ابتدا انبار مبدأ (بارگیری) را مشخص کنید."); }
@@ -3415,7 +5136,7 @@ function loadDropdowns() {
         renderRequirements(); playBeep('success'); document.getElementById('reqProductSelect').focus();
     };
 
-    // ۱۳. اسکنر کامیون و رفع خطای المان‌های Null
+    // ۱۰. اسکنر کامیون و رفع خطای المان‌های Null
     window.openDispatchScanner = function(docId, event) {
         try {
             if(event && typeof event.stopPropagation === 'function') event.stopPropagation();
