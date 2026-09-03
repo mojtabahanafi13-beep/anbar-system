@@ -424,11 +424,13 @@
     <div id="app-wrapper">
         <div id="mainUI" style="display:none;">
             
-            <div id="top-bar">
-                <div id="currentUserDisplay" style="color:white; font-size:13px; font-weight:bold;"></div>
-                <div id="cloudStatus" onclick="fetchDataFromServer()" style="color:white; font-size:12px; font-weight:bold; background:rgba(245, 158, 11, 0.9); padding:6px 15px; border-radius:15px; cursor:pointer; transition: background 0.3s; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">⏳ اتصال...</div>
+          <div id="top-bar">
+            <div id="currentUserDisplay" style="color:white; font-size:13px; font-weight:bold;"></div>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <div id="db-counter" style="color:#0f172a; font-size:12px; font-weight:900; background:#fcd34d; padding:6px 12px; border-radius:15px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">ثبت امروز دیتابیس: <span id="db-counter-val">0</span></div>
+                <div id="cloudStatus" onclick="fetchDataFromServer()" style="color:white; font-size:12px; font-weight:bold; background:rgba(245, 158, 11, 0.9); padding:6px 15px; border-radius:15px; cursor:pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">⏳ اتصال...</div>
             </div>
-
+        </div>
          <!-- مودال اسکن و بارگیری در کامیون (دوربین در بالای کادرهای دستی) -->
 
 <div id="dispatch-modal" class="modal-overlay">
@@ -1470,7 +1472,14 @@
                     if(currentUser.role === 'admin') { try{ renderSettings(); }catch(e){} }
                     try{ renderInventory(); }catch(e){} 
                     openTab('tab-dashboard', document.getElementById('tabBtnDashboard'));
-                }, 50);
+               try {
+                    let dIn = localStorage.getItem(companyPrefix + '_draftEntry');
+                    if(dIn) draftEntryItems = JSON.parse(dIn) || [];
+                    let dOut = localStorage.getItem(companyPrefix + '_draftExit');
+                    if(dOut) { let p = JSON.parse(dOut); draftExitItems = p.items || []; outRequirements = p.reqs || []; }
+                    renderDrafts(); renderRequirements();
+                } catch(e){}
+ }, 50);
             }
         }
 
@@ -3731,6 +3740,10 @@ async function syncNewDocumentToServer(docItems) {
 }
         function renderDrafts() { 
             try {
+if(companyPrefix) {
+                    localStorage.setItem(companyPrefix + '_draftEntry', JSON.stringify(draftEntryItems));
+                    localStorage.setItem(companyPrefix + '_draftExit', JSON.stringify({ items: draftExitItems, reqs: outRequirements }));
+}
                 let inList=document.getElementById('entryDraftList'), inC=0,inL=0,inW=0,inTP=0;
                 inList.innerHTML=draftEntryItems.map((i,idx)=>{
                     inC+=i.qtyCarton;inL+=i.qtyLoose;inTP+=i.totalPieces;let w=getWeight(i.pCode,i.totalPieces);inW+=w;
@@ -4831,7 +4844,8 @@ function loadDropdowns() {
                         });
                     }
 
-                    ensureDefaultUsers(); rebuildInventory(); updateLocalCacheOnly();
+                   ensureDefaultUsers(); rebuildInventory(); updateLocalCacheOnly();
+if(typeof updateTodayCounter === 'function') updateTodayCounter();
                 }
                 if (currentUser) {
                     if (currentUser.role !== 'loader') loadDropdowns();
@@ -4865,7 +4879,24 @@ function loadDropdowns() {
     };
 
     // ۵. ارسال سند به سرور با پاکسازی نسخه قدیمی قبل از ثبت مجدد
-    window.syncSingleDocToServer = async function(docId, docItems) {
+   // شمارنده زنده اسناد ثبت شده امروز در دیتابیس
+    window.updateTodayCounter = function() {
+        const todayStr = new Date().toLocaleDateString('fa-IR');
+        const count = historyLog.filter(log => log.date && log.date.includes(todayStr)).length;
+        const el = document.getElementById('db-counter-val');
+        if (el) el.innerText = count.toLocaleString('fa-IR');
+    };
+
+  // شمارنده زنده اسناد ثبت شده امروز در دیتابیس
+    window.updateTodayCounter = function() {
+        const todayStr = new Date().toLocaleDateString('fa-IR');
+        const count = historyLog.filter(log => log.date && log.date.includes(todayStr)).length;
+        const el = document.getElementById('db-counter-val');
+        if (el) el.innerText = count.toLocaleString('fa-IR');
+    };
+
+    // ۵. ارسال قطعی و سخت‌گیرانه (تأیید کد 200)
+    window.syncSingleDocToServerStrict = async function(docId, docItems) {
         const payload = {
             companyTarget: companyPrefix,
             docId: String(docId), type: docItems[0].type, date: docItems[0].date,
@@ -4876,61 +4907,130 @@ function loadDropdowns() {
             items: docItems.map(i => ({ 
                 pCode: i.pCode, batch: i.batch || 'نامشخص', 
                 qtyCarton: i.qtyCarton || 0, qtyLoose: i.qtyLoose || 0, 
-                totalPieces: i.totalPieces, 
-                warehouse: i.warehouse || i.wh || docItems[0].warehouse 
+                totalPieces: i.totalPieces, warehouse: i.warehouse || i.wh || docItems[0].warehouse 
             }))
         };
 
-        if (!navigator.onLine) {
-            const exists = window.offlineDocQueue.find(p => p.docId === payload.docId);
-            if(!exists) { window.offlineDocQueue.push(payload); window.saveOfflineQueue(); }
-            let statusDiv = document.getElementById("cloudStatus");
-            if(statusDiv) { statusDiv.innerText = `⚠️ ذخیره آفلاین (${window.offlineDocQueue.length})`; statusDiv.style.background = "#ef4444"; }
-            return;
+        if (!navigator.onLine) throw new Error("ارتباط اینترنت قطع است!");
+
+        // حذف نسخه قبلی سرور در صورت ویرایش
+        await fetch(`${DB_URL}/api/document?company=${companyPrefix}`, {
+            method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ docId: String(docId) })
+        });
+
+        const res = await fetch(`${DB_URL}/api/document?company=${companyPrefix}`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+        });
+        
+        if(!res.ok) throw new Error("دیتابیس پاسخ 200 نداد (کد: " + res.status + ")");
+        return true; 
+    };
+
+    window.finalizeEntryDoc = async function() {
+        if(!draftEntryItems.length) return alert("اقلام آماده ثبت خالی است.");
+        let docTypeEl = document.querySelector('input[name="entryDocType"]:checked');
+        if(!docTypeEl) return alert("نوع سند مشخص نیست!");
+        let defaultWh = document.getElementById('inWarehouseSelect').value;
+        if(!draftEntryItems.every(item => item.wh || defaultWh)) return alert("برای همه اقلام انبار مقصد را مشخص کنید.");
+
+        showUploadProgress(50, "در حال ثبت قطعی در دیتابیس...");
+        
+        let docType = docTypeEl.value; 
+        let currentDocId = editingEntryDocId ? editingEntryDocId : generateUniqueDocId();
+        let dateStr = new Date().toLocaleString('fa-IR'); 
+
+        let newItems = draftEntryItems.map(item => ({ 
+            docId: currentDocId, officeDoc: document.getElementById('inOfficeDoc').value||"بدون شماره", 
+            date: dateStr, type: docType, pCode: item.pCode, batch: item.batch, 
+            rawBarcode: item.raw, qtyCarton: item.qtyCarton, qtyLoose: item.qtyLoose, 
+            totalPieces: item.totalPieces, weight: item.weight, units: item.units, 
+            warehouse: item.wh || defaultWh, ref: document.getElementById('inSender').value||"ثبت اولیه", 
+            operator: currentUser?currentUser.name:"سیستم", dispatchStatus: 'done' 
+        }));
+
+        try {
+            // منتظر تایید 200 از سرور می‌ماند
+            await syncSingleDocToServerStrict(currentDocId, newItems);
+            hideUploadProgress();
+
+            // فقط در صورت تایید سرور، اطلاعات روی گوشی ثبت و فرم پاک می‌شود
+            historyLog = historyLog.filter(t => String(t.docId) !== String(currentDocId));
+            historyLog.push(...newItems);
+            saveData(); 
+            if(typeof updateTodayCounter === 'function') updateTodayCounter();
+
+            draftEntryItems = []; editingEntryDocId = null; 
+            ['inOfficeDoc','inBarcode','inName','inWeight','inUnitsPerCarton','inCartonQty','inLooseQty','inTotalPiecesOnly','inSender'].forEach(id=>{const el=document.getElementById(id); if(el) el.value = (id==='inCartonQty' ? '1' : (id==='inLooseQty' ? '0' : ''));});
+            const inInfo=document.getElementById('inBarcodeInfo'); if(inInfo) inInfo.innerText='';
+            renderDrafts();
+            
+            alert("✅ ثبت موفق! اطلاعات با دریافت تاییدیه (200 OK) در دیتابیس ابری ذخیره شد.");
+            viewSystemFactor(currentDocId);
+        } catch(e) {
+            hideUploadProgress();
+            alert("❌ خطا در ثبت دیتابیس: " + e.message + "\n\nاطلاعات فرم پاک نشد! لطفاً پس از رفع مشکل مجدداً دکمه ثبت نهایی را بزنید.");
+        }
+    };
+
+    window.finalizeExitDoc = async function() {
+        let cust = document.getElementById('outCustomer').value || "مشتری نامشخص";
+        let defaultWh = document.getElementById('outWarehouseSelect').value;
+        if(!defaultWh) return alert("انبار پیش‌فرض مبدأ انتخاب نشده است.");
+        let isScanNow = document.getElementById('outScanNowToggle').checked;
+
+        if (!isScanNow && outRequirements.length === 0) return alert("❌ فرم سفارش‌برداری خالی است!");
+        if (isScanNow && draftExitItems.length === 0) return alert("❌ هیچ کالایی اسکن نشده است.");
+
+        showUploadProgress(50, "در حال بررسی موجودی و ثبت قطعی...");
+
+        let currentDocId = editingExitDocId ? editingExitDocId : generateUniqueDocId();
+        let dateStr = new Date().toLocaleString('fa-IR'); 
+
+        let newItems = [];
+        if (!isScanNow) {
+            newItems = outRequirements.map(req => { 
+                let c = Math.floor(req.reqPieces / req.uPerCarton), l = req.reqPieces % req.uPerCarton;
+                return {
+                    docId: currentDocId, officeDoc: document.getElementById('outOfficeDoc').value || "بدون شماره",
+                    date: dateStr, type: 'خروج', pCode: req.pCode, batch: "در انتظار", rawBarcode: "سفارش ثبت شده",
+                    qtyCarton: c, qtyLoose: l, totalPieces: req.reqPieces, warehouse: req.wh || defaultWh,
+                    ref: cust, operator: currentUser ? currentUser.name : "نامشخص", dispatchStatus: 'pending'
+                };
+            });
+        } else {
+            newItems = draftExitItems.map(item => ({
+                docId: currentDocId, officeDoc: document.getElementById('outOfficeDoc').value || "بدون شماره",
+                date: dateStr, type: 'خروج', pCode: item.pCode, batch: item.batch, rawBarcode: item.raw,
+                qtyCarton: item.qtyCarton, qtyLoose: item.qtyLoose, totalPieces: item.totalPieces,
+                warehouse: item.wh || defaultWh, ref: cust, operator: currentUser ? currentUser.name : "نامشخص", dispatchStatus: 'done'
+            }));
         }
 
         try {
-            await fetch(`${DB_URL}/api/document?company=${payload.companyTarget || companyPrefix}`, {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ docId: String(docId) })
+            // منتظر تایید قطعی 200
+            await syncSingleDocToServerStrict(currentDocId, newItems);
+            hideUploadProgress();
+
+            historyLog = historyLog.filter(t => String(t.docId) !== String(currentDocId));
+            historyLog.push(...newItems);
+            saveData();
+            if(typeof updateTodayCounter === 'function') updateTodayCounter();
+
+            draftExitItems = []; editingExitDocId = null; outRequirements = [];
+            ['outOfficeDoc','outCustomer','outBarcode','outCartonQty','outLooseQty','outTotalPiecesOnly','reqTotalPieces'].forEach(id=>{
+                const el = document.getElementById(id); 
+                if(el) el.value = (id==='outCartonQty' ? '1' : (id==='outLooseQty' ? '0' : ''));
             });
-
-            const res = await fetch(`${DB_URL}/api/document?company=${payload.companyTarget || companyPrefix}`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
-            });
-            if(!res.ok) throw new Error("خطای سرور یا محدودیت روزانه");
-        } catch(e) { 
-            console.warn('انتقال سند به صف آفلاین...', e); 
-            const exists = window.offlineDocQueue.find(p => p.docId === payload.docId);
-            if(!exists) { window.offlineDocQueue.push(payload); window.saveOfflineQueue(); }
-            let statusDiv = document.getElementById("cloudStatus");
-            if(statusDiv) { statusDiv.innerText = `⚠️ ذخیره آفلاین (${window.offlineDocQueue.length})`; statusDiv.style.background = "#ef4444"; }
+            const outInfo = document.getElementById('outBarcodeInfo'); if(outInfo) outInfo.innerText = '';
+            renderRequirements(); renderDrafts();
+            
+            alert("✅ ثبت موفق! حواله با دریافت تاییدیه دیتابیس ابری ذخیره شد.");
+            viewSystemFactor(currentDocId);
+        } catch(e) {
+            hideUploadProgress();
+            alert("❌ خطا در ثبت دیتابیس: " + e.message + "\n\nاطلاعات فرم پاک نشد! لطفاً پس از رفع مشکل مجدداً دکمه ثبت نهایی را بزنید.");
         }
     };
-
-    const originalFinalizeEntry = window.finalizeEntryDoc;
-    window.finalizeEntryDoc = async function() {
-        const editId = editingEntryDocId;
-        originalFinalizeEntry();
-        let targetDocId = editId || (historyLog.length > 0 ? historyLog[historyLog.length - 1].docId : null);
-        if (targetDocId) {
-            let newDocs = historyLog.filter(log => String(log.docId) === String(targetDocId));
-            if(newDocs.length > 0) await syncSingleDocToServer(targetDocId, newDocs);
-        }
-    };
-
-    const originalFinalizeExit = window.finalizeExitDoc;
-    window.finalizeExitDoc = async function() {
-        const editId = editingExitDocId;
-        originalFinalizeExit(); 
-        let targetDocId = editId || (historyLog.length > 0 ? historyLog[historyLog.length - 1].docId : null);
-        if (targetDocId) {
-            let newDocs = historyLog.filter(log => String(log.docId) === String(targetDocId));
-            if(newDocs.length > 0) await syncSingleDocToServer(targetDocId, newDocs);
-        }
-    };
-
     // ۶. حذف عکس رسید
     window.deleteReceipt = async function(docId, event) {
         if(event) event.stopPropagation();
