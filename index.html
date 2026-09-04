@@ -1659,56 +1659,71 @@ function uploadLocalToCloud() {
 
         function saveData() {
             if (saveInProgress) { saveQueued = true; return; }
-            saveInProgress = true; 
+            saveInProgress = true;
             saveQueued = false;
+
             try {
+                // موجودی همیشه از historyLog محاسبه می‌شود و نباید برای هر تغییر
+                // دوباره کل تاریخچه به سرور ارسال شود.
                 rebuildInventory();
                 updateLocalCacheOnly();
 
                 const statusDiv = document.getElementById('cloudStatus');
-                if (statusDiv) { 
-                    statusDiv.innerText = '⏳ در حال ذخیره در D1...'; 
-                    statusDiv.style.background = 'rgba(59, 130, 246, 0.9)'; 
+                if (statusDiv) {
+                    statusDiv.innerText = '⏳ در حال ذخیره اطلاعات پایه در D1...';
+                    statusDiv.style.background = 'rgba(59, 130, 246, 0.9)';
                 }
-                if (!companyPrefix) { saveInProgress = false; return; }
 
-                const payload = {
+                if (!companyPrefix) {
+                    saveInProgress = false;
+                    return;
+                }
+
+                // مهم: saveData دیگر historyLog/inventory را ارسال نمی‌کند.
+                // اسناد از مسیر /api/document و حذف از مسیر /api/document DELETE ذخیره می‌شوند.
+                const masterPayload = {
                     productsMap,
                     productsUnitsMap,
                     productsWeightMap,
-                    inventory,
-                    historyLog,
                     lastDocNumber,
                     sysSettings,
                     sysUsers
                 };
 
-                fetch(`${DB_URL}/api/save-all?company=${companyPrefix}`, {
-                    method: 'PUT',
+                fetch(`${DB_URL}/api/save-master?company=${encodeURIComponent(companyPrefix)}`, {
+                    method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                }).then(r => {
+                    body: JSON.stringify(masterPayload),
+                    cache: 'no-store'
+                })
+                .then(r => {
                     if (!r.ok) throw new Error('HTTP ' + r.status);
                     if (statusDiv) {
                         statusDiv.innerText = '☁️ آنلاین (D1)';
                         statusDiv.style.background = 'rgba(16, 185, 129, 0.9)';
                     }
-                }).catch(err => {
-                    console.warn('D1 save error:', err);
+                })
+                .catch(err => {
+                    console.warn('D1 master save error:', err);
                     if (statusDiv) {
                         statusDiv.innerText = '⚠️ نسخه محلی';
                         statusDiv.style.background = 'rgba(239, 68, 68, 0.9)';
                     }
-                }).finally(() => {
+                })
+                .finally(() => {
                     saveInProgress = false;
                     if (saveQueued) setTimeout(saveData, 0);
                 });
+
             } catch (err) {
                 console.error(err);
                 saveInProgress = false;
                 saveQueued = false;
             }
-            if (document.getElementById('tab-dashboard')?.style.display === 'block') renderDashboard();
+
+            if (document.getElementById('tab-dashboard')?.style.display === 'block') {
+                renderDashboard();
+            }
         }
         function toggleCS(id, event) {
             if(event) event.stopPropagation();
