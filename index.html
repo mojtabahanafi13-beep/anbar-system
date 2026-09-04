@@ -4918,37 +4918,57 @@ if(typeof updateTodayCounter === 'function') updateTodayCounter();
 
    // ۵. ارسال قطعی و سخت‌گیرانه (تأیید کد 200)
     window.syncSingleDocToServerStrict = async function(docId, docItems) {
+        if (!Array.isArray(docItems) || !docItems.length) {
+            throw new Error("اقلام سند خالی است!");
+        }
+
         const payload = {
             companyTarget: companyPrefix,
-            docId: String(docId), type: docItems[0].type, date: docItems[0].date,
-            officeDoc: docItems[0].officeDoc || 'بدون شماره', ref: docItems[0].ref || '',
-            warehouse: docItems[0].warehouse || '', operator: docItems[0].operator || 'سیستم',
+            docId: String(docId),
+            type: docItems[0].type,
+            date: docItems[0].date,
+            officeDoc: docItems[0].officeDoc || 'بدون شماره',
+            ref: docItems[0].ref || '',
+            warehouse: docItems[0].warehouse || '',
+            operator: docItems[0].operator || 'سیستم',
             dispatchStatus: docItems[0].dispatchStatus || 'done',
-            dispatchDate: docItems[0].dispatchDate || null, 
-            items: docItems.map(i => ({ 
-                pCode: i.pCode, 
-                batch: i.batch || 'نامشخص', 
-                qtyCarton: i.qtyCarton || 0, 
-                qtyLoose: i.qtyLoose || 0, 
-                totalPieces: i.totalPieces, 
-                warehouse: i.warehouse || i.wh || docItems[0].warehouse,
+            dispatchDate: docItems[0].dispatchDate || null,
+            items: docItems.map(i => ({
+                pCode: i.pCode,
+                batch: i.batch || 'نامشخص',
+                qtyCarton: Number(i.qtyCarton) || 0,
+                qtyLoose: Number(i.qtyLoose) || 0,
+                totalPieces: Number(i.totalPieces) || 0,
+                warehouse: i.warehouse || i.wh || docItems[0].warehouse || 'انبار مرکزی',
                 rawBarcode: i.rawBarcode || ''
             }))
         };
 
-        if (!navigator.onLine) throw new Error("ارتباط اینترنت قطع است!");
+        if (!navigator.onLine) {
+            throw new Error("ارتباط اینترنت قطع است!");
+        }
 
-        // حذف نسخه قبلی سرور در صورت ویرایش
-        await fetch(`${DB_URL}/api/document?company=${companyPrefix}`, {
-            method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ docId: String(docId) })
+        // مهم: در ویرایش، دیگر DELETE جداگانه انجام نمی‌دهیم.
+        // endpoint ثبت سند خودش INSERT/REPLACE + DELETE اقلام قبلی + INSERT اقلام جدید
+        // را در یک DB.batch انجام می‌دهد؛ بنابراین اگر ارسال ناموفق شود، سند قبلی حذف نمی‌شود.
+        const res = await fetch(`${DB_URL}/api/document?company=${encodeURIComponent(companyPrefix)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+            cache: 'no-store'
         });
 
-        const res = await fetch(`${DB_URL}/api/document?company=${companyPrefix}`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
-        });
-        
-        if(!res.ok) throw new Error("دیتابیس پاسخ 200 نداد (کد: " + res.status + ")");
-        return true; 
+        let result = null;
+        try { result = await res.json(); } catch (e) {}
+
+        if (!res.ok || !result?.success) {
+            throw new Error(
+                result?.error ||
+                `دیتابیس پاسخ موفق نداد (کد: ${res.status})`
+            );
+        }
+
+        return true;
     };
 
    window.finalizeEntryDoc = async function() {
