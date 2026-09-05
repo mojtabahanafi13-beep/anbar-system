@@ -2164,18 +2164,11 @@ async function deleteReceipt(docId, event) {
         openTab('tab-exit', document.getElementById('tabBtnExit'));
     }
     
-    // ۳. حذف محلی و ارسال دستور حذف به سرور تا نسخه قدیمی در D1 باقی نماند
-    historyLog = historyLog.filter(t => String(t.docId) !== String(docId));
-    rebuildInventory();
-    updateLocalCacheOnly();
+    // ۳. سند قدیمی را فعلاً حذف نمی‌کنیم.
+    // ویرایش در زمان ثبت نهایی با allowReplace=true به‌صورت اتمیک در D1 انجام می‌شود.
+    // این کار جلوگیری می‌کند که در صورت خطای شبکه، سند قبلی از بین برود.
     renderInventory();
     generateCardex();
-
-    fetch(`${DB_URL}/api/document?company=${companyPrefix}`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ docId: String(docId) })
-    }).catch(e => console.warn("خطا در حذف سند قدیمی از سرور:", e));
 }
    
         
