@@ -1232,6 +1232,7 @@
 
         let companyPrefix = '', companyNameStr = '';
         let productsMap = {}, productsUnitsMap = {}, productsWeightMap = {}, inventory = {}, activeBarcodes = {};
+        // historyLog فقط کش سمت مرورگر از /api/init است؛ منبع اصلی اسناد، documents/document_items در D1 است.
         let historyLog = [], sysSettings = {}, sysUsers = [];
         let lastDocNumber = 1000;
         let currentUser = null, selectedLoginIndex = null; 
@@ -1494,7 +1495,8 @@
                 let key = log.pCode + "-" + batch;
                 if(!newInv[key]) newInv[key] = { pCode: log.pCode, batch: batch, stock: {} };
                 if(!Object.prototype.hasOwnProperty.call(newInv[key].stock, wh)) newInv[key].stock[wh] = 0;
-                let pieces = Math.max(0, Number(log.totalPieces) || 0);
+                // مقدار ثبت‌شده باید signed باشد؛ کسری واقعی نباید به صفر تبدیل شود.
+                let pieces = Number(log.totalPieces) || 0;
                 if(log.type === 'ورود' || log.type === 'اول دوره') newInv[key].stock[wh] += pieces;
                 else if(log.type === 'خروج') newInv[key].stock[wh] -= pieces;
             });
@@ -1506,11 +1508,12 @@
             let total = 0;
             (Array.isArray(historyLog) ? historyLog : []).forEach(log => {
                 if(!log || log.pCode !== pCode || (log.warehouse || 'انبار مرکزی') !== wh) return;
-                let pieces = Math.max(0, Number(log.totalPieces) || 0);
+                let pieces = Number(log.totalPieces) || 0;
                 if(log.type === 'ورود' || log.type === 'اول دوره') total += pieces;
                 else if(log.type === 'خروج') total -= pieces;
             });
-            return Math.max(0, total);
+            // موجودی منفی عمداً برگردانده می‌شود تا کسری پنهان نشود.
+            return total;
         }
 
         function getDraftExitStock(pCode, wh) {
@@ -1603,7 +1606,7 @@ async function runSystemHealthCheck() {
         try { localStorage.setItem('__anbar_health_test__','ok'); localStorage.removeItem('__anbar_health_test__'); ok('ذخیره محلی','فعال'); } catch(e){ bad('ذخیره محلی',e.message); }
         if(companyPrefix){ 
             try { 
-                const r=await fetch(`${DB_URL}/api/data?company=${companyPrefix}&t=${Date.now()}`,{cache:'no-store'}); 
+                const r=await fetch(`${DB_URL}/api/init?company=${companyPrefix}&t=${Date.now()}`,{cache:'no-store'}); 
                 if(r.ok) ok('اتصال سرور','HTTP '+r.status+' (متصل به دیتابیس ابری)'); 
                 else bad('اتصال سرور','HTTP '+r.status); 
             } catch(e){ 
@@ -3742,16 +3745,8 @@ function viewSystemFactor(docId) {
         }
 
 async function syncNewDocumentToServer(docItems) {
-    if (!companyPrefix || !navigator.onLine || !docItems || !docItems.length) return;
-    try {
-        await fetch(`${DB_URL}/api/append-doc?company=${companyPrefix}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ items: docItems })
-        });
-    } catch (e) {
-        console.warn('ذخیره همزمان سرور:', e);
-    }
+    // endpoint قدیمی append-doc دیگر استفاده نمی‌شود؛ ثبت قطعی با /api/document انجام می‌شود.
+    return false;
 }
         function renderDrafts() { 
             try {
@@ -3909,11 +3904,11 @@ if(companyPrefix) {
 
             return Object.keys(grouped).map(pCode => {
                 let r = grouped[pCode];
-                // موجودی منفی هرگز نباید در گزارش عادی نمایش داده شود.
-                r.totalPieces = Math.max(0, Math.round(r.totalPieces));
-                r.totalWeight = getWeight(pCode, r.totalPieces);
+                // موجودی منفی باید دیده شود تا خطای موجودی پنهان نشود.
+                r.totalPieces = Math.round(r.totalPieces);
+                r.totalWeight = r.totalPieces >= 0 ? getWeight(pCode, r.totalPieces) : 0;
                 return {pCode, ...r};
-            }).filter(r => r.totalPieces > 0);
+            }).filter(r => r.totalPieces !== 0);
         }
 
         function renderInventory(){
@@ -3923,14 +3918,24 @@ if(companyPrefix) {
                 let tbody=document.getElementById('inventoryTable'), rows=getInventoryRowsForExport();
                 rows.sort((a,b)=>{ const aa=String(a.pCode??'').trim(), bb=String(b.pCode??'').trim(); const na=Number(aa.replace(/[^0-9.\-]/g,'')), nb=Number(bb.replace(/[^0-9.\-]/g,'')); if(Number.isFinite(na)&&Number.isFinite(nb)&&na!==nb) return na-nb; return aa.localeCompare(bb, undefined, {numeric:true,sensitivity:'base'}); });
                 tbody.innerHTML=rows.map(prod=>{
-                    let u=Math.max(1, prod.units||1), total=Math.max(0, prod.totalPieces), c=Math.floor(total/u), l=total%u;
-                    return `<tr class="group-row">
+                    let u=Math.max(1, prod.units||1), total=Number(prod.totalPieces)||0;
+                    let isNegative = total < 0;
+                    let absTotal = Math.abs(total);
+                    let c = Math.floor(absTotal/u);
+                    let l = absTotal%u;
+                    let qtyMain = isNegative
+                        ? `⚠️ کسری ${absTotal.toLocaleString('fa-IR')} عدد`
+                        : `${total.toLocaleString('fa-IR')} عدد`;
+                    let qtyBreakdown = isNegative
+                        ? '⛔ موجودی منفی — نیاز به بررسی سند'
+                        : `${c.toLocaleString('fa-IR')} کارتن${l ? ` و ${l.toLocaleString('fa-IR')} عدد خرد` : ''}`;
+                    return `<tr class="group-row" style="${isNegative ? 'background:#fff1f2;' : ''}">
                         <td style="font-weight:900;text-align:right;"><span style="font-size:10px;color:var(--primary);font-family:monospace;background:#eff6ff;padding:2px 4px;border-radius:4px;">${prod.pCode}</span><br>${prod.name}</td>
                         <td>${u} عددی</td>
                         <td dir="rtl" style="text-align:right;">
-                            <div class="qty-primary" style="font-weight:900;font-size:16px;">${total.toLocaleString('fa-IR')} عدد</div>
-                            <div class="qty-secondary" style="font-weight:700;margin-top:3px;">${c.toLocaleString('fa-IR')} کارتن${l ? ` و ${l.toLocaleString('fa-IR')} عدد خرد` : ''}</div>
-                            <div class="qty-weight" style="margin-top:3px;">${prod.totalWeight>0 ? prod.totalWeight.toLocaleString('fa-IR',{maximumFractionDigits:2})+' کیلوگرم' : '۰ کیلوگرم'}</div>
+                            <div class="qty-primary" style="font-weight:900;font-size:16px;${isNegative ? 'color:var(--danger);' : ''}">${qtyMain}</div>
+                            <div class="qty-secondary" style="font-weight:700;margin-top:3px;${isNegative ? 'color:var(--danger);' : ''}">${qtyBreakdown}</div>
+                            <div class="qty-weight" style="margin-top:3px;">${(!isNegative && prod.totalWeight>0) ? prod.totalWeight.toLocaleString('fa-IR',{maximumFractionDigits:2})+' کیلوگرم' : '۰ کیلوگرم'}</div>
                         </td></tr>`;
                 }).join('')||'<tr><td colspan="3">موردی مطابق فیلتر پیدا نشد.</td></tr>';
             }catch(e){console.error("Inventory error",e);}
@@ -4917,12 +4922,13 @@ if(typeof updateTodayCounter === 'function') updateTodayCounter();
     };
 
    // ۵. ارسال قطعی و سخت‌گیرانه (تأیید کد 200)
-    window.syncSingleDocToServerStrict = async function(docId, docItems) {
+    window.syncSingleDocToServerStrict = async function(docId, docItems, allowReplace = false) {
         if (!Array.isArray(docItems) || !docItems.length) {
             throw new Error("اقلام سند خالی است!");
         }
 
         const payload = {
+            allowReplace: allowReplace === true,
             companyTarget: companyPrefix,
             docId: String(docId),
             type: docItems[0].type,
@@ -4962,6 +4968,17 @@ if(typeof updateTodayCounter === 'function') updateTodayCounter();
         try { result = await res.json(); } catch (e) {}
 
         if (!res.ok || !result?.success) {
+            if (result?.error === 'DOC_ID_EXISTS') {
+                throw new Error('شماره سند تکراری است؛ سند جدید ذخیره نشد.');
+            }
+
+            if (result?.error === 'INSUFFICIENT_STOCK') {
+                throw new Error(
+                    result?.message ||
+                    'موجودی کافی نیست؛ ثبت سند انجام نشد.'
+                );
+            }
+
             throw new Error(
                 result?.error ||
                 `دیتابیس پاسخ موفق نداد (کد: ${res.status})`
@@ -4995,7 +5012,7 @@ if(typeof updateTodayCounter === 'function') updateTodayCounter();
 
         try {
             // منتظر تایید 200 از سرور می‌ماند (متغیرها اصلاح شدند)
-            await syncSingleDocToServerStrict(currentDocId, newItems);
+            await syncSingleDocToServerStrict(currentDocId, newItems, Boolean(editingEntryDocId));
             hideUploadProgress();
 
             // فقط در صورت تایید سرور، اطلاعات روی گوشی ثبت و فرم پاک می‌شود
@@ -5052,7 +5069,7 @@ if(typeof updateTodayCounter === 'function') updateTodayCounter();
 
         try {
             // منتظر تایید قطعی 200 (متغیرها اصلاح شدند)
-            await syncSingleDocToServerStrict(currentDocId, newItems);
+            await syncSingleDocToServerStrict(currentDocId, newItems, Boolean(editingExitDocId));
             hideUploadProgress();
 
             historyLog = historyLog.filter(t => String(t.docId) !== String(currentDocId));
@@ -5126,7 +5143,7 @@ if(typeof updateTodayCounter === 'function') updateTodayCounter();
             let updatedDocs = historyLog.filter(log => String(log.docId) === String(targetDocId));
             if(updatedDocs.length > 0) {
                 updatedDocs.forEach(d => { d.dispatchStatus = 'done'; d.dispatchDate = new Date().toLocaleString('fa-IR'); });
-                await syncSingleDocToServerStrict(targetDocId, updatedDocs);
+                await syncSingleDocToServerStrict(targetDocId, updatedDocs, true);
             }
         }
     };
@@ -5139,7 +5156,7 @@ if(typeof updateTodayCounter === 'function') updateTodayCounter();
             let updatedDocs = historyLog.filter(log => String(log.docId) === String(targetDocId));
             if(updatedDocs.length > 0) {
                 updatedDocs.forEach(d => { d.dispatchStatus = 'done'; d.dispatchDate = new Date().toLocaleString('fa-IR'); });
-                await syncSingleDocToServerStrict(targetDocId, updatedDocs);
+                await syncSingleDocToServerStrict(targetDocId, updatedDocs, true);
             }
         }
     };
