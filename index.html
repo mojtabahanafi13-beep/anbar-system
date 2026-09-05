@@ -1504,10 +1504,12 @@
             return inventory;
         }
 
-        function getActualStock(pCode, wh) {
+        function getActualStock(pCode, wh, excludeDocId = null) {
             let total = 0;
+            const excluded = excludeDocId == null ? null : String(excludeDocId);
             (Array.isArray(historyLog) ? historyLog : []).forEach(log => {
                 if(!log || log.pCode !== pCode || (log.warehouse || 'انبار مرکزی') !== wh) return;
+                if(excluded !== null && String(log.docId) === excluded) return;
                 let pieces = Number(log.totalPieces) || 0;
                 if(log.type === 'ورود' || log.type === 'اول دوره') total += pieces;
                 else if(log.type === 'خروج') total -= pieces;
@@ -3340,7 +3342,7 @@ function viewSystemFactor(docId) {
                 return alert("❌ تعداد سفارش را به درستی وارد کنید."); 
             }
             
-            let totalStock = getActualStock(pCode, wh);
+            let totalStock = getActualStock(pCode, wh, editingExitDocId);
 
             let existing = outRequirements.find(r => r.pCode === pCode); 
             let currentReq = existing ? existing.reqPieces : 0;
@@ -3371,7 +3373,7 @@ function viewSystemFactor(docId) {
             container.innerHTML=outRequirements.map((req,idx)=>{
                 let c=Math.floor(req.reqPieces/req.uPerCarton),l=req.reqPieces%req.uPerCarton;tC+=c;tL+=l;tP+=req.reqPieces;tW+=getWeight(req.pCode,req.reqPieces);
                 return `<div class="req-item"><div style="flex:1;"><b>${req.name}</b><br><span class="qty-primary">${getPersianQtyStr(c,l)}</span> <span class="qty-secondary">| کل: ${req.reqPieces} عدد</span> <span class="qty-weight">${formatWeight(getWeight(req.pCode,req.reqPieces))}</span>
-                <div style="margin-top:6px;"><span style="font-size:10px;font-weight:900;">انبار مبدأ: </span><select class="item-wh-select" onchange="const old=outRequirements[${idx}].wh; this.value=this.value; outRequirements[${idx}].wh=this.value; if(getActualStock(outRequirements[${idx}].pCode,this.value)<outRequirements[${idx}].reqPieces){alert('⛔ موجودی این کالا در انبار انتخابی کافی نیست.'); outRequirements[${idx}].wh=old||document.getElementById('outWarehouseSelect').value;} renderRequirements();">${warehouseOptions(req.wh||document.getElementById('outWarehouseSelect').value)}</select></div>
+                <div style="margin-top:6px;"><span style="font-size:10px;font-weight:900;">انبار مبدأ: </span><select class="item-wh-select" onchange="const old=outRequirements[${idx}].wh; this.value=this.value; outRequirements[${idx}].wh=this.value; if(getActualStock(outRequirements[${idx}].pCode,this.value,editingExitDocId)<outRequirements[${idx}].reqPieces){alert('⛔ موجودی این کالا در انبار انتخابی کافی نیست.'); outRequirements[${idx}].wh=old||document.getElementById('outWarehouseSelect').value;} renderRequirements();">${warehouseOptions(req.wh||document.getElementById('outWarehouseSelect').value)}</select></div>
                 <span style="font-size:11px;color:var(--text-muted);">اسکن شده: <b style="color:var(--danger);">${req.scannedPieces}</b> عدد</span></div>
                 <button style="width:auto;padding:4px 8px;font-size:11px;background:var(--danger);color:#fff;" onclick="outRequirements.splice(${idx},1);renderRequirements();">حذف</button></div>`;
             }).join('');
@@ -3585,7 +3587,7 @@ function viewSystemFactor(docId) {
                     } 
                 } 
                 
-                let exactStock = getActualStock(pCode, wh), bestBatch = batch;
+                let exactStock = getActualStock(pCode, wh, editingExitDocId), bestBatch = batch;
                 for(let k in inventory) {
                     if(inventory[k].pCode === pCode && (inventory[k].stock[wh] || 0) > 0) { bestBatch = inventory[k].batch; break; }
                 }
@@ -3628,7 +3630,7 @@ function viewSystemFactor(docId) {
                     for (let req of outRequirements) {
                         let wh = req.wh || defaultWh, key = req.pCode + '|' + wh;
                         let already = reserved[key] || 0;
-                        let available = Math.max(0, getActualStock(req.pCode, wh) - already);
+                        let available = Math.max(0, getActualStock(req.pCode, wh, editingExitDocId) - already);
                         let requested = Number(req.reqPieces || 0);
                         if (available < requested) {
                             playBeep('error');
@@ -3642,7 +3644,7 @@ function viewSystemFactor(docId) {
                     for (let item of draftExitItems) {
                         let wh = item.wh || defaultWh, key = item.pCode + '|' + wh;
                         let already = reserved[key] || 0;
-                        let available = Math.max(0, getActualStock(item.pCode, wh) - already);
+                        let available = Math.max(0, getActualStock(item.pCode, wh, editingExitDocId) - already);
                         let requested = Number(item.totalPieces || 0);
                         if (available < requested) {
                             playBeep('error');
@@ -5166,7 +5168,7 @@ if(typeof updateTodayCounter === 'function') updateTodayCounter();
         if(!pCode || !productsMap[pCode]) { return alert("❌ کد یا نام کالا اشتباه است!"); }
         if(reqP <= 0) { return alert("❌ تعداد سفارش را به درستی وارد کنید."); }
         
-        let totalStock = getActualStock(pCode, wh);
+        let totalStock = getActualStock(pCode, wh, editingExitDocId);
         let existing = outRequirements.find(r => r.pCode === pCode && r.wh === wh); 
         let currentReq = existing ? existing.reqPieces : 0;
         
