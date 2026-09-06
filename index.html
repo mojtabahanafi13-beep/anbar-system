@@ -371,50 +371,40 @@
         #dispatch-reader { height:180px !important; max-height:180px !important; }
         #dispatch-reader video { width:100% !important; height:180px !important; max-height:180px !important; object-fit:cover !important; }
         
-/* ===== UI REDESIGN: Documents & Cardex ===== */
-#tab-cardex { padding:12px !important; }
-#tab-cardex h2 { margin-bottom:10px !important; }
-#tab-cardex .card { border-radius:12px !important; padding:12px !important; margin-bottom:10px !important; }
-#tab-cardex #cardexModeSelectorCard { display:flex !important; align-items:center; justify-content:space-between; gap:10px; }
-#tab-cardex #cardexModeSelectorCard .radio-group { flex:1; }
-#tab-cardex #cardexFilterCard { display:grid !important; grid-template-columns:minmax(0,1fr) auto; gap:8px !important; align-items:center; }
-#tab-cardex #cardexFilterCard .responsive-grid { grid-column:1/-1; margin:0 !important; }
-#tab-cardex #cardexFilterCard .radio-group { margin:0 !important; }
-#tab-cardex #cardexFilterCard > button { margin:0 !important; height:42px !important; width:auto !important; }
-#tab-cardex .cardex-toolbar-note { font-size:11px; color:var(--text-muted); }
-#tab-cardex .cardex-main-table, #tab-cardex .cardex-item-table { border-radius:10px !important; }
-#tab-cardex table th { font-size:11px !important; padding:9px 7px !important; }
-#tab-cardex table td { font-size:11px !important; padding:8px 7px !important; }
-#tab-cardex .group-row td { border-bottom:1px solid #e2e8f0 !important; }
-#tab-cardex .detail-row td { padding:7px 10px !important; }
-#tab-cardex .item-cardex-summary { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:0 0 10px; }
-#tab-cardex .item-cardex-summary > div { background:#fff; border:1px solid var(--border); border-radius:10px; padding:9px; text-align:center; }
-#tab-cardex .item-cardex-summary b { display:block; font-size:16px; margin-top:2px; }
-#tab-cardex .item-cardex-summary span { font-size:10px; color:var(--text-muted); }
+/* ===== Redesigned Documents & Cardex ===== */
+.redesigned-records-tab{padding-top:14px!important}
+.records-header{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:14px;padding:14px 16px;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:0 3px 12px rgba(15,23,42,.05)}
+.records-header h2{border:0;margin:0;font-size:19px;padding:0;color:var(--dark)}
+.records-subtitle{font-size:11px;color:var(--text-muted);margin-top:4px}
+.records-mode-switch{display:flex;gap:6px;background:#f1f5f9;padding:4px;border-radius:10px}
+.records-mode-btn{width:auto!important;margin:0!important;padding:9px 14px!important;border:0!important;border-radius:8px!important;background:transparent!important;color:#475569!important;font-size:12px!important;cursor:pointer}
+.records-mode-btn.active{background:#fff!important;color:var(--primary)!important;box-shadow:0 2px 7px rgba(15,23,42,.10)!important;font-weight:900}
+.records-search-panel{background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px;box-shadow:0 2px 10px rgba(15,23,42,.03)}
+.records-search-main{display:flex;align-items:center;gap:8px;border:2px solid #cbd5e1;border-radius:10px;padding:3px 4px 3px 12px;background:#fff}
+.records-search-main:focus-within{border-color:var(--primary);box-shadow:0 0 0 3px rgba(37,99,235,.10)}
+.records-search-icon{font-size:16px;opacity:.7}
+.records-search-main input{border:0!important;box-shadow:none!important;margin:0!important;min-width:0;padding:9px 6px!important;background:transparent!important}
+.records-search-btn{width:auto!important;margin:0!important;padding:9px 18px!important;background:var(--primary)!important;border-radius:8px!important;font-size:12px!important;white-space:nowrap}
+.records-filters-row{display:flex;align-items:center;gap:10px;margin-top:9px;flex-wrap:wrap}
+.records-filter-group{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:900;color:#475569;white-space:nowrap}
+.records-filter-group label{display:inline-flex;align-items:center;gap:4px;padding:5px 8px;border-radius:7px;background:#f8fafc;border:1px solid #e2e8f0;cursor:pointer}
+.records-filter-group input{width:auto!important;margin:0!important;padding:0!important}
+.records-target-filter{min-width:220px;flex:1}.records-target-filter input{margin:0!important;padding:8px 10px!important;font-size:12px!important}
+.records-excel-btn{width:auto!important;margin:0!important;padding:8px 12px!important;background:#059669!important;font-size:11px!important}
+.records-summary-bar{display:flex;justify-content:space-between;align-items:center;margin:8px 2px;font-size:11px;color:var(--text-muted)}
+.records-summary-help{font-size:10px}
+.records-table-shell{border:1px solid var(--border);border-radius:12px;background:#fff;overflow:auto;max-height:62vh;box-shadow:0 2px 10px rgba(15,23,42,.03)}
+.records-table{width:100%!important;min-width:860px;border-collapse:separate!important;border-spacing:0!important;font-size:12px!important}
+.records-table thead th{position:sticky;top:0;z-index:8;background:#f8fafc!important;border-bottom:2px solid #cbd5e1!important;padding:10px 8px!important;color:#334155!important;white-space:nowrap}
+.records-table tbody td{padding:8px 7px!important;border-bottom:1px solid #eef2f7!important;vertical-align:middle}
+.records-table tbody tr.group-row:hover{background:#f8fbff!important}
+.records-table .records-actions-col{width:108px}
+.record-main-title{font-weight:900;font-size:12px;color:#0f172a}.record-meta{font-size:10px;color:#64748b;margin-top:3px}.record-qty{font-weight:900;font-size:13px}.record-pill{display:inline-block;padding:3px 7px;border-radius:6px;font-weight:900;font-size:10px}.record-origin{font-size:10px;color:#475569;line-height:1.5}.record-actions{display:flex;justify-content:center;gap:4px;flex-wrap:wrap}.record-icon-btn{width:31px!important;height:30px!important;padding:0!important;margin:0!important;border-radius:7px!important;font-size:13px!important;background:#f1f5f9!important;color:#334155!important;border:1px solid #e2e8f0!important}.record-icon-btn:hover{background:#e2e8f0!important}
+.record-menu{position:fixed;z-index:100000;background:#fff;border:1px solid var(--border);border-radius:9px;box-shadow:0 12px 35px rgba(15,23,42,.18);padding:5px;min-width:175px}.record-menu button{width:100%!important;margin:0!important;padding:8px 10px!important;border:0!important;background:#fff!important;color:#334155!important;text-align:right!important;justify-content:flex-start!important;font-size:11px!important}.record-menu button:hover{background:#f8fafc!important}.record-menu .danger{color:#dc2626!important}.records-empty{padding:28px!important;text-align:center!important;color:var(--text-muted)!important}
+.detail-row.doc-det-modern{background:#fbfdff!important}.detail-modern-box{padding:8px 14px}.detail-modern-head{display:flex;justify-content:space-between;gap:10px;align-items:center}.detail-modern-name{font-weight:900;color:#0f172a}.detail-modern-meta{font-size:10px;color:#64748b}.detail-modern-right{text-align:left;font-size:11px;font-weight:900}.detail-modern-bottom{display:flex;justify-content:space-between;gap:10px;margin-top:5px;font-size:10px;color:#64748b}
+.item-cardex-search{background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:14px;margin-bottom:10px}.item-cardex-title{display:flex;align-items:center;gap:10px;margin-bottom:10px}.item-cardex-icon{width:38px;height:38px;border-radius:10px;background:#ffedd5;display:flex;align-items:center;justify-content:center;font-size:18px}.item-cardex-title b{display:block;color:#7c2d12;font-size:14px}.item-cardex-title span{display:block;color:#9a3412;font-size:10px;margin-top:3px}.item-cardex-autocomplete input{margin:0!important}.item-cardex-actions{display:flex;gap:8px;margin-top:9px}.item-cardex-actions button{margin:0!important;font-size:11px!important}.item-cardex-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}.item-cardex-stat{background:#fff;border:1px solid var(--border);border-radius:10px;padding:9px 11px}.item-cardex-stat small{display:block;color:var(--text-muted);font-size:10px}.item-cardex-stat strong{display:block;font-size:16px;margin-top:3px;color:var(--dark)}
+@media(max-width:700px){.records-header{flex-direction:column;align-items:stretch}.records-mode-switch{width:100%}.records-mode-btn{flex:1}.records-search-main input{font-size:12px!important}.records-search-btn{padding:9px 12px!important}.records-target-filter{min-width:100%}.records-excel-btn{width:100%!important}.item-cardex-actions{display:grid;grid-template-columns:1fr}.item-cardex-summary{grid-template-columns:1fr 1fr}.records-table-shell{max-height:61vh}}
 
-/* Documents page */
-#tab-documents { padding:12px !important; }
-#tab-documents h2 { margin-bottom:10px !important; }
-#tab-documents .card { border-radius:12px !important; padding:10px !important; margin-bottom:10px !important; }
-#tab-documents .documents-toolbar { display:grid; grid-template-columns:minmax(0,1fr) auto auto; gap:8px; align-items:center; }
-#tab-documents .documents-toolbar input { margin:0 !important; min-height:42px !important; }
-#tab-documents .documents-toolbar button { width:auto !important; margin:0 !important; min-height:42px !important; padding:8px 12px !important; }
-#tab-documents .documents-summary { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
-#tab-documents .documents-summary > span { background:#f8fafc; border:1px solid #e2e8f0; border-radius:999px; padding:5px 9px; font-size:10px; font-weight:900; }
-#tab-documents table th { padding:8px 6px !important; font-size:10px !important; }
-#tab-documents table td { padding:8px 6px !important; font-size:10.5px !important; }
-#tab-documents .group-row { box-shadow:inset 0 -1px 0 #e2e8f0; }
-#tab-documents .group-row > td:last-child button { min-height:30px !important; }
-#tab-documents .detail-row { background:#f8fafc !important; }
-#tab-documents .detail-row td { padding:6px 10px !important; }
-@media(max-width:700px){
-  #tab-cardex #cardexFilterCard { grid-template-columns:1fr !important; }
-  #tab-cardex #cardexFilterCard > button { width:100% !important; }
-  #tab-cardex .item-cardex-summary { grid-template-columns:1fr 1fr 1fr; gap:5px; }
-  #tab-documents .documents-toolbar { grid-template-columns:1fr 1fr; }
-  #tab-documents .documents-toolbar input { grid-column:1/-1; }
-  #tab-documents .documents-toolbar button { width:100% !important; }
-}
 </style>
 </head>
 <body>
@@ -925,44 +915,58 @@
                 </div>
             </div>
 
-            <!-- تب اسناد و کاردکس -->
-            <div id="tab-cardex" class="tab-content">
-                <h2 style="font-size:18px;" id="cardexTitleLabel">📋 اسناد و کاردکس کالاها</h2>
-                <div class="card" id="cardexModeSelectorCard" style="padding: 12px; margin-bottom: 15px;">
-                    <div class="radio-group" onchange="toggleCardexView()">
-                        <label class="radio-label"><input type="radio" name="cardexMode" value="docs" checked> 📄 تاریخچه اسناد</label>
-                        <label class="radio-label"><input type="radio" name="cardexMode" value="item"> 📦 کاردکس حرفه‌ای کالا</label>
+            <!-- تب اسناد و کاردکس - طراحی ساده و حرفه‌ای -->
+            <div id="tab-cardex" class="tab-content redesigned-records-tab">
+                <div class="records-header">
+                    <div>
+                        <h2 id="cardexTitleLabel">📋 اسناد و کاردکس</h2>
+                        <div class="records-subtitle">جستجو، مشاهده و پیگیری گردش انبار</div>
+                    </div>
+                    <div class="records-mode-switch">
+                        <button type="button" class="records-mode-btn active" id="recordsModeDocsBtn" onclick="switchRecordsMode('docs')">📄 اسناد</button>
+                        <button type="button" class="records-mode-btn" id="recordsModeItemBtn" onclick="switchRecordsMode('item')">📦 کاردکس کالا</button>
                     </div>
                 </div>
 
                 <div id="cardexDocsView">
-                    <div class="card" id="cardexFilterCard" style="background: #f1f5f9; padding:15px;">
-                        <div class="radio-group" onchange="generateCardex()" style="margin-bottom:10px;">
-                            <label class="radio-label"><input type="radio" name="filType" value="all" checked> همه</label>
-                            <label class="radio-label"><input type="radio" name="filType" value="ورود"> ورود</label>
-                            <label class="radio-label"><input type="radio" name="filType" value="اول دوره"> اول دوره</label>
-                            <label class="radio-label"><input type="radio" name="filType" value="خروج"> خروج</label>
+                    <div class="records-search-panel">
+                        <div class="records-search-main">
+                            <span class="records-search-icon">🔎</span>
+                            <input type="text" id="cardexBarcode" placeholder="شماره فاکتور، سند، کالا، بچ یا بارکد را جستجو کنید..." oninput="generateCardex()" onkeydown="if(event.key==='Enter') generateCardex()">
+                            <button type="button" class="records-search-btn" onclick="generateCardex()">جستجو</button>
                         </div>
-<div class="responsive-grid" style="margin-bottom:10px;">
-    <div class="autocomplete-wrapper"><input type="text" id="filterDocTarget" placeholder="فیلتر مشتری یا انبار..." onkeyup="filterTargets(this, 'dl-targets')" onfocus="filterTargets(this, 'dl-targets')" onkeydown="focusNext(event, 'cardexBarcode')"><div id="dl-targets" class="autocomplete-list"></div></div>
-    <div class="input-group" style="margin:0;">
-        <input type="text" id="cardexBarcode" placeholder="جستجوی شماره سند، کالا، بچ یا بارکد..." oninput="generateCardex()" onkeydown="if(event.key==='Enter') generateCardex()">
-        <button class="btn-blue" style="width:50px; margin:0;" onclick="generateCardex()">🔍</button>
-    </div>
-</div>
-                        <button class="btn-green" style="margin-top:10px;" onclick="exportToExcel()">📊 خروجی اکسل کامل</button>
+                        <div class="records-filters-row">
+                            <div class="records-filter-group">
+                                <span>نوع:</span>
+                                <label><input type="radio" name="filType" value="all" checked onchange="generateCardex()"> همه</label>
+                                <label class="entry-filter"><input type="radio" name="filType" value="ورود" onchange="generateCardex()"> ورود</label>
+                                <label class="entry-filter"><input type="radio" name="filType" value="اول دوره" onchange="generateCardex()"> اول دوره</label>
+                                <label class="exit-filter"><input type="radio" name="filType" value="خروج" onchange="generateCardex()"> خروج</label>
+                            </div>
+                            <div class="records-target-filter autocomplete-wrapper">
+                                <input type="text" id="filterDocTarget" placeholder="مشتری / انبار" onkeyup="filterTargets(this, 'dl-targets')" onfocus="filterTargets(this, 'dl-targets')" onkeydown="focusNext(event, 'cardexBarcode')">
+                                <div id="dl-targets" class="autocomplete-list"></div>
+                            </div>
+                            <button type="button" class="records-excel-btn" onclick="exportToExcel()">📊 خروجی اکسل</button>
+                        </div>
                     </div>
-                    <div class="table-responsive cardex-main-table" style="max-height: 65vh;">
-                        <table>
+
+                    <div class="records-summary-bar">
+                        <div><b id="recordsVisibleCount">۰</b> سند نمایش داده می‌شود</div>
+                        <div class="records-summary-help">برای دیدن جزئیات، روی سند بزنید</div>
+                    </div>
+
+                    <div class="records-table-shell">
+                        <table class="records-table">
                             <thead>
                                 <tr>
-                                    <th>سند</th>
-                                    <th>فاکتور/کاربر</th>
+                                    <th>سند / فاکتور</th>
                                     <th>تاریخ</th>
-                                    <th>نوع / وضعیت</th>
-                                    <th>مبدأ/مقصد</th>
-                                    <th>اقلام</th>
-                                    <th>عملیات</th>
+                                    <th>نوع</th>
+                                    <th>مبدأ</th>
+                                    <th>مقصد</th>
+                                    <th>مقدار</th>
+                                    <th class="records-actions-col">عملیات</th>
                                 </tr>
                             </thead>
                             <tbody id="cardexTable"></tbody>
@@ -970,37 +974,40 @@
                     </div>
                 </div>
 
-              <div id="cardexItemView" style="display:none;">
-    <div class="card" style="background: #fffbeb; padding:15px; border-color:#fde68a;">
-        <div class="autocomplete-wrapper">
-            <input type="text" id="itemCardexSelect" placeholder="🔍 جستجوی نام یا کد کالا..." onkeyup="filterProds(this, 'dl-cardex-prods')" onfocus="filterProds(this, 'dl-cardex-prods')">
-            <div id="dl-cardex-prods" class="autocomplete-list"></div>
-        </div>
-        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:10px; margin-top:12px;">
-            <button class="btn-blue" style="margin:0;" onclick="generateItemCardex()">👁️ مشاهده کاردکس</button>
-            <button class="btn-green" style="margin:0;" onclick="exportItemCardexExcel()">📥 دانلود اکسل این کالا</button>
-            <button class="btn-green" style="margin:0; background:#047857;" onclick="exportAllProductsCardexExcel()">📊 دانلود کاردکس کل کالاها (یکجا)</button>
-        </div>
-    </div>
-    <div class="table-responsive cardex-item-table" style="max-height:60vh;">
-        <table>
-            <thead>
-                <tr>
-                    <th>تاریخ</th>
-                    <th>سند / فاکتور</th>
-                    <th>عملیات / شخص</th>
-                    <th>وارده</th>
-                    <th>صادره</th>
-                    <th>موجودی</th>
-                </tr>
-            </thead>
-      <tbody id="itemCardexTable">
-                <tr><td colspan="6">کالایی انتخاب نشده است.</td></tr>
-            </tbody>
-        </table>
-    </div>
-</div>
-</div> <!-- 👈 این تگ بسته شدن تب کاردکس را دقیقاً اینجا اضافه کنید -->
+                <div id="cardexItemView" style="display:none;">
+                    <div class="item-cardex-search">
+                        <div class="item-cardex-title">
+                            <div class="item-cardex-icon">📦</div>
+                            <div><b>کاردکس یک کالا</b><span>کالا را انتخاب کنید تا گردش آن نمایش داده شود.</span></div>
+                        </div>
+                        <div class="autocomplete-wrapper item-cardex-autocomplete">
+                            <input type="text" id="itemCardexSelect" placeholder="جستجوی نام یا کد کالا..." onkeyup="filterProds(this, 'dl-cardex-prods')" onfocus="filterProds(this, 'dl-cardex-prods')">
+                            <div id="dl-cardex-prods" class="autocomplete-list"></div>
+                        </div>
+                        <div class="item-cardex-actions">
+                            <button class="btn-blue" type="button" onclick="generateItemCardex()">👁️ مشاهده کاردکس</button>
+                            <button class="btn-green" type="button" onclick="exportItemCardexExcel()">📥 اکسل این کالا</button>
+                            <button class="btn-green" type="button" onclick="exportAllProductsCardexExcel()">📊 اکسل کل کالاها</button>
+                        </div>
+                    </div>
+                    <div id="itemCardexSummary" class="item-cardex-summary" style="display:none;"></div>
+                    <div class="records-table-shell item-cardex-table-shell">
+                        <table class="records-table cardex-item-modern-table">
+                            <thead>
+                                <tr>
+                                    <th>تاریخ</th>
+                                    <th>سند / فاکتور</th>
+                                    <th>عملیات / شخص</th>
+                                    <th>وارده</th>
+                                    <th>صادره</th>
+                                    <th>مانده</th>
+                                </tr>
+                            </thead>
+                            <tbody id="itemCardexTable"><tr><td colspan="6" class="records-empty">کالایی انتخاب نشده است.</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
 
            <!-- تب تنظیمات -->
             <div id="tab-settings" class="tab-content">
@@ -4174,7 +4181,7 @@ function printInventory() {
             let link=document.createElement('a');link.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));link.download=filename;link.click();
         }
 
-        function toggleCardexView() { let mode = document.querySelector('input[name="cardexMode"]:checked').value; document.getElementById('cardexDocsView').style.display = mode === 'docs' ? 'block' : 'none'; document.getElementById('cardexItemView').style.display = mode === 'docs' ? 'none' : 'block'; if(mode === 'docs') generateCardex(); }
+        function toggleCardexView(){ switchRecordsMode(document.querySelector('input[name="cardexMode"]:checked')?.value==='item'?'item':'docs'); }
         
 // نگهداری وضعیت اسناد بازشده تا با همگام‌سازی‌های دوره‌ای بسته نشوند
 let expandedDocIds = new Set();
@@ -4196,219 +4203,72 @@ function toggleDocDetails(docId, event) {
     if(arrow) arrow.innerText = isOpen ? '🔼' : '🔽';
 }
 
-function generateCardex() {
-    try {
-        let rawQuery = document.getElementById('cardexBarcode') ? document.getElementById('cardexBarcode').value.trim() : '';
-        let query = normalizeSearchText(rawQuery);
-        let fType = document.querySelector('input[name="filType"]:checked')?.value || 'all';
-        let fTarget = document.getElementById('filterDocTarget') ? normalizeSearchText(document.getElementById('filterDocTarget').value.trim()) : ''; 
-        if(fTarget === 'همه') fTarget = '';
+function switchRecordsMode(mode){
+    const docs=document.getElementById('cardexDocsView'), item=document.getElementById('cardexItemView');
+    const db=document.getElementById('recordsModeDocsBtn'), ib=document.getElementById('recordsModeItemBtn');
+    if(mode==='item'){docs.style.display='none';item.style.display='block';db.classList.remove('active');ib.classList.add('active');}
+    else{docs.style.display='block';item.style.display='none';ib.classList.remove('active');db.classList.add('active');generateCardex();}
+}
 
-        let tbody = document.getElementById('cardexTable'); 
-        if(!tbody) return;
-        let tempHtml = ''; 
-        let docsMap = {};
+function openRecordMenu(docId, event){
+    if(event) event.stopPropagation();
+    document.querySelectorAll('.record-menu').forEach(x=>x.remove());
+    const menu=document.createElement('div'); menu.className='record-menu';
+    const buttons=[];
+    if(currentUser && currentUser.role==='admin') buttons.push(['✏️ ویرایش','editTransaction(''+docId+'')','']);
+    if(currentUser && currentUser.role!=='viewer' && currentUser.role!=='loader') buttons.push(['📄 مشاهده فاکتور','viewSystemFactor(''+docId+'')','']);
+    const d=historyLog.find(x=>String(x.docId)===String(docId));
+    if(d && d.type==='خروج' && d.dispatchStatus==='pending' && currentUser && currentUser.role!=='viewer') buttons.push(['🚚 اسکن بارگیری','openDispatchScanner(''+docId+'')','']);
+    if(currentUser && currentUser.role!=='viewer' && currentUser.role!=='loader') buttons.push(['📷 رسید','openPhotoCamera(''+docId+'')','']);
+    if(currentUser && currentUser.role==='admin') buttons.push(['❌ ابطال','cancelTransaction(''+docId+'')','danger']);
+    buttons.forEach(([txt,call,cls])=>{const b=document.createElement('button');b.className=cls;b.textContent=txt;b.onclick=()=>{menu.remove();try{eval(call)}catch(e){console.error(e)}};menu.appendChild(b)});
+    if(!buttons.length){const b=document.createElement('button');b.textContent='عملیاتی در دسترس نیست';menu.appendChild(b)}
+    document.body.appendChild(menu);
+    const r=event?.currentTarget?.getBoundingClientRect?.() || {left:20,top:100};
+    menu.style.top=(Math.min(window.innerHeight-menu.offsetHeight-8, r.bottom+6))+'px';
+    menu.style.left=(Math.max(8, r.left-menu.offsetWidth+10))+'px';
+    const close=(e)=>{if(!menu.contains(e.target)){menu.remove();document.removeEventListener('click',close)}}; setTimeout(()=>document.addEventListener('click',close),0);
+}
 
-        // ثبت اسناد به همراه اولویت زمانی ثبت
-        historyLog.forEach((log, index) => {
-            if(!log || log.docId == null) return;
-            const docIdKey = String(log.docId);
-            if(!docsMap[docIdKey]) {
-                docsMap[docIdKey] = { 
-                    docId: log.docId, 
-                    officeDoc: log.officeDoc || "بدون شماره", 
-                    date: log.date, 
-                    type: log.type, 
-                    ref: log.ref || "", 
-                    items: [], 
-                    totalCartons: 0, 
-                    totalLoose: 0, 
-                    totalWeight: 0, 
-                    totalPieces: 0, 
-                    involvedWH: new Set(), 
-                    operator: log.operator || "سیستم", 
-                    receiptFile: log.receiptFile || log.receiptImage || null, 
-                    receiptType: log.receiptType || null, 
-                    deliveryDate: log.deliveryDate || null,
-                    dispatchStatus: log.dispatchStatus || 'done',
-                    _orderIndex: index
-                };
-            }
-            docsMap[docIdKey]._orderIndex = index;
-
-            if(log.dispatchStatus === 'pending') docsMap[docIdKey].dispatchStatus = 'pending';
-
-            docsMap[docIdKey].items.push(log); 
-            docsMap[docIdKey].totalCartons += parseInt(log.qtyCarton || 0); 
-            docsMap[docIdKey].totalLoose += parseInt(log.qtyLoose || 0); 
-            docsMap[docIdKey].totalPieces += parseInt(log.totalPieces || 0); 
-            docsMap[docIdKey].totalWeight += getWeight(log.pCode, log.totalPieces);
-            if(log.warehouse) docsMap[docIdKey].involvedWH.add(log.warehouse);
-            if(log.receiptFile || log.receiptImage) { 
-                docsMap[docIdKey].receiptFile = log.receiptFile || log.receiptImage; 
-                docsMap[docIdKey].receiptType = log.receiptType; 
-                docsMap[docIdKey].deliveryDate = log.deliveryDate; 
-            }
+function generateCardex(){
+    try{
+        const tbody=document.getElementById('cardexTable'); if(!tbody) return;
+        const query=normalizeSearchText(document.getElementById('cardexBarcode')?.value||'');
+        const fType=document.querySelector('input[name="filType"]:checked')?.value||'all';
+        const fTarget=normalizeSearchText(document.getElementById('filterDocTarget')?.value||'');
+        const docsMap={};
+        historyLog.forEach((log,index)=>{
+            if(!log || log.docId==null) return;
+            const k=String(log.docId);
+            if(!docsMap[k]) docsMap[k]={docId:log.docId,officeDoc:log.officeDoc||'بدون شماره',date:log.date||'',type:log.type||'',ref:log.ref||'',operator:log.operator||'سیستم',items:[],warehouses:new Set(),receiptFile:log.receiptFile||null,deliveryDate:log.deliveryDate||null,dispatchStatus:log.dispatchStatus||'done',dispatchDate:log.dispatchDate||null,_orderIndex:index};
+            const d=docsMap[k]; d.items.push(log); if(log.warehouse)d.warehouses.add(log.warehouse); d._orderIndex=index;
+            if(log.receiptFile||log.receiptImage){d.receiptFile=log.receiptFile||log.receiptImage;d.deliveryDate=log.deliveryDate}
+            if(log.dispatchStatus==='pending')d.dispatchStatus='pending';
         });
-        
-        // مرتب‌سازی بر اساس آخرین سند ثبت‌شده توسط کاربر در بالاترین سطر
-        let filteredDocs = Object.values(docsMap).sort((a,b) => a._orderIndex - b._orderIndex).filter(doc => {
-            const matchType = (fType === 'all' || doc.type === fType);
-            const normRef = normalizeSearchText(doc.ref);
-            const matchTarget = (fTarget === '' || normRef.includes(fTarget) || Array.from(doc.involvedWH).some(w => normalizeSearchText(w).includes(fTarget)));
-            
-            if(!matchType || !matchTarget) return false;
+        let docs=Object.values(docsMap).sort((a,b)=>a._orderIndex-b._orderIndex).filter(d=>{
+            if(fType!=='all' && d.type!==fType) return false;
+            const target=normalizeSearchText(d.ref+' '+Array.from(d.warehouses).join(' ')); if(fTarget && !target.includes(fTarget)) return false;
             if(!query) return true;
-
-            const matchDocId = normalizeSearchText(String(doc.docId)).includes(query);
-            const matchOfficeDoc = normalizeSearchText(String(doc.officeDoc)).includes(query);
-            const matchRef = normRef.includes(query);
-            const matchWh = Array.from(doc.involvedWH).some(w => normalizeSearchText(w).includes(query));
-            
-            const matchItem = doc.items.some(i => {
-                const pCode = String(i.pCode || '');
-                const name = String(productsMap[pCode] || '');
-                const batch = String(i.batch || '');
-                const rawBarcode = String(i.rawBarcode || '');
-                return normalizeSearchText(pCode).includes(query) ||
-                       normalizeSearchText(name).includes(query) ||
-                       normalizeSearchText(batch).includes(query) ||
-                       normalizeSearchText(rawBarcode).includes(query);
-            });
-
-            return matchDocId || matchOfficeDoc || matchRef || matchWh || matchItem;
+            const blob=normalizeSearchText([d.docId,d.officeDoc,d.ref,d.operator,...Array.from(d.warehouses),...d.items.flatMap(i=>[i.pCode,productsMap[i.pCode]||i.productNameSnapshot||'',i.batch,i.rawBarcode||''])].join(' '));
+            return blob.includes(query);
         });
-        
-        if (currentUser && currentUser.role === 'loader') {
-            filteredDocs = filteredDocs.filter(d => d.dispatchStatus === 'pending');
-        }
-
-        if(!filteredDocs.length) { 
-            tbody.innerHTML = '<tr><td colspan="7" style="padding:20px; text-align:center; color:var(--text-muted);">سندی با این مشخصات یافت نشد.</td></tr>'; 
-            return; 
-        }
-        
-        filteredDocs.forEach(doc => {
-            const docIdStr = String(doc.docId);
-            const isExpanded = query !== '' ? true : expandedDocIds.has(docIdStr);
-            const color = doc.type === 'خروج' ? 'color:var(--danger)' : 'color:var(--success)';
-            let actionsHtml = ''; 
-            let hasReceipt = Boolean(doc.receiptFile || doc.receiptImage);
-            
-            let typeHtml = doc.type;
-          if (doc.type === 'خروج') {
-                let isDone = doc.dispatchStatus === 'done';
-                let statusStr = isDone ? '✅ تایید و ارسال شد' : 'در انتظار بارگیری';
-                let statusColor = isDone ? 'color:var(--success); background:#ecfdf5; font-size:11px; padding:4px 8px;' : 'color:#d97706; background:#fef3c7; padding:2px 6px;';
-                let dispatchDateStr = (isDone && doc.dispatchDate) ? `<br><span style="font-size:9px; color:var(--text-muted); font-family: Tahoma;">${doc.dispatchDate}</span>` : '';
-                typeHtml += `<br><span style="display:inline-block; margin-top:4px; border-radius:4px; font-weight:bold; ${statusColor}">${statusStr}</span>${dispatchDateStr}`;
-            }
-
-            if (currentUser && currentUser.role === 'viewer') {
-                actionsHtml = hasReceipt ? `<div style="color:var(--success); font-weight:bold;">✅ تحویل شد<br><span style="font-size:9px; color:var(--text-muted); font-family: Tahoma;">${doc.deliveryDate || ''}</span></div><button class="btn-green" style="padding:4px 8px; font-size:11px; margin-top:4px;" onclick="viewReceipt('${doc.docId}'); event.stopPropagation();">👁️ رسید</button>` : `<div style="color:var(--warning); font-size:11px;">⏳ در انتظار رسید</div>`;
-            } else if (currentUser && currentUser.role === 'loader') {
-                actionsHtml = `<button style="background:#8b5cf6; color:white; border:none; border-radius:4px; padding:8px; font-size:12px; margin-bottom:4px; width:100%; cursor:pointer; font-weight:bold; box-shadow:0 4px 10px rgba(139, 92, 246, 0.3);" onclick="openDispatchScanner('${doc.docId}', event)">🚚 اسکن اقلام در کامیون</button>`;
-            } else {
-                let deleteBtnHtml = (currentUser && currentUser.role === 'admin') ? ` <button style="background:var(--danger); color:white; border:none; border-radius:4px; padding:4px 8px; font-size:10px; margin-top:2px; cursor:pointer;" onclick="deleteReceipt('${doc.docId}', event)">🗑️ حذف عکس</button>` : '';
-                
-                let receiptSection = hasReceipt 
-                    ? `<div style="color:var(--success); font-weight:bold; font-size:11px; margin-top:6px; line-height:1.4;">✅ رسید ثبت شد<br><span style="font-size:9px; color:var(--text-muted); font-family: Tahoma;">${doc.deliveryDate || ''}</span></div><button class="btn-green" style="padding:4px 8px; font-size:10px; margin-top:2px;" onclick="viewReceipt('${doc.docId}'); event.stopPropagation();">👁️ مشاهده عکس</button>${deleteBtnHtml}` 
-                    : `<button class="btn-scan" style="padding:4px 8px; font-size:11px; margin-top:6px;" onclick="openPhotoCamera('${doc.docId}'); event.stopPropagation();">📷 گرفتن عکس رسید</button>`;
-                
-                let dispatchBtnHtml = '';
-                if (doc.type === 'خروج' && doc.dispatchStatus === 'pending') {
-                    dispatchBtnHtml = `<button style="background:#8b5cf6; color:white; border:none; border-radius:4px; padding:6px; font-size:11px; margin-bottom:4px; width:100%; cursor:pointer; font-weight:bold;" onclick="openDispatchScanner('${doc.docId}', event)">🚚 اسکن در کامیون</button>`;
-                }
-
-                actionsHtml = `
-                <button class="btn-blue" style="padding:4px 8px; font-size:11px; width:100%; margin-bottom:4px;" onclick="viewSystemFactor('${doc.docId}'); event.stopPropagation();">📄 مشاهده فاکتور</button>
-                ${dispatchBtnHtml}
-                <div style="display:flex; gap:4px; margin-bottom:4px;">
-                    <button style="flex:1; background-color:#b45309; color:white; border:none; border-radius:4px; padding:4px; font-size:11px; cursor:pointer;" onclick="editTransaction('${doc.docId}', event)">✏️ ویرایش</button>
-                    <button style="flex:1; background-color:#b91c1c; color:white; border:none; border-radius:4px; padding:4px; font-size:11px; cursor:pointer;" onclick="cancelTransaction('${doc.docId}', event)">❌ ابطال</button>
-                </div>
-                ${receiptSection}`;
-            }
-
-            tempHtml += `<tr class="group-row" onclick="toggleDocDetails('${doc.docId}', event)">
-                <td style="font-weight:900; font-size:14px;">${doc.docId} <span id="doc-arrow-${doc.docId}">${isExpanded ? '🔼' : '🔽'}</span></td>
-                <td style="color:var(--primary); font-weight:bold;">${doc.officeDoc}<br><span style="font-size:9px; color:var(--text-muted);">👤 ${doc.operator}</span></td>
-                <td dir="ltr">${(doc.date||'').split('،')[0]}</td>
-                <td style="${color}; font-weight:bold;">${typeHtml}</td>
-                <td style="font-size:11px;line-height:1.7;"><div><b>مبدأ:</b> ${doc.type==='خروج'?Array.from(doc.involvedWH).join('، '):(doc.ref||'—')}</div><div><b>مقصد:</b> ${doc.type==='خروج'?(doc.ref||'—'):Array.from(doc.involvedWH).join('، ')}</div></td>
-                <td style="font-weight:bold;" dir="rtl"><span class="qty-primary">${getPersianQtyStr(doc.totalCartons, doc.totalLoose)}</span><br><span class="qty-secondary">کل: ${doc.totalPieces} عدد</span><br><span class="qty-weight">${doc.totalWeight > 0 ? doc.totalWeight.toFixed(2).replace(/\.00$/,'') + ' kg' : ''}</span></td>
-                <td>${actionsHtml}</td>
-            </tr>`;
-            
-            let displayedItems = doc.items;
-            if(query !== '') {
-                const isDocLevelMatch = normalizeSearchText(String(doc.docId)).includes(query) || normalizeSearchText(String(doc.officeDoc)).includes(query) || normalizeSearchText(doc.ref).includes(query);
-                if(!isDocLevelMatch) {
-                    displayedItems = doc.items.filter(i => {
-                        return normalizeSearchText(i.pCode).includes(query) ||
-                               normalizeSearchText(productsMap[i.pCode]||'').includes(query) ||
-                               normalizeSearchText(i.batch||'').includes(query) ||
-                               normalizeSearchText(i.rawBarcode||'').includes(query);
-                    });
-                }
-            }
-
-            let groupedItems = {}; 
-            displayedItems.forEach(item => { 
-                if(!groupedItems[item.pCode]) { 
-                    groupedItems[item.pCode] = { name: productsMap[item.pCode] || item.pCode, c: 0, l: 0, w: 0, tp: 0, items: [] }; 
-                }
-                groupedItems[item.pCode].c += Number(item.qtyCarton || 0); 
-                groupedItems[item.pCode].l += Number(item.qtyLoose || 0); 
-                groupedItems[item.pCode].tp += Number(item.totalPieces || 0); 
-                groupedItems[item.pCode].w += getWeight(item.pCode, item.totalPieces, item); 
-                groupedItems[item.pCode].items.push(item); 
-            }); 
-            
-            const dispStyle = isExpanded ? 'table-row' : 'none';
-
-            for(let pCode in groupedItems) { 
-                let g = groupedItems[pCode]; 
-                tempHtml += `<tr class="detail-row doc-det-${doc.docId}" style="display:${dispStyle}; background:#f8fafc;">
-                    <td colspan="7" style="text-align: right;">
-                        <div style="display:flex; justify-content:space-between; font-weight:bold;">
-                            <span>📦 ${g.name} (${pCode})</span>
-                            <span dir="rtl">${getPersianQtyStr(g.c, g.l)} (کل: ${g.tp} عدد)${formatWeight(g.w)}</span>
-                        </div>
-                    </td>
-                </tr>`; 
-                g.items.forEach(item => { 
-                    let itemW = getWeight(item.pCode, item.totalPieces, item);
-                    const rawBarcodeStr = String(item.rawBarcode || '');
-                    const isExactBarcodeMatch = query !== '' && normalizeSearchText(rawBarcodeStr).includes(query);
-                    
-                    const highlightStyle = isExactBarcodeMatch 
-                        ? 'background-color:#ecfdf5; border-right:4px solid #10b981;' 
-                        : 'background-color:#ffffff;';
-                    const badgeStyle = isExactBarcodeMatch 
-                        ? 'background:#10b981; color:#ffffff; font-weight:900;' 
-                        : 'background:#eff6ff; color:#1e3a8a;';
-
-                    tempHtml += `<tr class="detail-row doc-det-${doc.docId}" style="display:${dispStyle}; ${highlightStyle}">
-                        <td colspan="7" style="text-align: right; border-top:1px dashed var(--border); padding:8px 15px;">
-                            <div style="display:flex; justify-content:space-between; align-items:center;">
-                                <div style="display:flex; align-items:center; gap:8px;">
-                                    <span style="font-size:11px; color:#b45309; font-weight:bold; background:#fffbeb; padding:3px 6px; border-radius:4px; border:1px solid #fde68a;">بچ: ${item.batch}</span>
-                                    <span style="font-size:12px; font-family:monospace; padding:3px 8px; border-radius:4px; border:1px solid #bfdbfe; ${badgeStyle}">بارکد: ${item.rawBarcode || 'دستی / نامشخص'}</span>
-                                    ${isExactBarcodeMatch ? '<span style="font-size:11px; color:#059669; font-weight:bold;">🎯 بارکد منطبق</span>' : ''}
-                                </div>
-                                <div style="text-align:left;">
-                                    <div dir="rtl" style="font-weight:bold; font-size:12px; color:var(--dark);">${getPersianQtyStr(item.qtyCarton, item.qtyLoose)} <span style="font-size:11px; color:var(--text-muted);">(کل: ${item.totalPieces} عدد)</span>${formatWeight(itemW)}</div>
-                                    <div style="color:var(--text-muted); font-size:10px; margin-top:2px;">انبار: ${item.warehouse}</div>
-                                </div>
-                            </div>
-                        </td>
-                    </tr>`; 
-                }); 
-            } 
-        });
-        tbody.innerHTML = tempHtml;
-    } catch(e) { console.error("Cardex docs error", e); }
+        if(currentUser?.role==='loader') docs=docs.filter(d=>d.dispatchStatus==='pending');
+        const countEl=document.getElementById('recordsVisibleCount'); if(countEl) countEl.innerText=docs.length.toLocaleString('fa-IR');
+        if(!docs.length){tbody.innerHTML='<tr><td colspan="7" class="records-empty">سندی با این مشخصات پیدا نشد.</td></tr>';return;}
+        tbody.innerHTML=docs.map(doc=>{
+            const isExit=doc.type==='خروج', typeBg=isExit?'#fff1f2':'#ecfdf5', typeColor=isExit?'#b91c1c':'#047857';
+            let totalC=0,totalL=0,totalP=0; doc.items.forEach(i=>{totalC+=Number(i.qtyCarton)||0;totalL+=Number(i.qtyLoose)||0;totalP+=Number(i.totalPieces)||0});
+            const wh=Array.from(doc.warehouses).join('، ')||'—';
+            const origin=isExit?wh:(doc.ref||'—'), dest=isExit?(doc.ref||'—'):wh;
+            const status=isExit?(doc.dispatchStatus==='pending'?'<div class="record-meta">در انتظار بارگیری</div>':'<div class="record-meta">✅ ارسال شده</div>'):'';
+            const expanded=(query && expandedDocIds.has(String(doc.docId))) || expandedDocIds.has(String(doc.docId));
+            const detail=doc.items.map(i=>{
+                const nm=i.productNameSnapshot||productsMap[i.pCode]||i.pCode; const unit=Number(i.unitsSnapshot||i.units||productsUnitsMap[i.pCode])||1; const wt=Number(i.weightSnapshot ?? i.weight ?? productsWeightMap[i.pCode] ?? 0); const w=(wt*Number(i.totalPieces||0)/unit); 
+                return `<tr class="detail-row doc-det-modern doc-det-${doc.docId}" style="display:${expanded?'table-row':'none'}"><td colspan="7"><div class="detail-modern-box"><div class="detail-modern-head"><span class="detail-modern-name">${nm} <span class="detail-modern-meta">(${i.pCode})</span></span><span class="detail-modern-right">${getPersianQtyStr(i.qtyCarton,i.qtyLoose)} | ${Number(i.totalPieces||0).toLocaleString('fa-IR')} عدد</span></div><div class="detail-modern-bottom"><span>بچ: ${i.batch||'نامشخص'} | بارکد: ${i.rawBarcode||'دستی'}</span><span>${i.warehouse||'انبار مرکزی'} | ${w?Number(w).toFixed(2)+' kg':''}</span></div></div></td></tr>`
+            }).join('');
+            return `<tr class="group-row" onclick="toggleDocDetails('${doc.docId}',event)"><td><div class="record-main-title">${doc.officeDoc||'بدون شماره'}</div><div class="record-meta">سند ${doc.docId} | ${doc.operator}</div></td><td dir="ltr">${String(doc.date).split('،')[0]}</td><td><span class="record-pill" style="background:${typeBg};color:${typeColor}">${doc.type}</span>${status}</td><td class="record-origin">${origin}</td><td class="record-origin">${dest}</td><td><div class="record-qty">${getPersianQtyStr(totalC,totalL)}</div><div class="record-meta">کل ${totalP.toLocaleString('fa-IR')} عدد</div></td><td class="records-actions-col"><div class="record-actions"><button class="record-icon-btn" title="جزئیات" onclick="toggleDocDetails('${doc.docId}',event)">${expanded?'▲':'▼'}</button><button class="record-icon-btn" title="عملیات" onclick="openRecordMenu('${doc.docId}',event)">⋮</button></div></td></tr>${detail}`;
+        }).join('');
+    }catch(e){console.error('Cardex docs error',e)}
 }
 
 function generateItemCardex() {
