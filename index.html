@@ -370,7 +370,52 @@
         /* اسکنر بارگیری: پنجره کوتاه و جمع‌وجور برای بارکد معمولی */
         #dispatch-reader { height:180px !important; max-height:180px !important; }
         #dispatch-reader video { width:100% !important; height:180px !important; max-height:180px !important; object-fit:cover !important; }
-        </style>
+        
+/* ===== UI REDESIGN: Documents & Cardex ===== */
+#tab-cardex { padding:12px !important; }
+#tab-cardex h2 { margin-bottom:10px !important; }
+#tab-cardex .card { border-radius:12px !important; padding:12px !important; margin-bottom:10px !important; }
+#tab-cardex #cardexModeSelectorCard { display:flex !important; align-items:center; justify-content:space-between; gap:10px; }
+#tab-cardex #cardexModeSelectorCard .radio-group { flex:1; }
+#tab-cardex #cardexFilterCard { display:grid !important; grid-template-columns:minmax(0,1fr) auto; gap:8px !important; align-items:center; }
+#tab-cardex #cardexFilterCard .responsive-grid { grid-column:1/-1; margin:0 !important; }
+#tab-cardex #cardexFilterCard .radio-group { margin:0 !important; }
+#tab-cardex #cardexFilterCard > button { margin:0 !important; height:42px !important; width:auto !important; }
+#tab-cardex .cardex-toolbar-note { font-size:11px; color:var(--text-muted); }
+#tab-cardex .cardex-main-table, #tab-cardex .cardex-item-table { border-radius:10px !important; }
+#tab-cardex table th { font-size:11px !important; padding:9px 7px !important; }
+#tab-cardex table td { font-size:11px !important; padding:8px 7px !important; }
+#tab-cardex .group-row td { border-bottom:1px solid #e2e8f0 !important; }
+#tab-cardex .detail-row td { padding:7px 10px !important; }
+#tab-cardex .item-cardex-summary { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:0 0 10px; }
+#tab-cardex .item-cardex-summary > div { background:#fff; border:1px solid var(--border); border-radius:10px; padding:9px; text-align:center; }
+#tab-cardex .item-cardex-summary b { display:block; font-size:16px; margin-top:2px; }
+#tab-cardex .item-cardex-summary span { font-size:10px; color:var(--text-muted); }
+
+/* Documents page */
+#tab-documents { padding:12px !important; }
+#tab-documents h2 { margin-bottom:10px !important; }
+#tab-documents .card { border-radius:12px !important; padding:10px !important; margin-bottom:10px !important; }
+#tab-documents .documents-toolbar { display:grid; grid-template-columns:minmax(0,1fr) auto auto; gap:8px; align-items:center; }
+#tab-documents .documents-toolbar input { margin:0 !important; min-height:42px !important; }
+#tab-documents .documents-toolbar button { width:auto !important; margin:0 !important; min-height:42px !important; padding:8px 12px !important; }
+#tab-documents .documents-summary { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+#tab-documents .documents-summary > span { background:#f8fafc; border:1px solid #e2e8f0; border-radius:999px; padding:5px 9px; font-size:10px; font-weight:900; }
+#tab-documents table th { padding:8px 6px !important; font-size:10px !important; }
+#tab-documents table td { padding:8px 6px !important; font-size:10.5px !important; }
+#tab-documents .group-row { box-shadow:inset 0 -1px 0 #e2e8f0; }
+#tab-documents .group-row > td:last-child button { min-height:30px !important; }
+#tab-documents .detail-row { background:#f8fafc !important; }
+#tab-documents .detail-row td { padding:6px 10px !important; }
+@media(max-width:700px){
+  #tab-cardex #cardexFilterCard { grid-template-columns:1fr !important; }
+  #tab-cardex #cardexFilterCard > button { width:100% !important; }
+  #tab-cardex .item-cardex-summary { grid-template-columns:1fr 1fr 1fr; gap:5px; }
+  #tab-documents .documents-toolbar { grid-template-columns:1fr 1fr; }
+  #tab-documents .documents-toolbar input { grid-column:1/-1; }
+  #tab-documents .documents-toolbar button { width:100% !important; }
+}
+</style>
 </head>
 <body>
 
