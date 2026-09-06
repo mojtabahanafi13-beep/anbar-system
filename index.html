@@ -4215,12 +4215,12 @@ function openRecordMenu(docId, event){
     document.querySelectorAll('.record-menu').forEach(x=>x.remove());
     const menu=document.createElement('div'); menu.className='record-menu';
     const buttons=[];
-    if(currentUser && currentUser.role==='admin') buttons.push(['✏️ ویرایش','editTransaction(''+docId+'')','']);
-    if(currentUser && currentUser.role!=='viewer' && currentUser.role!=='loader') buttons.push(['📄 مشاهده فاکتور','viewSystemFactor(''+docId+'')','']);
+    if(currentUser && currentUser.role==='admin') buttons.push(['✏️ ویرایش', "editTransaction('" + docId + "')", '']);
+    if(currentUser && currentUser.role!=='viewer' && currentUser.role!=='loader') buttons.push(['📄 مشاهده فاکتور',"viewSystemFactor(\'" + docId + "\')",'']);
     const d=historyLog.find(x=>String(x.docId)===String(docId));
-    if(d && d.type==='خروج' && d.dispatchStatus==='pending' && currentUser && currentUser.role!=='viewer') buttons.push(['🚚 اسکن بارگیری','openDispatchScanner(''+docId+'')','']);
-    if(currentUser && currentUser.role!=='viewer' && currentUser.role!=='loader') buttons.push(['📷 رسید','openPhotoCamera(''+docId+'')','']);
-    if(currentUser && currentUser.role==='admin') buttons.push(['❌ ابطال','cancelTransaction(''+docId+'')','danger']);
+    if(d && d.type==='خروج' && d.dispatchStatus==='pending' && currentUser && currentUser.role!=='viewer') buttons.push(['🚚 اسکن بارگیری',"openDispatchScanner(\'" + docId + "\')",'']);
+    if(currentUser && currentUser.role!=='viewer' && currentUser.role!=='loader') buttons.push(['📷 رسید',"openPhotoCamera(\'" + docId + "\')",'']);
+    if(currentUser && currentUser.role==='admin') buttons.push(['❌ ابطال',"cancelTransaction(\'" + docId + "\')",'danger']);
     buttons.forEach(([txt,call,cls])=>{const b=document.createElement('button');b.className=cls;b.textContent=txt;b.onclick=()=>{menu.remove();try{eval(call)}catch(e){console.error(e)}};menu.appendChild(b)});
     if(!buttons.length){const b=document.createElement('button');b.textContent='عملیاتی در دسترس نیست';menu.appendChild(b)}
     document.body.appendChild(menu);
