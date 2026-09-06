@@ -1126,9 +1126,9 @@
             return Number(`${prefix}${randomSuffix}`);
         }
 
-        function getWeight(pCode, totalPieces) {
-            let w = parseFloat(productsWeightMap[pCode]) || 0;
-            let u = parseInt(productsUnitsMap[pCode]) || 1;
+        function getWeight(pCode, totalPieces, item = null) {
+            let w = parseFloat(item?.weightSnapshot ?? item?.weight ?? productsWeightMap[pCode]) || 0;
+            let u = parseInt(item?.unitsSnapshot ?? item?.units ?? productsUnitsMap[pCode]) || 1;
             if(u === 0) u = 1;
             return (totalPieces / u) * w;
         }
@@ -2141,7 +2141,7 @@ async function deleteReceipt(docId, event) {
         selectCS('inWarehouseSelect', master.warehouse, master.warehouse);
         
         uniqueDocs.forEach(item => {
-            draftEntryItems.push({ raw: item.rawBarcode || "", pCode: item.pCode, batch: item.batch, qtyCarton: item.qtyCarton, qtyLoose: item.qtyLoose, totalPieces: item.totalPieces, name: productsMap[item.pCode], weight: item.weight, units: item.units, wh: item.warehouse }); 
+            draftEntryItems.push({ raw: item.rawBarcode || "", pCode: item.pCode, batch: item.batch, qtyCarton: item.qtyCarton, qtyLoose: item.qtyLoose, totalPieces: item.totalPieces, name: item.productNameSnapshot || productsMap[item.pCode], weight: item.weight, units: item.units, wh: item.warehouse }); 
         });
         renderDrafts();
         openTab('tab-entry', document.getElementById('tabBtnEntry'));
@@ -2155,7 +2155,7 @@ async function deleteReceipt(docId, event) {
         selectCS('outWarehouseSelect', master.warehouse, master.warehouse);
         
         uniqueDocs.forEach(item => {
-            draftExitItems.push({ raw: item.rawBarcode || "", pCode: item.pCode, batch: item.batch, qtyCarton: item.qtyCarton, qtyLoose: item.qtyLoose, totalPieces: item.totalPieces, name: productsMap[item.pCode], wh: item.warehouse, units: productsUnitsMap[item.pCode] || 1 }); 
+            draftExitItems.push({ raw: item.rawBarcode || "", pCode: item.pCode, batch: item.batch, qtyCarton: item.qtyCarton, qtyLoose: item.qtyLoose, totalPieces: item.totalPieces, name: item.productNameSnapshot || productsMap[item.pCode], wh: item.warehouse, units: item.unitsSnapshot || productsUnitsMap[item.pCode] || 1 }); 
         });
         
         let scanNowToggle = document.getElementById('outScanNowToggle');
@@ -4316,7 +4316,7 @@ function generateCardex() {
                 groupedItems[item.pCode].c += Number(item.qtyCarton || 0); 
                 groupedItems[item.pCode].l += Number(item.qtyLoose || 0); 
                 groupedItems[item.pCode].tp += Number(item.totalPieces || 0); 
-                groupedItems[item.pCode].w += getWeight(item.pCode, item.totalPieces); 
+                groupedItems[item.pCode].w += getWeight(item.pCode, item.totalPieces, item); 
                 groupedItems[item.pCode].items.push(item); 
             }); 
             
@@ -4333,7 +4333,7 @@ function generateCardex() {
                     </td>
                 </tr>`; 
                 g.items.forEach(item => { 
-                    let itemW = getWeight(item.pCode, item.totalPieces);
+                    let itemW = getWeight(item.pCode, item.totalPieces, item);
                     const rawBarcodeStr = String(item.rawBarcode || '');
                     const isExactBarcodeMatch = query !== '' && normalizeSearchText(rawBarcodeStr).includes(query);
                     
@@ -4407,7 +4407,7 @@ function generateItemCardex() {
             </tr>`;
 
             grp.items.forEach(item => {
-                let w = getWeight(item.pCode, item.totalPieces);
+                let w = getWeight(item.pCode, item.totalPieces, item);
                 htmlStr += `<tr class="detail-row item-det-${grp.docId}" style="background-color: #f8fafc;">
                     <td colspan="6" style="text-align: right; border-top:1px dashed var(--border); padding:6px 15px;">
                         <div style="display:flex; justify-content:space-between; font-size:11px;">
@@ -4941,7 +4941,10 @@ if(typeof updateTodayCounter === 'function') updateTodayCounter();
                 qtyLoose: Number(i.qtyLoose) || 0,
                 totalPieces: Number(i.totalPieces) || 0,
                 warehouse: i.warehouse || i.wh || docItems[0].warehouse || 'انبار مرکزی',
-                rawBarcode: i.rawBarcode || ''
+                rawBarcode: i.rawBarcode || '',
+                productNameSnapshot: i.productNameSnapshot || i.name || productsMap[i.pCode] || '',
+                unitsSnapshot: Number(i.unitsSnapshot ?? i.units ?? productsUnitsMap[i.pCode]) || 1,
+                weightSnapshot: Number(i.weightSnapshot ?? i.weight ?? productsWeightMap[i.pCode]) || 0
             }))
         };
 
@@ -5000,7 +5003,10 @@ if(typeof updateTodayCounter === 'function') updateTodayCounter();
             docId: currentDocId, officeDoc: document.getElementById('inOfficeDoc').value||"بدون شماره", 
             date: dateStr, type: docType, pCode: item.pCode, batch: item.batch, 
             rawBarcode: item.raw, qtyCarton: item.qtyCarton, qtyLoose: item.qtyLoose, 
-            totalPieces: item.totalPieces, weight: item.weight, units: item.units, 
+            totalPieces: item.totalPieces, weight: item.weight, units: item.units,
+            productNameSnapshot: item.name || productsMap[item.pCode] || '',
+            unitsSnapshot: Number(item.units || productsUnitsMap[item.pCode]) || 1,
+            weightSnapshot: Number(item.weight ?? productsWeightMap[item.pCode]) || 0,
             warehouse: item.wh || defaultWh, ref: document.getElementById('inSender').value||"ثبت اولیه", 
             operator: currentUser?currentUser.name:"سیستم", dispatchStatus: 'done' 
         }));
