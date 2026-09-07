@@ -3104,67 +3104,57 @@ function startDispatchCamera() {
 }
 
  function finalizeDispatchDoc() {
-            let oldItems = historyLog.filter(log => String(log.docId) === String(currentDispatchDocId));
-            if(!oldItems.length) { alert('❌ حواله پیدا نشد یا قبلاً نهایی شده است.'); return; }
+            const targetDocId = String(currentDispatchDocId ?? '').trim();
+            if (!targetDocId) return alert('❌ شماره حواله معتبر نیست.');
+            const oldItems = historyLog.filter(log => String(log.docId) === targetDocId);
+            if (!oldItems.length) return alert('❌ حواله پیدا نشد یا قبلاً نهایی شده است.');
 
             const problems = [];
             Object.keys(dispatchReqs || {}).forEach(key => {
-                const r = dispatchReqs[key];
-                const req = Number(r.req || 0);
-                const scanned = Number(r.scanned || 0);
-                if (scanned !== req) problems.push(`${r.name || key}: موردنیاز ${req} عدد، اسکن‌شده ${scanned} عدد`);
+                const r = dispatchReqs[key], req = Number(r?.req || 0), scanned = Number(r?.scanned || 0);
+                if (scanned !== req) problems.push(`${r?.name || key}: موردنیاز ${req} عدد، اسکن‌شده ${scanned} عدد`);
             });
-            if (!Array.isArray(currentDispatchScans) || currentDispatchScans.length === 0) {
-                problems.push('هیچ اسکن ثبت‌شده‌ای برای این حواله وجود ندارد.');
-            }
-            if (problems.length) {
-                alert('⛔ تأیید نهایی متوقف شد.\n\n' + problems.slice(0,10).join('\n'));
-                renderDispatchTable();
-                return;
-            }
-            let master = oldItems[0];
-            
-            historyLog = historyLog.filter(log => String(log.docId) !== String(currentDispatchDocId));
-            
-            let groupedScans = {};
-            currentDispatchScans.forEach(scan => {
-                let key = scan.rawBarcode; 
-                if(!groupedScans[key]) groupedScans[key] = { pCode: scan.pCode, batch: scan.batch, rawBarcode: scan.rawBarcode, pieces: 0 };
-                groupedScans[key].pieces += scan.pieces;
+            if (!Array.isArray(currentDispatchScans) || currentDispatchScans.length === 0) problems.push('هیچ اسکن ثبت‌شده‌ای برای این حواله وجود ندارد.');
+            if (problems.length) { alert('⛔ تأیید نهایی متوقف شد.\n\n' + problems.slice(0,10).join('\n')); renderDispatchTable(); return; }
+
+            const nowStr = new Date().toLocaleString('fa-IR');
+            const scanMetaByPCode = {};
+            (currentDispatchScans || []).forEach(scan => {
+                const pCode = String(scan?.pCode ?? '').trim(); if (!pCode) return;
+                if (!scanMetaByPCode[pCode]) scanMetaByPCode[pCode] = { barcodes: [], batches: [] };
+                const meta = scanMetaByPCode[pCode];
+                const barcode = String(scan?.rawBarcode ?? '').trim();
+                const batch = String(scan?.batch ?? '').trim();
+                if (barcode && !meta.barcodes.includes(barcode)) meta.barcodes.push(barcode);
+                if (batch && batch !== 'نامشخص' && !meta.batches.includes(batch)) meta.batches.push(batch);
             });
-            
-            Object.values(groupedScans).forEach(scan => {
-                let units = parseInt(productsUnitsMap[scan.pCode]) || 1;
-                let c = Math.floor(scan.pieces / units);
-                let l = scan.pieces % units;
-                
-                historyLog.push({
-                    docId: currentDispatchDocId,
-                    officeDoc: master.officeDoc,
-                    date: master.date,
-                    type: 'خروج',
-                    pCode: scan.pCode,
-                    batch: scan.batch,
-                    rawBarcode: scan.rawBarcode,
-                    qtyCarton: c,
-                    qtyLoose: l,
-                    totalPieces: scan.pieces,
-                    warehouse: master.warehouse,
-                    ref: master.ref,
-                    operator: master.operator,
-                    dispatchStatus: 'done',
-                    dispatchDate: new Date().toLocaleString('fa-IR'),
-                    receiptFile: master.receiptFile || null,
-                    receiptType: master.receiptType || null,
-                    deliveryDate: master.deliveryDate || null
-                });
+
+            // اصل مهم: اسکن فقط متادیتای بارگیری را به سند اضافه می‌کند.
+            // مقادیر quantity و warehouse سند اصلی هرگز بر اساس بارکد محاسبه یا جایگزین نمی‌شوند.
+            const updatedItems = oldItems.map(item => {
+                const clone = { ...item };
+                const meta = scanMetaByPCode[String(item.pCode ?? '').trim()];
+                clone.qtyCarton = Number(item.qtyCarton) || 0;
+                clone.qtyLoose = Number(item.qtyLoose) || 0;
+                clone.totalPieces = Number(item.totalPieces) || 0;
+                clone.warehouse = item.warehouse;
+                clone.dispatchStatus = 'done';
+                clone.dispatchDate = nowStr;
+                if (meta) {
+                    if (meta.barcodes.length) clone.rawBarcode = meta.barcodes.join(' | ');
+                    if (meta.batches.length === 1) clone.batch = meta.batches[0];
+                    else if (meta.batches.length > 1) clone.batch = meta.batches.join(' | ');
+                }
+                return clone;
             });
-            
+
+            historyLog = historyLog.filter(log => String(log.docId) !== targetDocId);
+            historyLog.push(...updatedItems);
             clearDispatchProgress(currentDispatchDocId);
             saveData();
             generateCardex();
             closeDispatchScanner();
-            alert("🎉 بارگیری با موفقیت تایید شد و بارکدهای واقعی جایگزین گردید!");
+            alert('🎉 بارگیری ثبت شد؛ بارکدها فقط به اطلاعات سند اضافه شدند و موجودی از بابت اسکن تغییر نکرد.');
         }
 
         function bypassAndFinalizeDispatch() {
