@@ -5629,10 +5629,9 @@ function openDocActionMenu(docId,event){
   }else{popup.style.top='100px';popup.style.left='100px';}
   setTimeout(()=>document.addEventListener('click',closeDocActionMenu,{once:true}),0);
 }
-<script>
 (function connectBarcodeScanner() {
     // آدرس IP کامپیوتر که در گام ۱ به دست آوردید را جایگزین کنید:
-    const PC_IP = '192.168.12.117'; 
+    const PC_IP = '192.168.1.45'; 
     const socket = new WebSocket(`ws://${PC_IP}:8765`);
 
     socket.onopen = () => {
