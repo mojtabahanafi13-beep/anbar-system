@@ -5629,6 +5629,45 @@ function openDocActionMenu(docId,event){
   }else{popup.style.top='100px';popup.style.left='100px';}
   setTimeout(()=>document.addEventListener('click',closeDocActionMenu,{once:true}),0);
 }
+<script>
+(function connectBarcodeScanner() {
+    // آدرس IP کامپیوتر که در گام ۱ به دست آوردید را جایگزین کنید:
+    const PC_IP = '192.168.1.45'; 
+    const socket = new WebSocket(`ws://${PC_IP}:8765`);
+
+    socket.onopen = () => {
+        console.log('✓ به بارکدخوان سیستم انبار متصل شد');
+    };
+
+    socket.onmessage = (event) => {
+        const barcode = event.data;
+        console.log('بارکد دریافتی:', barcode);
+
+        // شناسه (ID) فیلد ورودی بارکد در فرم انبار را بگذارید:
+        const barcodeInput = document.getElementById('barcodeInput') || document.querySelector('input[name="barcode"]');
+
+        if (barcodeInput) {
+            barcodeInput.value = barcode;
+            // شبیه‌سازی رویداد برای اجرای جستجو یا ثبت خودکار فرم
+            barcodeInput.dispatchEvent(new Event('input', { bubbles: true }));
+            barcodeInput.dispatchEvent(new Event('change', { bubbles: true }));
+
+            // اگر در برنامه تابعی برای ثبت مستقیم فاکتور یا کالا دارید، اینجا فراخوانی کنید
+            if (typeof handleScanSubmit === 'function') {
+                handleScanSubmit(barcode);
+            }
+        }
+    };
+
+    // تلاش مجدد در صورت قفل شدن گوشی یا قطع لحظه‌ای وای‌فای
+    socket.onclose = () => {
+        setTimeout(connectBarcodeScanner, 3000);
+    };
+
+    socket.onerror = () => {
+        socket.close();
+    };
+})();
 </script>
 </body>
 </html>
