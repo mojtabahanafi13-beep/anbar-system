@@ -5629,42 +5629,30 @@ function openDocActionMenu(docId,event){
   }else{popup.style.top='100px';popup.style.left='100px';}
   setTimeout(()=>document.addEventListener('click',closeDocActionMenu,{once:true}),0);
 }
-(function connectBarcodeScanner() {
-    // آدرس IP کامپیوتر که در گام ۱ به دست آوردید را جایگزین کنید:
-    const PC_IP = '192.168.12.117'; 
-    const socket = new WebSocket(`ws://${PC_IP}:8765`);
+(function connectBarcode() {
+    // اتصال مستقیم به سوکت همان سروری که صفحه را باز کرده است
+    const socket = new WebSocket('wss://fresh-frog-32.loca.lt');
 
     socket.onopen = () => {
-        console.log('✓ به بارکدخوان سیستم انبار متصل شد');
+        console.log('✓ بارکدخوان متصل شد');
     };
 
     socket.onmessage = (event) => {
         const barcode = event.data;
-        console.log('بارکد دریافتی:', barcode);
-
-        // شناسه (ID) فیلد ورودی بارکد در فرم انبار را بگذارید:
-        const barcodeInput = document.getElementById('barcodeInput') || document.querySelector('input[name="barcode"]');
-
-        if (barcodeInput) {
-            barcodeInput.value = barcode;
-            // شبیه‌سازی رویداد برای اجرای جستجو یا ثبت خودکار فرم
-            barcodeInput.dispatchEvent(new Event('input', { bubbles: true }));
-            barcodeInput.dispatchEvent(new Event('change', { bubbles: true }));
-
-            // اگر در برنامه تابعی برای ثبت مستقیم فاکتور یا کالا دارید، اینجا فراخوانی کنید
+        // شناسه فیلد ورودی بارکد در فرم انبار
+        const input = document.getElementById('barcodeInput') || document.querySelector('input[name="barcode"]');
+        if (input) {
+            input.value = barcode;
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            input.dispatchEvent(new Event('change', { bubbles: true }));
             if (typeof handleScanSubmit === 'function') {
                 handleScanSubmit(barcode);
             }
         }
     };
 
-    // تلاش مجدد در صورت قفل شدن گوشی یا قطع لحظه‌ای وای‌فای
     socket.onclose = () => {
-        setTimeout(connectBarcodeScanner, 3000);
-    };
-
-    socket.onerror = () => {
-        socket.close();
+        setTimeout(connectBarcode, 3000);
     };
 })();
 </script>
