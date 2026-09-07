@@ -5631,7 +5631,7 @@ function openDocActionMenu(docId,event){
 }
 (function connectBarcodeScanner() {
     // آدرس IP کامپیوتر که در گام ۱ به دست آوردید را جایگزین کنید:
-    const PC_IP = '192.168.1.45'; 
+    const PC_IP = '192.168.12.117'; 
     const socket = new WebSocket(`ws://${PC_IP}:8765`);
 
     socket.onopen = () => {
