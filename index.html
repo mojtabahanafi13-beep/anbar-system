@@ -174,6 +174,11 @@
         @media (max-width: 900px) { .dash-grid { grid-template-columns: 1fr; } }
         
         .recent-list { list-style: none; padding: 0; margin: 0; }
+.recent-activity-row{padding:9px 0 !important;gap:10px;}
+.recent-invoice-main{font-size:14px;font-weight:900;color:var(--primary);line-height:1.2;}
+.recent-doc-sub{font-size:11px;font-weight:900;color:var(--text-main);margin-top:2px;}
+.dashboard-recent-card{min-height:180px;}
+@media(max-width:600px){.recent-invoice-main{font-size:13px}.recent-doc-sub{font-size:10px}.dashboard-recent-card{min-height:160px;}}
         .recent-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px dashed var(--border); font-size: 12px; }
         .badge { padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; color: #fff; }
         .badge.in { background-color: var(--success); }
@@ -1023,6 +1028,33 @@ td{border-bottom-color:#d0d8e2 !important;}
 .dispatch-scanned-barcode-delete{width:auto!important;min-width:54px!important;height:30px!important;margin:0!important;padding:4px 8px!important;background:#dc2626!important;border:0!important;border-radius:6px!important;color:#fff!important;font-size:10px!important;font-weight:900!important;}
 </style>
 
+
+<style>
+/* ===== داشبورد: مرکز هشدار و کارهای فوری ===== */
+.dashboard-action-center{margin-bottom:10px;border:1px solid #d7e0eb;border-radius:11px;background:#fff;box-shadow:0 4px 12px rgba(37,55,80,.05);overflow:hidden;}
+.dashboard-action-head{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;background:linear-gradient(135deg,#f8fafc,#eef4fb);border-bottom:1px solid #dbe4ef;flex-wrap:wrap;}
+.dashboard-action-title{font-size:14px;font-weight:900;color:#172033;display:flex;align-items:center;gap:7px;}
+.dashboard-action-count{font-size:11px;font-weight:900;color:#fff;background:#dc2626;border-radius:999px;padding:4px 9px;min-width:26px;text-align:center;}
+.dashboard-alert-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:8px;}
+.dashboard-alert-card{border:1px solid #e1e7ef;border-radius:9px;background:#fff;padding:9px;min-width:0;}
+.dashboard-alert-card.receipt{border-right:4px solid #dc2626;}
+.dashboard-alert-card.loading{border-right:4px solid #d97706;}
+.dashboard-alert-card.incomplete{border-right:4px solid #7c3aed;}
+.dashboard-alert-label{font-size:11px;font-weight:900;color:#475569;margin-bottom:6px;}
+.dashboard-alert-total{font-size:20px;font-weight:900;color:#172033;margin-bottom:7px;}
+.dashboard-alert-list{display:flex;flex-direction:column;gap:5px;max-height:150px;overflow:auto;}
+.dashboard-alert-row{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:6px 7px;background:#f8fafc;border:1px solid #e6ebf2;border-radius:7px;}
+.dashboard-alert-main{min-width:0;flex:1;}
+.dashboard-alert-invoice{font-size:11px;font-weight:900;color:#1d4ed8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.dashboard-alert-meta{font-size:9px;font-weight:700;color:#64748b;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.dashboard-alert-btn{flex:0 0 auto;border:0;border-radius:6px;padding:5px 7px;font-family:Tahoma;font-size:9px;font-weight:900;color:#fff;cursor:pointer;margin:0;width:auto;box-shadow:none;}
+.dashboard-alert-btn.receipt{background:#dc2626;}
+.dashboard-alert-btn.loading{background:#d97706;}
+.dashboard-alert-btn.open{background:#2563eb;}
+.dashboard-alert-empty{padding:14px 6px;text-align:center;font-size:10px;font-weight:800;color:#059669;background:#f0fdf4;border-radius:7px;}
+@media(max-width:900px){.dashboard-alert-grid{grid-template-columns:1fr 1fr;}.dashboard-alert-card.incomplete{grid-column:1/-1;}}
+@media(max-width:600px){.dashboard-alert-grid{grid-template-columns:1fr;}.dashboard-alert-card.incomplete{grid-column:auto;}.dashboard-alert-row{align-items:flex-start;}.dashboard-action-head{padding:9px 10px;}}
+</style>
 </head>
 <body>
 
@@ -1307,6 +1339,19 @@ td{border-bottom-color:#d0d8e2 !important;}
         <div class="dash-card" style="--c: var(--primary);"><h3>⏳ حواله‌های در انتظار بارگیری</h3><div id="dashPending" class="val">0</div></div>
         <div class="dash-card" style="--c: var(--warning);"><h3>📄 اسناد امروز</h3><div id="dashDocs" class="val">0</div></div>
     </div>
+
+    <!-- مرکز هشدار و کارهای فوری -->
+    <div class="dashboard-action-center">
+        <div class="dashboard-action-head">
+            <div class="dashboard-action-title">🚦 کارهای فوری و هشدارهای انبار <span id="dashboardActionCount" class="dashboard-action-count">0</span></div>
+            <button type="button" class="dashboard-alert-btn open" style="padding:6px 10px;font-size:10px;" onclick="dashboardRefreshActionCenter()">↻ بروزرسانی</button>
+        </div>
+        <div id="dashboardActionGrid" class="dashboard-alert-grid">
+            <div class="dashboard-alert-card receipt"><div class="dashboard-alert-label">🔴 خروج بدون رسید</div><div class="dashboard-alert-total">0</div><div class="dashboard-alert-empty">در حال بررسی...</div></div>
+            <div class="dashboard-alert-card loading"><div class="dashboard-alert-label">🟠 در انتظار بارگیری</div><div class="dashboard-alert-total">0</div><div class="dashboard-alert-empty">در حال بررسی...</div></div>
+            <div class="dashboard-alert-card incomplete"><div class="dashboard-alert-label">🟣 بارگیری ناقص</div><div class="dashboard-alert-total">0</div><div class="dashboard-alert-empty">در حال بررسی...</div></div>
+        </div>
+    </div>
     
     <!-- 🚨 بخش ویژه نیازمند شارژ (تمام‌عرض، در بالای صفحه و جلوی چشم) -->
     <div class="card" style="border: 2px solid #ef4444; background: #fff5f5; padding: 16px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.08); border-radius: 10px;">
@@ -1318,12 +1363,8 @@ td{border-bottom-color:#d0d8e2 !important;}
                     <span style="font-size:11px; color:#7f1d1d; font-weight:bold;">اقلام بحرانی جهت ثبت سفارش خرید یا تولید</span>
                 </div>
             </div>
-            <div class="custom-select-wrapper" style="margin:0; width:150px;">
-                <input type="hidden" id="dashLowStockWh" value="all">
-                <div class="custom-select-display" onclick="toggleCS('dashLowStockWh', event)" id="disp-dashLowStockWh" style="padding:8px 12px; font-size:12px; border-color:#fca5a5; background:#fff;" tabindex="0">
-                    همه انبارها <span style="font-size:10px;">▼</span>
-                </div>
-                <div class="custom-select-options" id="opt-dashLowStockWh" style="border-color:#fca5a5;"></div>
+            <div style="margin:0; width:150px; padding:8px 12px; font-size:12px; border:1px solid #fca5a5; border-radius:8px; background:#fff; color:#991b1b; font-weight:900; text-align:center;">
+                📦 انبار محصول
             </div>
         </div>
         <div class="table-responsive" style="max-height: 250px; background: #fff; border: 1.5px solid #fecaca; border-radius:8px;">
@@ -1340,16 +1381,13 @@ td{border-bottom-color:#d0d8e2 !important;}
         </div>
     </div>
 
-    <!-- نمودار روند و آخرین فعالیت‌ها -->
-    <div class="dash-grid">
-        <div class="card">
-            <h3 style="margin:0 0 10px 0; font-size:14px;">📈 روند ۷ روز اخیر</h3>
-            <div style="height: 220px;"><canvas id="trendChart"></canvas></div>
+    <!-- آخرین فعالیت‌ها -->
+    <div class="card dashboard-recent-card" style="display:flex; flex-direction:column; margin-bottom:10px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;">
+            <h3 style="margin:0; font-size:14px;">⚡ آخرین فعالیت‌ها</h3>
+            <span style="font-size:10px;color:var(--text-muted);font-weight:800;">۵ سند اخیر</span>
         </div>
-        <div class="card" style="display:flex; flex-direction:column;">
-            <h3 style="margin:0 0 10px 0; font-size:14px;">⚡ آخرین فعالیت‌ها</h3>
-            <div style="flex:1; overflow-y:auto; padding-right:5px;"><ul class="recent-list" id="recentActivityList"></ul></div>
-        </div>
+        <div style="flex:1; overflow-y:auto; padding-right:5px;"><ul class="recent-list" id="recentActivityList"></ul></div>
     </div>
     
     <!-- نمودار موجودی انبارها -->
@@ -4491,8 +4529,115 @@ if(companyPrefix) {
             }catch(e){console.error("Render Draft Error",e);}
         }
 
+        function dashboardEscape(v){
+            return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+        }
+
+        function dashboardBuildDocsMap(){
+            const docsMap = {};
+            (Array.isArray(historyLog) ? historyLog : []).forEach((log, index) => {
+                if(!log || log.docId == null) return;
+                const id = String(log.docId);
+                if(!docsMap[id]){
+                    docsMap[id] = {
+                        docId: log.docId,
+                        officeDoc: log.officeDoc || 'بدون شماره',
+                        date: log.date || '',
+                        type: log.type || '',
+                        ref: log.ref || '',
+                        operator: log.operator || 'سیستم',
+                        dispatchStatus: log.dispatchStatus || 'done',
+                        receiptFile: log.receiptFile || log.receiptImage || null,
+                        receiptType: log.receiptType || null,
+                        deliveryDate: log.deliveryDate || null,
+                        items: [],
+                        totalCartons: 0,
+                        totalPieces: 0,
+                        _orderIndex: index
+                    };
+                }
+                const d = docsMap[id];
+                d._orderIndex = index;
+                if(log.dispatchStatus === 'pending') d.dispatchStatus = 'pending';
+                if(log.receiptFile || log.receiptImage){
+                    d.receiptFile = log.receiptFile || log.receiptImage;
+                    d.receiptType = log.receiptType || d.receiptType;
+                    d.deliveryDate = log.deliveryDate || d.deliveryDate;
+                }
+                d.items.push(log);
+                d.totalCartons += Number(log.qtyCarton || 0);
+                d.totalPieces += Number(log.totalPieces || 0);
+            });
+            return docsMap;
+        }
+
+        function dashboardGetProgress(docId){
+            try{
+                const raw = localStorage.getItem(dispatchProgressKey(String(docId)));
+                if(!raw) return null;
+                const saved = JSON.parse(raw);
+                if(!saved || String(saved.docId) !== String(docId) || !Array.isArray(saved.scans)) return null;
+                const byCode = {};
+                saved.scans.forEach(scan=>{
+                    const p=String(scan?.pCode||'').trim(); if(!p) return;
+                    byCode[p]=(byCode[p]||0)+Number(scan?.pieces||0);
+                });
+                return {scans:saved.scans, byCode};
+            }catch(e){ return null; }
+        }
+
+        function dashboardOpenDocuments(status){
+            openTab('tab-cardex', document.getElementById('tabBtnCardex'));
+            const q=document.getElementById('cardexBarcode'); if(q) q.value='';
+            const inv=document.getElementById('invoiceOnlySearch'); if(inv) inv.value='';
+            const st=document.getElementById('docStatusFilter'); if(st) st.value=status || 'all';
+            generateCardex();
+        }
+
+        function dashboardOpenInvoice(docId){
+            const docs=dashboardBuildDocsMap(); const d=docs[String(docId)];
+            openTab('tab-cardex', document.getElementById('tabBtnCardex'));
+            const q=document.getElementById('cardexBarcode'); if(q) q.value='';
+            const st=document.getElementById('docStatusFilter'); if(st) st.value='all';
+            const inv=document.getElementById('invoiceOnlySearch'); if(inv) inv.value=d?.officeDoc && d.officeDoc!=='بدون شماره' ? d.officeDoc : '';
+            generateCardex();
+        }
+
+        function renderDashboardActionCenter(){
+            const wrap=document.getElementById('dashboardActionGrid');
+            const countEl=document.getElementById('dashboardActionCount');
+            if(!wrap) return;
+            const docs=dashboardBuildDocsMap();
+            const arr=Object.values(docs).sort((a,b)=>b._orderIndex-a._orderIndex);
+            const missingReceipt=arr.filter(d=>d.type==='خروج' && !d.receiptFile && !d.receiptImage);
+            const pending=arr.filter(d=>d.type==='خروج' && d.dispatchStatus==='pending');
+            const incomplete=pending.filter(d=>{
+                const pr=dashboardGetProgress(d.docId);
+                if(!pr) return false;
+                let required=0;
+                (d.items||[]).forEach(i=>required += Number(i.totalPieces||0));
+                const scanned=Object.values(pr.byCode||{}).reduce((a,b)=>a+b,0);
+                return scanned>0 && scanned<required;
+            });
+            const totalAlerts=missingReceipt.length+pending.length+incomplete.length;
+            if(countEl) countEl.innerText=totalAlerts.toLocaleString('fa-IR');
+            const cardHtml=(cls,label,items,buttonClass,buttonText,buttonFn,emptyText)=>{
+                const rows=items.slice(0,8).map(d=>{
+                    const meta=cls==='incomplete' ? (()=>{ const pr=dashboardGetProgress(d.docId); const required=(d.items||[]).reduce((a,i)=>a+Number(i.totalPieces||0),0); const scanned=pr?Object.values(pr.byCode||{}).reduce((a,b)=>a+b,0):0; return `${scanned.toLocaleString('fa-IR')} از ${required.toLocaleString('fa-IR')} عدد`; })() : (d.operator||'سیستم');
+                    return `<div class="dashboard-alert-row"><div class="dashboard-alert-main"><div class="dashboard-alert-invoice">فاکتور: ${dashboardEscape(d.officeDoc||'بدون شماره')} <span style="color:#94a3b8">· سند ${dashboardEscape(d.docId)}</span></div><div class="dashboard-alert-meta">${dashboardEscape(meta)}</div></div><button type="button" class="dashboard-alert-btn ${buttonClass}" onclick="event.stopPropagation();${buttonFn}('${dashboardEscape(String(d.docId))}')">${buttonText}</button></div>`;
+                }).join('');
+                return `<div class="dashboard-alert-card ${cls}"><div class="dashboard-alert-label">${label}</div><div class="dashboard-alert-total">${items.length.toLocaleString('fa-IR')}</div><div class="dashboard-alert-list">${rows || `<div class="dashboard-alert-empty">${emptyText}</div>`}</div>${items.length>8?`<button type="button" class="dashboard-alert-btn open" style="width:100%;margin-top:6px;" onclick="dashboardOpenDocuments('${cls==='receipt'?'receipt':'unsent'}')">مشاهده همه</button>`:''}</div>`;
+            };
+            wrap.innerHTML = [
+                cardHtml('receipt','🔴 خروج بدون رسید',missingReceipt,'receipt','ثبت رسید','openPhotoCamera','همه اسناد رسید دارند.'),
+                cardHtml('loading','🟠 در انتظار بارگیری',pending,'loading','بارگیری','openDispatchScanner','هیچ حواله‌ای در صف بارگیری نیست.'),
+                cardHtml('incomplete','🟣 بارگیری ناقص',incomplete,'open','مشاهده','dashboardOpenInvoice','بارگیری ناقصی ذخیره نشده است.')
+            ].join('');
+        }
+
         function renderDashboard() {
             try {
+                renderDashboardActionCenter();
                 let todayStr = new Date().toLocaleDateString('fa-IR'); 
                 let todayIn = 0, todayOut = 0, todayDocs = new Set();
                 let trendDataMap = {};
@@ -4526,7 +4671,7 @@ if(companyPrefix) {
                 let pEl = document.getElementById('dashPending'); if(pEl) pEl.innerText = pendingCount.toLocaleString();
                 document.getElementById('dashDocs').innerText = todayDocs.size.toLocaleString();
 
-                let dashLowWh = document.getElementById('dashLowStockWh') ? document.getElementById('dashLowStockWh').value : 'all';
+                let dashLowWh = 'انبار محصول';
                 let tbody = document.getElementById('lowStockTable'); let tempHtml = '', lowFound = false;
                 
                 let whData = {}; // محاسبه چارت کیکی به صورت کلی
@@ -4569,16 +4714,13 @@ if(companyPrefix) {
                 let last5=Object.values(recentDocs).sort((a,b)=>b.docId-a.docId).slice(0,5);
                 document.getElementById('recentActivityList').innerHTML=last5.map(l=>{
                     let source=l.type==='خروج'?Array.from(l.whs).join('، '):(l.ref||'—'),dest=l.type==='خروج'?(l.ref||'—'):Array.from(l.whs).join('، ');
-                    return `<li class="recent-item"><div style="flex:1;"><strong>${l.type} | سند ${l.docId}</strong><br><span style="font-size:10px;color:var(--text-muted);">فاکتور: ${l.officeDoc||'بدون شماره'}</span><br><span style="font-size:10px;color:var(--text-muted);">مبدأ: ${source} | مقصد: ${dest}</span></div><div style="text-align:left;"><span class="badge ${l.type==='خروج'?'out':'in'}">${l.type}</span><br><span class="qty-primary" dir="rtl">${getPersianQtyStr(l.totalC,l.totalL)}</span><br><span class="qty-secondary">کل: ${l.totalP} عدد</span><br><span class="qty-weight">${l.totalW>0?l.totalW.toFixed(2)+' kg':''}</span></div></li>`;
+                    return `<li class="recent-item recent-activity-row"><div style="flex:1;min-width:0;"><div class="recent-invoice-main">فاکتور: ${l.officeDoc||'بدون شماره'}</div><div class="recent-doc-sub">سند: ${l.docId}</div><div style="font-size:10px;color:var(--text-muted);margin-top:3px;">مبدأ: ${source} | مقصد: ${dest}</div></div><div style="text-align:left;min-width:72px;"><span class="badge ${l.type==='خروج'?'out':'in'}">${l.type}</span><br><span class="qty-primary" dir="rtl">${getPersianQtyStr(l.totalC,l.totalL)}</span><br><span class="qty-secondary">کل: ${l.totalP} عدد</span><br><span class="qty-weight">${l.totalW>0?l.totalW.toFixed(2)+' kg':''}</span></div></li>`;
                 }).join('')||'<li style="text-align:center;padding:20px;font-size:12px;color:var(--text-muted);">هیچ فعالیتی ثبت نشده است.</li>';
 
                 if(typeof Chart !== 'undefined') {
                     if(chartWh) chartWh.destroy(); 
                     chartWh = new Chart(document.getElementById('whChart').getContext('2d'), { type: 'doughnut', data: { labels: Object.keys(whData), datasets: [{ data: Object.values(whData), backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444'] }] }, options: { maintainAspectRatio: false } });
                     
-                    let activeDates = Object.keys(trendDataMap).sort().slice(-7); 
-                    if(chartTrend) chartTrend.destroy(); 
-                    chartTrend = new Chart(document.getElementById('trendChart').getContext('2d'), { type: 'bar', data: { labels: activeDates.length ? activeDates.map(d=>d.split('/').slice(1).join('/')) : ['بدون دیتا'], datasets: [{ label: 'ورود (کارتن)', data: activeDates.length ? activeDates.map(d=>trendDataMap[d].in) : [0], backgroundColor: '#10b981' }, { label: 'خروج (کارتن)', data: activeDates.length ? activeDates.map(d=>trendDataMap[d].out) : [0], backgroundColor: '#ef4444' }] }, options: { maintainAspectRatio: false } });
                 }
             } catch(e) { console.error("Dashboard error", e); }
         }
