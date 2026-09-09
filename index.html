@@ -423,6 +423,12 @@ button{border-radius:8px;box-shadow:none;}
 #cardexFilterCard .filter-search-wrap{display:flex;gap:6px;align-items:center;}
 #cardexFilterCard .filter-search-wrap input{margin:0;height:40px;}
 #cardexFilterCard .filter-search-wrap .btn-blue{width:44px;height:40px;padding:0;margin:0;}
+#cardexFilterCard .filter-quick-row{grid-template-columns:minmax(0,1.45fr) minmax(250px,1fr) minmax(160px,.9fr);}
+#cardexFilterCard .barcode-search-box{min-width:0;}
+#cardexFilterCard .invoice-only-search{display:flex;gap:5px;align-items:center;min-width:0;}
+#cardexFilterCard .invoice-only-search input{margin:0;height:40px;min-width:0;flex:1;font-weight:900;}
+#cardexFilterCard .invoice-only-search button{width:40px;height:40px;padding:0;margin:0;flex:0 0 40px;}
+#cardexFilterCard .invoice-only-search .invoice-clear-btn{background:#64748b;}
 #cardexFilterCard .quick-filter-select{height:40px;background:#fff;}
 #cardexFilterCard .btn-green{margin:0 !important;width:auto !important;min-width:90px;height:40px;padding:0 13px !important;}
 #cardexFilterCard .filter-advanced{margin-top:6px;}
@@ -888,9 +894,11 @@ td{border-bottom-color:#d0d8e2 !important;}
   #tab-cardex #cardexFilterCard{padding:6px!important;margin-bottom:5px!important;}
   #tab-cardex #cardexModeSelectorCard .radio-group{gap:4px!important;}
   #tab-cardex #cardexModeSelectorCard .radio-label{min-height:36px!important;font-size:10px!important;padding:5px 6px!important;}
-  #tab-cardex #cardexFilterCard .filter-quick-row{grid-template-columns:minmax(0,1fr) 38px!important;gap:5px!important;}
+  #tab-cardex #cardexFilterCard .filter-quick-row{grid-template-columns:1fr!important;gap:5px!important;}
   #tab-cardex #cardexFilterCard .filter-search-wrap input{font-size:11px!important;height:38px!important;}
-  #tab-cardex #cardexFilterCard .quick-filter-select{grid-column:1/-1!important;height:34px!important;}
+  #tab-cardex #cardexFilterCard .quick-filter-select{height:34px!important;}
+  #tab-cardex #cardexFilterCard .invoice-only-search input{font-size:11px!important;height:38px!important;}
+  #tab-cardex #cardexFilterCard .invoice-only-search button{height:38px!important;flex-basis:38px!important;width:38px!important;}
   #tab-cardex #cardexFilterCard .filter-quick-row>.btn-green{position:static!important;grid-column:auto!important;width:38px!important;min-width:38px!important;height:38px!important;font-size:0!important;}
   #tab-cardex #cardexFilterCard .filter-quick-row>.btn-green::after{content:'↧';font-size:18px!important;}
   .m-doc-actions:has(.m-act:nth-child(1):last-child){grid-template-columns:1fr;}
@@ -949,6 +957,72 @@ td{border-bottom-color:#d0d8e2 !important;}
   .m-receipt-alert span{width:100%;padding-right:24px;}
 }
 </style>
+
+<style id="final-user-db-barcode-fix">
+/* نوار نام کاربر + دیتابیس دقیقاً هم‌رنگ نوار تب‌ها */
+#top-bar{
+    background:#182235 !important;
+    border-bottom:1px solid #26354b !important;
+}
+#top-bar #currentUserDisplay{
+    color:#ffffff !important;
+}
+#top-bar #db-counter{
+    background:#182235 !important;
+    color:#ffffff !important;
+    border:1px solid #34435a !important;
+    box-shadow:none !important;
+}
+#top-bar #cloudStatus{
+    background:#182235 !important;
+    color:#ffffff !important;
+    border:1px solid #34435a !important;
+    box-shadow:none !important;
+}
+
+/* وقتی جستجو با بارکد انجام شد، فقط همان بارکد دقیق نمایش داده شود */
+#tab-cardex .barcode-chip.exact-search-hit{
+    background:#f59e0b !important;
+    color:#111827 !important;
+    border:2px solid #d97706 !important;
+    box-shadow:0 0 0 2px rgba(245,158,11,.18),0 3px 8px rgba(245,158,11,.16) !important;
+    font-weight:900 !important;
+}
+#tab-cardex .detail-row.exact-search-row{
+    background:#fffaf0 !important;
+    border-right:4px solid #f59e0b !important;
+}
+.m-item.exact-search-item{
+    border-color:#f59e0b !important;
+    background:#fffaf0 !important;
+    box-shadow:inset 3px 0 0 #f59e0b !important;
+}
+.m-barcode-chip.exact-search-hit{
+    background:#f59e0b !important;
+    color:#111827 !important;
+    border:2px solid #d97706 !important;
+    box-shadow:0 0 0 2px rgba(245,158,11,.18),0 3px 8px rgba(245,158,11,.16) !important;
+    font-weight:900 !important;
+}
+
+/* ===== UX16.1 — اسناد: جستجوی بارکد + فاکتور در یک ردیف ===== */
+#tab-cardex #cardexFilterCard .filter-quick-row{grid-template-columns:minmax(0,1.35fr) minmax(240px,.95fr) minmax(150px,.8fr)!important;gap:7px!important;}
+#tab-cardex #cardexFilterCard .barcode-search-box input{min-width:0!important;}
+#tab-cardex #cardexFilterCard .invoice-only-search{display:flex!important;gap:5px!important;align-items:center!important;padding:0!important;margin:0!important;background:transparent!important;border:0!important;border-radius:0!important;min-width:0!important;}
+#tab-cardex #cardexFilterCard .invoice-only-search input{margin:0!important;flex:1!important;min-width:0!important;height:34px!important;font-size:11px!important;}
+#tab-cardex #cardexFilterCard .invoice-only-search button{margin:0!important;width:34px!important;min-width:34px!important;height:34px!important;padding:0!important;}
+#tab-cardex #cardexFilterCard .invoice-only-search .invoice-clear-btn{background:#64748b!important;}
+@media(max-width:700px){
+  #tab-cardex #cardexFilterCard .filter-quick-row{grid-template-columns:1fr!important;}
+  #tab-cardex #cardexFilterCard .invoice-only-search input{height:38px!important;font-size:11px!important;}
+  #tab-cardex #cardexFilterCard .invoice-only-search button{height:38px!important;width:38px!important;min-width:38px!important;}
+}
+/* حذف تکی بارکد از لیست بارکدهای گرفته‌شده */
+.dispatch-scanned-barcode-row{display:flex;align-items:center;gap:7px;background:#fff;border:1px solid #c4b5fd;border-radius:8px;padding:6px 7px;}
+.dispatch-scanned-barcode-value{flex:1;min-width:0;font-family:monospace;font-size:11px;font-weight:900;word-break:break-all;color:#1f2937;}
+.dispatch-scanned-barcode-delete{width:auto!important;min-width:54px!important;height:30px!important;margin:0!important;padding:4px 8px!important;background:#dc2626!important;border:0!important;border-radius:6px!important;color:#fff!important;font-size:10px!important;font-weight:900!important;}
+</style>
+
 </head>
 <body>
 
@@ -1093,6 +1167,17 @@ td{border-bottom-color:#d0d8e2 !important;}
     </button>
 </div>
         </div>
+    </div>
+</div>
+
+<!-- نمایش بارکدهای گرفته‌شده برای هر کالا در پنجره بارگیری -->
+<div id="dispatchScannedBarcodesModal" class="modal-overlay" style="z-index:10001;">
+    <div class="modal-box" style="max-width:650px;max-height:78vh;overflow:hidden;">
+        <div class="modal-header" style="background:#6d28d9;border-bottom:none;padding:11px 14px;">
+            <h3 id="dispatchScannedBarcodesTitle" style="margin:0;font-size:14px;color:#fff;font-weight:900;">بارکدهای گرفته‌شده</h3>
+            <button type="button" class="btn-red" style="margin:0;width:auto;padding:6px 12px;font-size:11px;" onclick="closeDispatchScannedBarcodes()">بستن ❌</button>
+        </div>
+        <div id="dispatchScannedBarcodesBody" class="modal-body" style="background:#f8fafc;padding:10px;overflow-y:auto;max-height:calc(78vh - 52px);"></div>
     </div>
 </div>
 
@@ -1471,9 +1556,14 @@ td{border-bottom-color:#d0d8e2 !important;}
     <div id="cardexDocsView">
         <div class="card" id="cardexFilterCard">
             <div class="filter-quick-row">
-                <div class="filter-search-wrap">
-                    <input type="text" id="cardexBarcode" placeholder="🔎 شماره فاکتور، کالا، بچ یا بارکد..." oninput="generateCardex()" onkeydown="if(event.key==='Enter') generateCardex()">
+                <div class="filter-search-wrap barcode-search-box">
+                    <input type="text" id="cardexBarcode" placeholder="🔎 کالا، بچ یا بارکد..." oninput="generateCardex()" onkeydown="if(event.key==='Enter') generateCardex()">
                     <button class="btn-blue" onclick="generateCardex()">🔍</button>
+                </div>
+                <div class="invoice-only-search">
+                    <input type="text" id="invoiceOnlySearch" placeholder="🧾 فقط شماره فاکتور..." oninput="generateCardex()" onkeydown="if(event.key==='Enter') generateCardex()">
+                    <button type="button" class="btn-blue" onclick="generateCardex()">🔎</button>
+                    <button type="button" class="invoice-clear-btn" onclick="clearInvoiceOnlySearch()">✕</button>
                 </div>
                 <div class="autocomplete-wrapper" style="margin:0;">
                     <input type="text" id="filterDocTarget" class="quick-filter-select" placeholder="📍 مشتری / انبار" onkeyup="filterTargets(this, 'dl-targets')" onfocus="filterTargets(this, 'dl-targets')" onkeydown="focusNext(event, 'cardexBarcode')">
@@ -2918,9 +3008,10 @@ async function deleteReceipt(docId, event) {
                 // فقط کالاهایی که واقعاً خرده موردنیاز دارند، ردیف خرده نشان می‌دهند.
                 let looseText = reqLoose > 0 ? `<div style="margin-top:3px;font-size:11px;color:#b45309;font-weight:900;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:4px 6px;">🟠 خرده موردنیاز: ${reqLoose.toLocaleString('fa-IR')} عدد | خرده اسکن‌شده: ${scannedLoose.toLocaleString('fa-IR')} عدد | خرده باقی‌مانده: ${Math.max(0, reqLoose - scannedLoose).toLocaleString('fa-IR')} عدد</div>` : '';
                 html += `<tr style="${bg}">
-                    <td style="text-align:right; font-weight:bold; line-height:1.5;">
-                        ${r.name}<br>
+                    <td style="text-align:right; font-weight:bold; line-height:1.5; cursor:pointer;" onclick="showDispatchScannedBarcodes('${String(r.pCode).replace(/'/g, "\'")}')" title="برای مشاهده بارکدهای گرفته‌شده کلیک کنید">
+                        <span style="text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px;">${r.name}</span><br>
                         <span style="font-size:10px; color:var(--warning); background:#fffbeb; padding:2px 4px; border-radius:4px; border:1px solid #fde68a;">بچ: ${r.batch}</span>
+                        <span style="display:block;margin-top:3px;font-size:9px;color:#6d28d9;font-weight:900;">👆 مشاهده بارکدهای گرفته‌شده</span>
                         ${looseText}
                     </td>
                     <td style="font-weight:bold; font-size:15px;" dir="rtl">${reqCartons.toLocaleString('fa-IR')} کارتن${reqLoose > 0 ? `<div style="font-size:11px;color:#b45309;margin-top:2px;">+ ${reqLoose.toLocaleString('fa-IR')} خرده</div>` : ''}</td>
@@ -2955,6 +3046,75 @@ async function deleteReceipt(docId, event) {
                 if(prevLoose && dispatchReqs[prevLoose]) looseSel.value=prevLoose;
             }
             document.getElementById('btnFinalizeDispatch').style.display = allDone ? 'block' : 'none';
+        }
+
+        function showDispatchScannedBarcodes(pCode){
+            const key = String(pCode || '').trim();
+            const r = dispatchReqs && dispatchReqs[key];
+            const modal = document.getElementById('dispatchScannedBarcodesModal');
+            const body = document.getElementById('dispatchScannedBarcodesBody');
+            const title = document.getElementById('dispatchScannedBarcodesTitle');
+            if(!r || !modal || !body) return;
+            const scans = (Array.isArray(currentDispatchScans) ? currentDispatchScans : []).filter(x => String(x.pCode || '').trim() === key);
+            const real = scans.filter(x => String(x.rawBarcode || '').trim() && !String(x.rawBarcode).startsWith('MANUAL-'));
+            const manual = scans.filter(x => String(x.rawBarcode || '').startsWith('MANUAL-'));
+            if(title) title.innerText = `📦 ${r.name} — بارکدهای گرفته‌شده`;
+            let html = '';
+            if(real.length){
+                html += `<div style="font-size:11px;font-weight:900;color:#5b21b6;margin-bottom:7px;">بارکدهای واقعی اسکن‌شده: ${real.length.toLocaleString('fa-IR')}</div>`;
+                html += `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:6px;">`;
+                real.forEach((x,i)=>{
+                    const globalIndex = (Array.isArray(currentDispatchScans) ? currentDispatchScans : []).indexOf(x);
+                    const safeBarcode = String(x.rawBarcode || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+                    html += `<div class="dispatch-scanned-barcode-row">
+                        <span style="color:#8b5cf6;min-width:22px;text-align:center;font-weight:900;">${(i+1).toLocaleString('fa-IR')}.</span>
+                        <span class="dispatch-scanned-barcode-value">${safeBarcode}</span>
+                        <button type="button" class="dispatch-scanned-barcode-delete" onclick="event.stopPropagation(); deleteDispatchScannedBarcode(${globalIndex})">🗑 حذف</button>
+                    </div>`;
+                });
+                html += `</div>`;
+            } else {
+                html += `<div style="padding:12px;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:8px;text-align:center;font-size:12px;font-weight:900;color:#64748b;">هنوز بارکد واقعی برای این کالا گرفته نشده است.</div>`;
+            }
+            if(manual.length){
+                html += `<div style="margin-top:10px;padding:7px 8px;background:#fff7ed;border:1px solid #fed7aa;border-radius:7px;font-size:10px;font-weight:900;color:#9a3412;">ثبت دستی: ${manual.length.toLocaleString('fa-IR')} مورد (بدون بارکد)</div>`;
+            }
+            body.innerHTML = html;
+            modal.style.display='flex';
+        }
+
+        function deleteDispatchScannedBarcode(globalIndex){
+            if(!Array.isArray(currentDispatchScans)) return;
+            const idx = Number(globalIndex);
+            if(!Number.isInteger(idx) || idx < 0 || idx >= currentDispatchScans.length) return;
+            const scan = currentDispatchScans[idx];
+            if(!scan || String(scan.rawBarcode || '').startsWith('MANUAL-')) return;
+            const pCode = String(scan.pCode || '').trim();
+            const r = dispatchReqs && dispatchReqs[pCode];
+            if(!r) return;
+
+            const barcode = String(scan.rawBarcode || '').trim();
+            if(!confirm(`بارکد زیر حذف شود؟\n${barcode}`)) return;
+
+            const pieces = Number(scan.pieces || 0);
+            const cartons = Number(scan.cartons || 0);
+            const loose = Number(scan.loose || 0);
+
+            r.scanned = Math.max(0, Number(r.scanned || 0) - pieces);
+            r.scannedCartons = Math.max(0, Number(r.scannedCartons || 0) - cartons);
+            r.scannedLoose = Math.max(0, Number(r.scannedLoose || 0) - loose);
+
+            currentDispatchScans.splice(idx, 1);
+            saveDispatchProgress();
+            renderDispatchTable();
+            updateDispatchScanSummary();
+            showDispatchScannedBarcodes(pCode);
+            updateLiveInfoDispatch(false, `🗑 بارکد ${barcode} حذف شد؛ مقدار بارگیری این کالا اصلاح شد.`);
+        }
+
+        function closeDispatchScannedBarcodes(){
+            const modal=document.getElementById('dispatchScannedBarcodesModal');
+            if(modal) modal.style.display='none';
         }
 
         function updateLiveInfoDispatch(isError, msg) {
@@ -4715,6 +4875,8 @@ function generateCardex() {
     try {
         let rawQuery = document.getElementById('cardexBarcode') ? document.getElementById('cardexBarcode').value.trim() : '';
         let query = normalizeSearchText(rawQuery);
+        let invoiceOnlyRaw = document.getElementById('invoiceOnlySearch') ? document.getElementById('invoiceOnlySearch').value.trim() : '';
+        let invoiceOnlyQuery = normalizeSearchText(invoiceOnlyRaw);
         let fType = document.querySelector('input[name="filType"]:checked')?.value || 'all';
         let fTarget = document.getElementById('filterDocTarget') ? normalizeSearchText(document.getElementById('filterDocTarget').value.trim()) : ''; 
         if(fTarget === 'همه') fTarget = '';
@@ -4770,9 +4932,10 @@ function generateCardex() {
         let filteredDocs = Object.values(docsMap).sort((a,b) => a._orderIndex - b._orderIndex).filter(doc => {
             const matchType = (fType === 'all' || doc.type === fType);
             const normRef = normalizeSearchText(doc.ref);
+            const matchInvoiceOnly = !invoiceOnlyQuery || normalizeSearchText(String(doc.officeDoc || '')) === invoiceOnlyQuery || normalizeSearchText(String(doc.officeDoc || '')).includes(invoiceOnlyQuery);
             const matchTarget = (fTarget === '' || normRef.includes(fTarget) || Array.from(doc.involvedWH).some(w => normalizeSearchText(w).includes(fTarget)));
             
-            if(!matchType || !matchTarget) return false;
+            if(!matchType || !matchTarget || !matchInvoiceOnly) return false;
             if(!query) return true;
 
             const matchDocId = normalizeSearchText(String(doc.docId)).includes(query);
@@ -4893,7 +5056,9 @@ function generateCardex() {
                 g.items.forEach(item => { 
                     let itemW = getWeight(item.pCode, item.totalPieces, item);
                     const rawBarcodeStr = String(item.rawBarcode || '');
-                    const isExactBarcodeMatch = query !== '' && normalizeSearchText(rawBarcodeStr).includes(query);
+                    const normalizedQ = normalizeSearchText(query || '');
+                    const hasExactBarcodeMatch = normalizedQ !== '' && rawBarcodeStr.split('|').map(x=>normalizeSearchText(x.trim())).includes(normalizedQ);
+                    const isExactBarcodeMatch = hasExactBarcodeMatch;
                     
                     const highlightStyle = isExactBarcodeMatch 
                         ? 'background-color:#ecfdf5; border-right:4px solid #10b981;' 
@@ -4902,7 +5067,7 @@ function generateCardex() {
                         ? 'background:#10b981; color:#ffffff; font-weight:900;' 
                         : 'background:#eff6ff; color:#1e3a8a;';
 
-                    tempHtml += `<tr class="detail-row doc-det-${doc.docId}" style="display:${dispStyle}; ${highlightStyle}">
+                    tempHtml += `<tr class="detail-row doc-det-${doc.docId} ${isExactBarcodeMatch ? 'exact-search-row' : ''}" style="display:${dispStyle}; ${highlightStyle}">
                         <td colspan="7" style="text-align: right; border-top:1px dashed var(--border); padding:8px 15px;">
                             <div style="display:flex; justify-content:space-between; align-items:center;">
                                 <div style="display:flex; align-items:center; gap:8px;">
@@ -4917,7 +5082,7 @@ function generateCardex() {
                                             return `<span class="barcode-chip ${isMatch ? 'match' : ''} ${manual ? 'manual' : ''}" title="${v}">${v}</span>`;
                                         }).join('')}
                                         ${!item.rawBarcode ? '<span class="barcode-chip manual">دستی / نامشخص</span>' : ''}
-                                        ${item.rawBarcode ? `<span class="barcode-count">${String(item.rawBarcode).split('|').filter(x => String(x).trim()).length.toLocaleString('fa-IR')} بارکد</span>` : ''}
+                                        ${item.rawBarcode && !(normalizedQ !== '' && hasExactBarcodeMatch) ? `<span class="barcode-count">${String(item.rawBarcode).split('|').filter(x => String(x).trim()).length.toLocaleString('fa-IR')} بارکد</span>` : ''}
                                         ${isExactBarcodeMatch ? '<span style="font-size:11px; color:#059669; font-weight:bold; white-space:nowrap;">🎯 بارکد منطبق</span>' : ''}
                                     </div>
                                 </div>
@@ -4936,6 +5101,12 @@ function generateCardex() {
     } catch(e) { console.error("Cardex docs error", e); }
 }
 
+function clearInvoiceOnlySearch(){
+    const el = document.getElementById('invoiceOnlySearch');
+    if(el){ el.value=''; el.focus(); }
+    generateCardex();
+}
+
 function renderMobileDocumentCards(filteredDocs, query='') {
     const wrap = document.getElementById('mobileDocumentCards');
     if(!wrap) return;
@@ -4947,6 +5118,14 @@ function renderMobileDocumentCards(filteredDocs, query='') {
       .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
       .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
     const persianNumber = (v) => Number(v||0).toLocaleString('fa-IR');
+
+    const normalizedQuery = normalizeSearchText(query || '');
+    const isExactBarcodeSearch = normalizedQuery !== '' && (filteredDocs||[]).some(doc =>
+        (doc.items||[]).some(item =>
+            String(item.rawBarcode||'').split('|').map(x=>normalizeSearchText(x.trim())).includes(normalizedQuery)
+        )
+    );
+
     const docStatus = (doc) => {
         if(doc.type !== 'خروج') return {text:'ورود', cls:'in', icon:'↓'};
         return doc.dispatchStatus === 'done'
@@ -4977,18 +5156,40 @@ function renderMobileDocumentCards(filteredDocs, query='') {
         const grouped={};
         (doc.items||[]).forEach(item=>{
             const key=String(item.pCode||'');
-            if(!grouped[key]) grouped[key]={name:productsMap[key]||item.productNameSnapshot||key,c:0,l:0,p:0,w:0,batches:new Set(),barcodes:[]};
+            const itemBarcodes=String(item.rawBarcode||'').split('|').map(x=>x.trim()).filter(Boolean);
+
+            // در جستجوی دقیق بارکد، فقط قلم حاوی همان بارکد وارد جزئیات می‌شود
+            if(isExactBarcodeSearch && !itemBarcodes.some(b=>normalizeSearchText(b)===normalizedQuery)) return;
+
+            if(!grouped[key]) grouped[key]={
+                name:productsMap[key]||item.productNameSnapshot||key,
+                c:0,l:0,p:0,w:0,batches:new Set(),barcodes:[]
+            };
             grouped[key].c += Number(item.qtyCarton||0);
             grouped[key].l += Number(item.qtyLoose||0);
             grouped[key].p += Number(item.totalPieces||0);
             grouped[key].w += getWeight(item.pCode,item.totalPieces,item);
             if(item.batch) grouped[key].batches.add(item.batch);
-            String(item.rawBarcode||'').split('|').map(x=>x.trim()).filter(Boolean).forEach(x=>grouped[key].barcodes.push(x));
+
+            itemBarcodes.forEach(x=>{
+                if(isExactBarcodeSearch){
+                    if(normalizeSearchText(x)===normalizedQuery) grouped[key].barcodes.push(x);
+                } else {
+                    grouped[key].barcodes.push(x);
+                }
+            });
         });
+
         const detailHtml=Object.values(grouped).map(g=>{
-            const bcs=g.barcodes.slice(0,24).map(b=>`<span class="m-barcode-chip">${esc(b)}</span>`).join('');
-            const extra=g.barcodes.length>24 ? `<span class="m-barcode-more">+${persianNumber(g.barcodes.length-24)} بارکد دیگر</span>` : '';
-            return `<div class="m-item">
+            const shownBarcodes = isExactBarcodeSearch
+                ? g.barcodes.filter(b=>normalizeSearchText(b)===normalizedQuery).slice(0,1)
+                : g.barcodes.slice(0,24);
+
+            const bcs=shownBarcodes.map(b=>`<span class="m-barcode-chip ${isExactBarcodeSearch ? 'exact-search-hit' : ''}">${esc(b)}</span>`).join('');
+            const extra=!isExactBarcodeSearch && g.barcodes.length>24
+                ? `<span class="m-barcode-more">+${persianNumber(g.barcodes.length-24)} بارکد دیگر</span>` : '';
+
+            return `<div class="m-item ${isExactBarcodeSearch?'exact-search-item':''}">
                 <div class="m-item-top"><strong>📦 ${esc(g.name)}</strong><span>${esc(Object.keys(grouped).find(k=>grouped[k]===g)||'')}</span></div>
                 <div class="m-item-qty"><span>${getPersianQtyStr(g.c,g.l)}</span><span>${persianNumber(g.p)} عدد</span>${g.w>0?`<span>${g.w.toFixed(2).replace(/\.00$/,'')} kg</span>`:''}</div>
                 ${g.batches.size?`<div class="m-batch">بچ: ${esc(Array.from(g.batches).join('، '))}</div>`:''}
