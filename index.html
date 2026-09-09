@@ -1893,6 +1893,7 @@ td{border-bottom-color:#d0d8e2 !important;}
         }
 
         function showScanError(message) {
+            dispatchErrorLocked = true;
             // هشدار سخت‌افزاری/دیداری برای اسکن اشتباه: لرزش + صدای خطا + پاپ‌آپ با دکمه OK
             triggerScanVibration();
             playBeep('error');
@@ -1914,9 +1915,20 @@ td{border-bottom-color:#d0d8e2 !important;}
                 </div>
             </div>`;
             document.body.appendChild(modal);
-            const close = () => { modal.remove(); const inp=document.getElementById('dispatchBarcode'); if(inp){inp.focus();inp.select();} };
+            const close = () => {
+                if (!document.body.contains(modal)) return;
+                modal.remove();
+                isDispatchScanning = false;
+                dispatchLastProcessed = '';
+                const inp=document.getElementById('dispatchBarcode');
+                if(inp){ inp.focus(); inp.select(); }
+            };
             document.getElementById('scanErrorOkBtn').onclick = close;
-            modal.addEventListener('click', e => { if(e.target === modal) close(); });
+            // خطا باید تا زمان تایید کاربر قفل بماند؛ کلیک بیرون یا ESC اجازه عبور ندارد.
+            modal.addEventListener('click', e => { e.stopPropagation(); });
+            modal.addEventListener('keydown', e => {
+                if (e.key !== 'Tab') e.stopPropagation();
+            }, true);
             setTimeout(()=>document.getElementById('scanErrorOkBtn')?.focus(), 50);
         }
 
@@ -3217,6 +3229,8 @@ async function deleteReceipt(docId, event) {
         let dispatchScanTimer = null;
         let dispatchLastProcessed = '';
         function processDispatchHardwareInput(force=false) {
+            // وقتی خطای بارکد باز است، اسکنر سخت‌افزاری کاملاً متوقف است تا OK زده شود.
+            if (document.getElementById('scan-error-modal')) return false;
             const input = document.getElementById('dispatchBarcode');
             if(!input) return;
             const txt = input.value.trim();
@@ -3234,10 +3248,17 @@ async function deleteReceipt(docId, event) {
             setTimeout(()=>{ dispatchLastProcessed=''; input.focus(); }, 500);
         }
         function handleDispatchBarcodeInput() {
+            // تا وقتی پیام خطا تایید نشده، هیچ ورودی جدیدی پردازش نشود.
+            if (document.getElementById('scan-error-modal')) return;
             clearTimeout(dispatchScanTimer);
             dispatchScanTimer=setTimeout(()=>processDispatchHardwareInput(false), 350);
         }
         function handleDispatchHardwareScanner(e) {
+            // حتی ورود مستقیم از بارکدخوان هم هنگام خطا مسدود باشد.
+            if (document.getElementById('scan-error-modal')) {
+                if(e){ e.preventDefault(); e.stopPropagation(); }
+                return;
+            }
             if(e && e.key === 'Enter') {
                 e.preventDefault();
                 e.stopPropagation();
@@ -3465,6 +3486,7 @@ async function deleteReceipt(docId, event) {
 }
 
     let isDispatchScanning = false;
+let dispatchErrorLocked = false;
 let lastCameraScanTime = 0;
 
 function startDispatchCamera() {
@@ -3479,6 +3501,7 @@ function startDispatchCamera() {
         { facingMode: "environment" }, 
         { fps: 15, qrbox: { width: 250, height: 100 } }, 
         (txt) => { 
+            if (dispatchErrorLocked || document.getElementById('scan-error-modal')) return;
             const now = Date.now();
             // وقفه ۱.۲ ثانیه‌ای هوشمند برای جلوگیری از اسکن چندباره یک فریم یکسان
             if (isDispatchScanning || (now - lastCameraScanTime < 1200)) return;
@@ -3490,8 +3513,9 @@ function startDispatchCamera() {
             const ok = processDispatchScan(txt);
             
             if (ok === false) {
-                // فقط در صورت بروز خطا، دوربین بسته شده و پیام خطا ظاهر می‌شود
+                // خطا یعنی کل مسیر اسکن تا تایید OK متوقف بماند.
                 stopDispatchCamera();
+                isDispatchScanning = true;
             } else {
                 // در صورت اسکن موفق، کادر پاک شده و دوربین برای کارتن بعدی باز می‌ماند
                 document.getElementById('dispatchBarcode').value = '';
@@ -3504,7 +3528,10 @@ function startDispatchCamera() {
                 }
             }
             
-            setTimeout(() => { isDispatchScanning = false; }, 800);
+            // در حالت خطا، فقط دکمه OK مجاز به آزاد کردن قفل است.
+            if (!document.getElementById('scan-error-modal')) {
+                setTimeout(() => { if(!dispatchErrorLocked) isDispatchScanning = false; }, 800);
+            }
         }, 
         (err) => {}
     ).catch(() => { 
