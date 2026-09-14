@@ -1321,7 +1321,9 @@ td{border-bottom-color:#d0d8e2 !important;}
                 <button class="tab-btn" id="tabBtnInventory" onclick="openTab('tab-inventory', this)">📦 موجودی</button>
                 <button class="tab-btn" id="tabBtnEntry" onclick="openTab('tab-entry', this)">📥 ثبت ورود</button>
                 <button class="tab-btn" id="tabBtnExit" onclick="openTab('tab-exit', this)">📤 صدور حواله</button>
+                <button class="tab-btn" id="tabBtnTransfer" onclick="openTab('tab-transfer', this)">🔄 انتقال بین انبار</button>
                 <button class="tab-btn" id="tabBtnCardex" onclick="openTab('tab-cardex', this)">📋 اسناد و کاردکس</button>
+                <button class="tab-btn" id="tabBtnInventoryCount" onclick="openTab('tab-inventory-count', this)">🧮 انبارگردانی</button>
                 <button class="tab-btn" id="settingsTabBtn" onclick="openTab('tab-settings', this)">⚙️ تنظیمات</button>
                 <button class="tab-btn tab-logout" onclick="logoutApp()">🚪 خروج</button>
             </div>
@@ -1581,6 +1583,67 @@ td{border-bottom-color:#d0d8e2 !important;}
                 </div>
             </div>
 
+            <!-- تب انتقال بین انبار -->
+            <div id="tab-transfer" class="tab-content">
+                <div class="split-layout">
+                    <div class="form-panel" style="border-top: 5px solid #7c3aed;">
+                        <h2 style="color:#6d28d9;font-size:18px;">🔄 انتقال بین انبارها</h2>
+                        <div style="background:#f5f3ff;padding:12px;border-radius:10px;margin-bottom:12px;border:1px solid #ddd6fe;">
+                            <div style="font-size:12px;color:#5b21b6;font-weight:900;line-height:1.9;">
+                                کالا از انبار مبدأ کم و به انبار مقصد اضافه می‌شود. مقدار انتقال روی موجودی تأثیر مستقیم دارد و بارکدگیری در این بخش موجودی را دوباره تغییر نمی‌دهد.
+                            </div>
+                        </div>
+                        <div class="responsive-grid" style="grid-template-columns:1fr 1fr;gap:10px;">
+                            <div>
+                                <label style="font-size:12px;font-weight:900;">انبار مبدأ:</label>
+                                <select id="transferSourceWarehouse" onchange="transferDraftItems=[]; renderTransferDrafts(); handleTransferBarcodeInput()"></select>
+                            </div>
+                            <div>
+                                <label style="font-size:12px;font-weight:900;">انبار مقصد:</label>
+                                <select id="transferDestinationWarehouse" onchange="transferDraftItems=[]; renderTransferDrafts()"></select>
+                            </div>
+                        </div>
+                        <div class="responsive-grid" style="grid-template-columns:1fr 1fr;gap:10px;">
+                            <div>
+                                <label style="font-size:12px;font-weight:900;">شماره انتقال:</label>
+                                <input type="text" id="transferOfficeDoc" placeholder="مثلاً TR-1001">
+                            </div>
+                            <div>
+                                <label style="font-size:12px;font-weight:900;">شرح انتقال:</label>
+                                <input type="text" id="transferRef" placeholder="مثلاً جابجایی بین انبار محصول و فیروزبهرام">
+                            </div>
+                        </div>
+                        <div style="margin-top:8px;">
+                            <label style="font-size:12px;font-weight:900;">کد کالا / بارکد:</label>
+                            <div class="input-group" style="margin:0;">
+                                <input type="text" id="transferBarcode" class="hardware-input" placeholder="کد کالا یا بارکد را وارد کنید..." oninput="handleTransferBarcodeInput()" onkeydown="handleTransferBarcodeKey(event)">
+                                <button type="button" class="btn-blue" style="width:auto;padding:0 18px;margin:0;background:#7c3aed;" onclick="addTransferDraft()">➕ افزودن</button>
+                            </div>
+                            <div id="transferBarcodeInfo" class="live-info" style="margin-top:5px;"></div>
+                        </div>
+                        <div class="responsive-grid" style="grid-template-columns:1fr 1fr;gap:10px;">
+                            <div>
+                                <label style="font-size:12px;font-weight:900;">تعداد کارتن:</label>
+                                <input type="number" min="0" id="transferCartonQty" value="1">
+                            </div>
+                            <div>
+                                <label style="font-size:12px;font-weight:900;">تعداد خرده:</label>
+                                <input type="number" min="0" id="transferLooseQty" value="0">
+                            </div>
+                        </div>
+                        <button type="button" style="background:#7c3aed;" onclick="finalizeTransferDoc()">✅ ثبت نهایی انتقال</button>
+                        <div id="transferStatus" class="live-info"></div>
+                    </div>
+
+                    <div class="cart-panel">
+                        <h2 style="font-size:16px;color:#6d28d9;">📦 اقلام آماده انتقال</h2>
+                        <div id="transferDraftList" class="draft-list" style="background:#faf5ff;border-color:#c4b5fd;">
+                            <div style="text-align:center;color:#6b7280;font-size:12px;">هنوز کالایی برای انتقال اضافه نشده است.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- تب اسناد و کاردکس -->
             <div id="tab-cardex" class="tab-content">
     <h2 id="cardexTitleLabel">📋 اسناد و کاردکس کالاها</h2>
@@ -1654,6 +1717,71 @@ td{border-bottom-color:#d0d8e2 !important;}
         </div>
     </div>
 </div>
+
+
+<style>
+/* ===== ماژول انبارگردانی دوره‌ای ===== */
+.inventory-count-toolbar{display:grid;grid-template-columns:180px 220px 1fr auto;gap:9px;align-items:end;margin-bottom:10px;}
+.inventory-count-toolbar .count-field{min-width:0;}
+.inventory-count-toolbar label{display:block;font-size:11px;font-weight:900;color:var(--dark);margin-bottom:4px;}
+.inventory-count-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin:8px 0 10px;}
+.inventory-count-stat{background:#f8fafc;border:1px solid var(--border);border-radius:9px;padding:8px 10px;display:flex;justify-content:space-between;align-items:center;font-size:11px;font-weight:900;}
+.inventory-count-stat b{font-size:16px;color:var(--dark);}
+.inventory-count-table{max-height:calc(100vh - 330px);overflow:auto;border:1px solid var(--border);border-radius:9px;background:#fff;}
+.inventory-count-table table{min-width:820px;}
+.inventory-count-table th{position:sticky;top:0;z-index:5;background:#eef3f8 !important;}
+.inventory-count-input{width:120px!important;margin:0!important;text-align:center!important;font-weight:900!important;}
+.inventory-count-row.diff{background:#fff7ed;}
+.inventory-count-row.match{background:#ecfdf5;}
+.inventory-count-actions{display:flex;gap:7px;flex-wrap:wrap;}
+.inventory-count-actions button{width:auto;margin:0;padding:8px 12px;font-size:11px;}
+.inventory-count-note{background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:9px 11px;font-size:11px;font-weight:800;color:#1e40af;line-height:1.8;margin-bottom:10px;}
+@media(max-width:800px){
+ .inventory-count-toolbar{grid-template-columns:1fr 1fr;}
+ .inventory-count-toolbar .count-wide{grid-column:1/-1;}
+ .inventory-count-summary{grid-template-columns:1fr 1fr;}
+}
+</style>
+
+
+            <!-- تب انبارگردانی -->
+            <div id="tab-inventory-count" class="tab-content">
+                <div class="card" style="border-top:5px solid var(--primary);">
+                    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+                        <h2 style="margin:0;color:var(--primary);font-size:18px;border:0;padding:0;">🧮 انبارگردانی دوره‌ای</h2>
+                        <span id="inventoryCountStatus" style="font-size:11px;font-weight:900;color:var(--text-muted);">دوره‌ای ثبت نشده است</span>
+                    </div>
+                    <div class="inventory-count-note">
+                        انبارگردانی پس از تأیید، موجودی شمارش‌شده را به‌عنوان <b>مبنای جدید</b> قرار می‌دهد؛ اسناد قدیمی حذف نمی‌شوند و در «اسناد و کاردکس» باقی می‌مانند. از آن لحظه موجودی عملیاتی از شمارش جدید ادامه پیدا می‌کند.
+                    </div>
+                    <div class="inventory-count-toolbar">
+                        <div class="count-field"><label>سال دوره</label><input id="inventoryCountYear" type="number" min="1400" max="1600" value="1405" onchange="loadInventoryCount()" onkeydown="if(event.key==='Enter') loadInventoryCount()"></div>
+                        <div class="count-field"><label>انبار</label><div class="custom-select-wrapper" style="margin:0;">
+                            <input type="hidden" id="inventoryCountWarehouse" value="">
+                            <div class="custom-select-display" id="disp-inventoryCountWarehouse" onclick="toggleCS('inventoryCountWarehouse', event)" tabindex="0">انتخاب انبار... <span style="font-size:10px;">▼</span></div>
+                            <div class="custom-select-options" id="opt-inventoryCountWarehouse"></div>
+                        </div></div>
+                        <div class="count-field count-wide"><label>اسکن بارکد کارتن برای شمارش سریع</label><input id="inventoryCountBarcode" class="hardware-input" type="text" placeholder="بارکد را اسکن کنید؛ هر اسکن = یک کارتن" onkeydown="handleInventoryCountBarcode(event)"></div>
+                        <button class="btn-blue" style="margin:0;height:40px;" onclick="loadInventoryCount()">🔄 شروع / ادامه شمارش</button>
+                    </div>
+                    <div class="inventory-count-actions" style="margin-bottom:8px;">
+                        <button class="btn-blue" onclick="fillUncountedWithSystem()">✅ باقی‌مانده‌ها = موجودی سیستم</button>
+                        <button class="btn-red" onclick="clearInventoryCountInputs()">🧹 پاک کردن شمارش‌ها</button>
+                        <button class="btn-green" onclick="finalizeInventoryCount()">🔐 تأیید و شروع دوره جدید</button>
+                    </div>
+                    <div class="inventory-count-summary">
+                        <div class="inventory-count-stat"><span>کالاها</span><b id="countStatTotal">۰</b></div>
+                        <div class="inventory-count-stat"><span>شمارش‌شده</span><b id="countStatDone">۰</b></div>
+                        <div class="inventory-count-stat"><span>دارای اختلاف</span><b id="countStatDiff">۰</b></div>
+                        <div class="inventory-count-stat"><span>باقی‌مانده</span><b id="countStatRemain">۰</b></div>
+                    </div>
+                    <div class="inventory-count-table">
+                        <table><thead><tr><th>کد کالا</th><th style="text-align:right;">نام کالا</th><th>موجودی سیستم</th><th>شمارش واقعی</th><th>اختلاف</th></tr></thead>
+                        <tbody id="inventoryCountTableBody"><tr><td colspan="5" style="padding:30px;text-align:center;color:var(--text-muted);font-weight:900;">ابتدا انبار و سال را انتخاب و «شروع / ادامه شمارش» را بزنید.</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
 
            <!-- تب تنظیمات -->
             <div id="tab-settings" class="tab-content">
@@ -1803,7 +1931,7 @@ td{border-bottom-color:#d0d8e2 !important;}
 </div>
 
     <script>
-    const DB_URL = "https://app.factor-anbar.online";
+    const DB_URL = "https://anbar-db.mojtaba-hanafi13.workers.dev";
         let autoSyncInterval = null;
 // جلوگیری از تزریق کدهای مخرب در متن‌ها
         function escapeHtml(str) {
@@ -2154,6 +2282,8 @@ td{border-bottom-color:#d0d8e2 !important;}
                 document.getElementById('tabBtnEntry').style.display = 'none';
                 document.getElementById('tabBtnExit').style.display = 'none';
                 document.getElementById('settingsTabBtn').style.display = 'none';
+                if(document.getElementById('tabBtnInventoryCount')) document.getElementById('tabBtnInventoryCount').style.display = 'none';
+                if(document.getElementById('tabBtnTransfer')) document.getElementById('tabBtnTransfer').style.display = 'none';
                 
                 document.getElementById('tabBtnCardex').innerText = '🚚 حواله‌های بارگیری';
                 document.getElementById('cardexTitleLabel').innerText = '🚚 حواله‌های در انتظار بارگیری';
@@ -2165,6 +2295,7 @@ td{border-bottom-color:#d0d8e2 !important;}
                 document.getElementById('tabBtnDashboard').style.display = 'block';
                 document.getElementById('tabBtnInventory').style.display = 'block';
                 document.getElementById('tabBtnCardex').style.display = 'block';
+                if(document.getElementById('tabBtnTransfer')) document.getElementById('tabBtnTransfer').style.display = (currentUser.role === 'viewer') ? 'none' : 'block';
                 document.getElementById('tabBtnCardex').innerText = '📋 اسناد و کاردکس';
                 document.getElementById('cardexTitleLabel').innerText = '📋 اسناد و کاردکس کالاها';
                 document.getElementById('cardexModeSelectorCard').style.display = 'block';
@@ -2194,21 +2325,51 @@ td{border-bottom-color:#d0d8e2 !important;}
             }
         }
 
+        function getActiveInventoryBaseline(wh) {
+            const list = Array.isArray(sysSettings?.inventoryCountBaselines) ? sysSettings.inventoryCountBaselines : [];
+            const matches = list.filter(x => x && String(x.warehouse || '') === String(wh || ''));
+            if(!matches.length) return null;
+            return matches[matches.length - 1];
+        }
+
+        function isLogIncludedAfterBaseline(log, baseline) {
+            if(!baseline) return true;
+            const ids = new Set(Array.isArray(baseline.excludedDocIds) ? baseline.excludedDocIds.map(x => String(x)) : []);
+            return !ids.has(String(log.docId));
+        }
+
         function rebuildInventory() {
-            // موجودی واقعی فقط از اسناد ثبت‌شده محاسبه می‌شود؛ اقلام پیش‌نویس نباید
-            // قبل از ثبت سند موجودی را کم/زیاد کنند.
+            // موجودی جاری بر اساس آخرین انبارگردانی هر انبار + اسناد بعد از آن محاسبه می‌شود.
+            // اسناد قبل از انبارگردانی حذف نمی‌شوند؛ فقط از مبنای موجودی جاری کنار گذاشته می‌شوند.
             let newInv = {};
+            const baselines = Array.isArray(sysSettings?.inventoryCountBaselines) ? sysSettings.inventoryCountBaselines : [];
+            const baselineMap = {};
+            baselines.forEach(b => { if(b && b.warehouse) baselineMap[String(b.warehouse)] = b; });
+
+            Object.values(baselineMap).forEach(b => {
+                const counts = b.counts && typeof b.counts === 'object' ? b.counts : {};
+                Object.keys(counts).forEach(pCode => {
+                    const pieces = Number(counts[pCode]) || 0;
+                    if(pieces < 0) return;
+                    const key = `${pCode}-__INVENTORY_COUNT__`;
+                    if(!newInv[key]) newInv[key] = { pCode, batch: `انبارگردانی ${b.year || ''}`.trim(), stock:{} };
+                    newInv[key].stock[String(b.warehouse)] = pieces;
+                });
+            });
+
             (Array.isArray(historyLog) ? historyLog : []).forEach(log => {
                 if(!log || !log.pCode) return;
-                let wh = log.warehouse || "انبار مرکزی";
-                let batch = log.batch || "نامشخص";
-                let key = log.pCode + "-" + batch;
-                if(!newInv[key]) newInv[key] = { pCode: log.pCode, batch: batch, stock: {} };
+                const wh = log.warehouse || 'انبار مرکزی';
+                const baseline = baselineMap[String(wh)];
+                if(!isLogIncludedAfterBaseline(log, baseline)) return;
+                const batch = log.batch || 'نامشخص';
+                const key = log.pCode + '-' + batch;
+                if(!newInv[key]) newInv[key] = { pCode: log.pCode, batch, stock:{} };
                 if(!Object.prototype.hasOwnProperty.call(newInv[key].stock, wh)) newInv[key].stock[wh] = 0;
-                // مقدار ثبت‌شده باید signed باشد؛ کسری واقعی نباید به صفر تبدیل شود.
-                let pieces = Number(log.totalPieces) || 0;
+                const pieces = Number(log.totalPieces) || 0;
                 if(log.type === 'ورود' || log.type === 'اول دوره') newInv[key].stock[wh] += pieces;
                 else if(log.type === 'خروج') newInv[key].stock[wh] -= pieces;
+                else if(log.type === 'انتقال بین انبار'){ if((log.movementType||'ورود')==='خروج') newInv[key].stock[wh] -= pieces; else newInv[key].stock[wh] += pieces; }
             });
             inventory = newInv;
             return inventory;
@@ -2216,15 +2377,20 @@ td{border-bottom-color:#d0d8e2 !important;}
 
         function getActualStock(pCode, wh, excludeDocId = null) {
             let total = 0;
+            const baseline = getActiveInventoryBaseline(wh);
+            if(baseline && baseline.counts && Object.prototype.hasOwnProperty.call(baseline.counts, pCode)) {
+                total = Number(baseline.counts[pCode]) || 0;
+            }
+            const ids = baseline ? new Set(Array.isArray(baseline.excludedDocIds) ? baseline.excludedDocIds.map(x => String(x)) : []) : null;
             const excluded = excludeDocId == null ? null : String(excludeDocId);
             (Array.isArray(historyLog) ? historyLog : []).forEach(log => {
-                if(!log || log.pCode !== pCode || (log.warehouse || 'انبار مرکزی') !== wh) return;
+                if(!log || String(log.pCode) !== String(pCode) || (log.warehouse || 'انبار مرکزی') !== wh) return;
                 if(excluded !== null && String(log.docId) === excluded) return;
-                let pieces = Number(log.totalPieces) || 0;
+                if(ids && ids.has(String(log.docId))) return;
+                const pieces = Number(log.totalPieces) || 0;
                 if(log.type === 'ورود' || log.type === 'اول دوره') total += pieces;
                 else if(log.type === 'خروج') total -= pieces;
             });
-            // موجودی منفی عمداً برگردانده می‌شود تا کسری پنهان نشود.
             return total;
         }
 
@@ -2884,6 +3050,160 @@ async function deleteReceipt(docId, event) {
 }
    
         
+        // ===== انتقال بین انبارها =====
+        let transferDraftItems = [];
+
+        function renderTransferWarehouses() {
+            const src = document.getElementById('transferSourceWarehouse');
+            const dst = document.getElementById('transferDestinationWarehouse');
+            if(!src || !dst) return;
+            const warehouses = Array.isArray(sysSettings?.warehouses) ? sysSettings.warehouses : [];
+            const opts = warehouses.map(w => `<option value="${String(w).replace(/"/g,'&quot;')}">${String(w)}</option>`).join('');
+            src.innerHTML = opts;
+            dst.innerHTML = opts;
+            if(warehouses.length > 1){
+                if(warehouses.includes('انبار محصول')) src.value='انبار محصول';
+                if(warehouses.includes('انبار فیروزبهرام')) dst.value='انبار فیروزبهرام';
+                if(src.value === dst.value) dst.selectedIndex = 1;
+            }
+        }
+
+        function handleTransferBarcodeInput(){
+            const raw = (document.getElementById('transferBarcode')?.value || '').trim();
+            const info = document.getElementById('transferBarcodeInfo');
+            if(!raw){ if(info) info.innerText=''; return; }
+            const pCode = raw.length >= 6 && !raw.startsWith('M-') ? raw.substring(0,6) : raw;
+            if(productsMap[pCode]){
+                const units = parseInt(productsUnitsMap[pCode]) || 1;
+                const src = document.getElementById('transferSourceWarehouse')?.value || '';
+                const stock = getActualStock(pCode, src);
+                const c = Math.floor(stock/units), l = stock % units;
+                if(info) info.innerText = `📦 ${productsMap[pCode]} | موجودی مبدأ: ${getPersianQtyStr(c,l)}`;
+            } else if(info) info.innerText = '⚠️ کالا در سیستم پیدا نشد.';
+        }
+
+        function handleTransferBarcodeKey(e){
+            if(e?.key === 'Enter'){ e.preventDefault(); addTransferDraft(); }
+        }
+
+        function addTransferDraft(){
+            rebuildInventory();
+            const src = document.getElementById('transferSourceWarehouse')?.value || '';
+            const dst = document.getElementById('transferDestinationWarehouse')?.value || '';
+            if(!src || !dst) return alert('❌ انبار مبدأ و مقصد را مشخص کنید.');
+            if(src === dst) return alert('❌ انبار مبدأ و مقصد نمی‌توانند یکسان باشند.');
+            const raw = (document.getElementById('transferBarcode')?.value || '').trim();
+            if(!raw) return alert('❌ کد کالا یا بارکد را وارد کنید.');
+            const pCode = raw.length >= 6 && !raw.startsWith('M-') ? raw.substring(0,6) : raw;
+            if(!productsMap[pCode]) { playBeep('error'); return alert('❌ این کالا در سیستم تعریف نشده است.'); }
+            const units = parseInt(productsUnitsMap[pCode]) || 1;
+            const c = Math.max(0, parseInt(document.getElementById('transferCartonQty')?.value)||0);
+            const l = Math.max(0, parseInt(document.getElementById('transferLooseQty')?.value)||0);
+            const pieces = c * units + l;
+            if(pieces <= 0) return alert('❌ مقدار انتقال را مشخص کنید.');
+            const available = Number(getActualStock(pCode, src)) || 0;
+            const reserved = transferDraftItems.filter(i=>i.pCode===pCode && i.source===src).reduce((a,i)=>a+Number(i.totalPieces||0),0);
+            if(available - reserved < pieces){
+                playBeep('error');
+                return alert(`⛔ موجودی کافی نیست.\n\nکالا: ${productsMap[pCode]}\nموجودی قابل انتقال: ${Math.max(0,available-reserved).toLocaleString('fa-IR')} عدد\nمقدار درخواستی: ${pieces.toLocaleString('fa-IR')} عدد`);
+            }
+            let batch = raw.length >= 9 && !raw.startsWith('M-') ? raw.substring(6,9) : 'نامشخص';
+            let existing = transferDraftItems.find(i=>i.pCode===pCode && i.source===src && i.destination===dst && i.batch===batch);
+            if(existing){
+                existing.qtyCarton += c; existing.qtyLoose += l; existing.totalPieces += pieces;
+            }else{
+                transferDraftItems.push({pCode,batch,raw,qtyCarton:c,qtyLoose:l,totalPieces:pieces,name:productsMap[pCode],units,source:src,destination:dst});
+            }
+            document.getElementById('transferBarcode').value='';
+            document.getElementById('transferCartonQty').value='1';
+            document.getElementById('transferLooseQty').value='0';
+            renderTransferDrafts();
+            handleTransferBarcodeInput();
+            document.getElementById('transferBarcode').focus();
+        }
+
+        function renderTransferDrafts(){
+            const el=document.getElementById('transferDraftList');
+            if(!el) return;
+            if(!transferDraftItems.length){
+                el.innerHTML='<div style="text-align:center;color:#6b7280;font-size:12px;">هنوز کالایی برای انتقال اضافه نشده است.</div>';
+                return;
+            }
+            el.innerHTML=transferDraftItems.map((i,idx)=>`
+                <div style="background:#fff;border:1px solid #ddd6fe;border-right:4px solid #7c3aed;border-radius:8px;padding:9px;margin-bottom:7px;">
+                    <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;">
+                        <div style="min-width:0;">
+                            <div style="font-weight:900;color:#5b21b6;font-size:13px;">${String(i.name).replace(/</g,'&lt;')}</div>
+                            <div style="font-size:10px;color:#64748b;font-family:monospace;">${i.pCode} | بچ: ${i.batch}</div>
+                            <div style="font-size:10px;color:#475569;margin-top:3px;">${i.source} ← ${i.destination}</div>
+                            <div style="font-weight:900;color:#1e293b;margin-top:3px;">${getPersianQtyStr(i.qtyCarton,i.qtyLoose)} | ${i.totalPieces.toLocaleString('fa-IR')} عدد</div>
+                        </div>
+                        <button type="button" style="width:auto;margin:0;background:#dc2626;padding:7px 10px;font-size:11px;" onclick="removeTransferDraft(${idx})">🗑 حذف</button>
+                    </div>
+                </div>`).join('');
+        }
+
+        function removeTransferDraft(idx){
+            if(idx<0 || idx>=transferDraftItems.length) return;
+            transferDraftItems.splice(idx,1);
+            renderTransferDrafts();
+        }
+
+        async function finalizeTransferDoc(){
+            if(!transferDraftItems.length) return alert('❌ هیچ کالایی برای انتقال اضافه نشده است.');
+            const src = document.getElementById('transferSourceWarehouse')?.value || '';
+            const dst = document.getElementById('transferDestinationWarehouse')?.value || '';
+            if(!src || !dst || src===dst) return alert('❌ انبار مبدأ و مقصد را صحیح انتخاب کنید.');
+            if(transferDraftItems.some(i=>i.source!==src || i.destination!==dst)) return alert('❌ همه اقلام این انتقال باید مربوط به همین مبدأ و مقصد باشند.');
+            const officeBase = (document.getElementById('transferOfficeDoc')?.value || '').trim() || ('TR-' + Date.now().toString().slice(-8));
+            const ref = (document.getElementById('transferRef')?.value || '').trim() || `انتقال داخلی: ${src} ← ${dst}`;
+            const dateStr = new Date().toLocaleString('fa-IR');
+            const transferDocId = generateUniqueDocId();
+            const sourceItems = transferDraftItems.map(i=>({
+                docId:transferDocId, officeDoc:officeBase, date:dateStr, type:'انتقال بین انبار', movementType:'خروج', pCode:i.pCode, batch:i.batch, rawBarcode:i.raw,
+                qtyCarton:i.qtyCarton, qtyLoose:i.qtyLoose, totalPieces:i.totalPieces, weight:(productsWeightMap[i.pCode]||0)*i.totalPieces,
+                units:i.units, productNameSnapshot:i.name, unitsSnapshot:i.units, weightSnapshot:Number(productsWeightMap[i.pCode])||0,
+                warehouse:i.source, ref:`انتقال بین انبار | مقصد: ${i.destination} | ${ref}`, operator:currentUser?currentUser.name:'سیستم', dispatchStatus:'done'
+            }));
+            const destItems = transferDraftItems.map(i=>({
+                docId:transferDocId, officeDoc:officeBase, date:dateStr, type:'انتقال بین انبار', movementType:'ورود', pCode:i.pCode, batch:i.batch, rawBarcode:i.raw,
+                qtyCarton:i.qtyCarton, qtyLoose:i.qtyLoose, totalPieces:i.totalPieces, weight:(productsWeightMap[i.pCode]||0)*i.totalPieces,
+                units:i.units, productNameSnapshot:i.name, unitsSnapshot:i.units, weightSnapshot:Number(productsWeightMap[i.pCode])||0,
+                warehouse:i.destination, ref:`انتقال بین انبار | مبدأ: ${i.source} | ${ref}`, operator:currentUser?currentUser.name:'سیستم', dispatchStatus:'done'
+            }));
+            const availableCheck = {};
+            transferDraftItems.forEach(i=>{
+                const key=i.pCode+'|'+i.source;
+                availableCheck[key]=(availableCheck[key]||0)+Number(i.totalPieces||0);
+            });
+            for(const key in availableCheck){
+                const [pc,wh]=key.split('|');
+                const available=Number(getActualStock(pc,wh)) || 0;
+                if(available<availableCheck[key]) return alert(`⛔ موجودی برای انتقال کافی نیست.\nکالا: ${productsMap[pc]||pc}\nانبار: ${wh}\nموجودی: ${available} عدد\nانتقال: ${availableCheck[key]} عدد`);
+            }
+            showUploadProgress(50,'در حال ثبت انتقال بین انبارها...');
+            try{
+                // یک شماره سند واحد با دو ردیف متقابل (خروج از مبدأ + ورود به مقصد)
+                // بنابراین در صفحه اسناد فقط یک سند «انتقال بین انبار» دیده می‌شود.
+                await syncSingleDocToServerStrict(transferDocId, [...sourceItems, ...destItems], false);
+                historyLog = historyLog.filter(t=>String(t.docId)!==String(transferDocId));
+                historyLog.push(...sourceItems,...destItems);
+                saveData();
+                if(typeof updateTodayCounter==='function') updateTodayCounter();
+                transferDraftItems=[];
+                renderTransferDrafts();
+                document.getElementById('transferOfficeDoc').value='';
+                document.getElementById('transferRef').value='';
+                document.getElementById('transferBarcode').value='';
+                hideUploadProgress();
+                alert('✅ انتقال بین انبارها با موفقیت ثبت شد.');
+                renderInventory(); renderDashboard(); generateCardex();
+            }catch(e){
+                hideUploadProgress();
+                alert('❌ انتقال ثبت نشد: '+e.message);
+            }
+        }
+
         let currentDispatchDocId = null;
         let dispatchReqs = {}; 
         let html5QrCode_dispatch = null;
@@ -4769,26 +5089,23 @@ if(companyPrefix) {
         }
 
         function getInventoryRowsForExport() {
-            // همیشه از historyLog محاسبه می‌کنیم تا موجودی نمایشی با اسناد ثبت‌شده یکی باشد.
+            rebuildInventory();
             let filterWh = document.getElementById('filterWarehouseSelect')?.value || 'all';
             let search = normalizeSearchText(document.getElementById('inventorySearch')?.value || '');
             let grouped = {};
-
-            (Array.isArray(historyLog) ? historyLog : []).forEach(log => {
-                if(!log || !log.pCode) return;
-                let wh = log.warehouse || 'انبار مرکزی';
-                if(filterWh !== 'all' && filterWh !== wh) return;
-                let pCode = String(log.pCode);
-                let name = productsMap[pCode] || 'نامشخص';
+            Object.values(inventory || {}).forEach(item => {
+                const pCode = String(item.pCode || '');
+                const name = productsMap[pCode] || 'نامشخص';
                 if(search && !normalizeSearchText(pCode + ' ' + name).includes(search)) return;
-                if(!grouped[pCode]) grouped[pCode] = {name, units: Math.max(1, parseInt(productsUnitsMap[pCode]) || parseInt(log.units) || 1), totalPieces:0, totalWeight:0};
-                let pieces = Math.max(0, Number(log.totalPieces) || 0);
-                grouped[pCode].totalPieces += (log.type === 'خروج' ? -pieces : pieces);
+                const units = Math.max(1, parseInt(productsUnitsMap[pCode]) || parseInt(item.units) || 1);
+                Object.entries(item.stock || {}).forEach(([wh, rawPieces]) => {
+                    if(filterWh !== 'all' && filterWh !== wh) return;
+                    if(!grouped[pCode]) grouped[pCode] = {name, units, totalPieces:0, totalWeight:0};
+                    grouped[pCode].totalPieces += Number(rawPieces) || 0;
+                });
             });
-
             return Object.keys(grouped).map(pCode => {
                 let r = grouped[pCode];
-                // موجودی منفی باید دیده شود تا خطای موجودی پنهان نشود.
                 r.totalPieces = Math.round(r.totalPieces);
                 r.totalWeight = r.totalPieces >= 0 ? getWeight(pCode, r.totalPieces) : 0;
                 return {pCode, ...r};
@@ -5296,6 +5613,7 @@ function renderMobileDocumentCards(filteredDocs, query='') {
     );
 
     const docStatus = (doc) => {
+        if(doc.type === 'انتقال بین انبار') return {text:'انتقال بین انبار', cls:'done', icon:'↔'};
         if(doc.type !== 'خروج') return {text:'ورود', cls:'in', icon:'↓'};
         return doc.dispatchStatus === 'done'
           ? {text:'ارسال شد', cls:'done', icon:'✓'}
@@ -5307,8 +5625,16 @@ function renderMobileDocumentCards(filteredDocs, query='') {
         const isOpen = query !== '' ? true : expandedDocIds.has(id);
         const hasReceipt=Boolean(doc.receiptFile||doc.receiptImage);
         const st=docStatus(doc);
-        const routeFrom=doc.type==='خروج' ? Array.from(doc.involvedWH).join('، ') : (doc.ref||'—');
-        const routeTo=doc.type==='خروج' ? (doc.ref||'—') : Array.from(doc.involvedWH).join('، ');
+        let routeFrom='—', routeTo='—';
+        if(doc.type==='انتقال بین انبار'){
+            const srcItem=(doc.items||[]).find(x=>x.type==='خروج');
+            const dstItem=(doc.items||[]).find(x=>x.type==='ورود');
+            routeFrom=srcItem?.warehouse || '—';
+            routeTo=dstItem?.warehouse || '—';
+        } else {
+            routeFrom=doc.type==='خروج' ? Array.from(doc.involvedWH).join('، ') : (doc.ref||'—');
+            routeTo=doc.type==='خروج' ? (doc.ref||'—') : Array.from(doc.involvedWH).join('، ');
+        }
         const totalWeight=doc.totalWeight>0 ? `${doc.totalWeight.toFixed(2).replace(/\.00$/,'')} kg` : '';
         let receiptHtml = hasReceipt
           ? `<span class="m-receipt ok">✓ رسید ثبت شده${doc.deliveryDate ? ` · ${esc(doc.deliveryDate)}` : ''}</span>`
@@ -5484,13 +5810,17 @@ function getFilteredDocumentRows() {
         let d = map[log.docId];
         d.items.push(log);
         d.warehouses.add(log.warehouse);
+        const hasTransferMeta = d.items.some(x=>String(x.ref||'').includes('انتقال بین انبار')) || d.items.some(x=>x.type==='انتقال بین انبار') || d.items.some(x=>x.movementType);
+        const hasIn = d.items.some(x=>x.type==='ورود' || (x.type==='انتقال بین انبار' && x.movementType==='ورود'));
+        const hasOut = d.items.some(x=>x.type==='خروج' || (x.type==='انتقال بین انبار' && x.movementType==='خروج'));
+        if(hasTransferMeta && hasIn && hasOut) d.type='انتقال بین انبار';
     });
 
     return Object.values(map)
         .sort((a,b) => a._orderIndex - b._orderIndex)
         .filter(d => {
             let blob = normalizeSearchText([d.officeDoc, d.docId, d.ref, ...d.warehouses, ...d.items.map(i => [productsMap[i.pCode]||'', i.pCode, i.batch, i.rawBarcode||''])].flat().join(' '));
-            return (fType === 'all' || d.type === fType) && (!fTarget || blob.includes(fTarget)) && (!query || blob.includes(query));
+            return (fType === 'all' || d.type === fType || (d.type==='انتقال بین انبار' && ((fType==='ورود' && d.items.some(i=>i.type==='ورود' || (i.type==='انتقال بین انبار' && i.movementType==='ورود'))) || (fType==='خروج' && d.items.some(i=>i.type==='خروج' || (i.type==='انتقال بین انبار' && i.movementType==='خروج')))))) && (!fTarget || blob.includes(fTarget)) && (!query || blob.includes(query));
         });
 }
 
@@ -5670,6 +6000,133 @@ function filterProds(inputEl, listId) { filterList(inputEl, listId, Object.keys(
 function filterTargets(inputEl, listId) { filterList(inputEl, listId, ['همه'].concat(sysSettings.customers||[]).concat(sysSettings.senders||[]).concat(sysSettings.warehouses||[])); }
 function filterEntryTargets(inputEl, listId) { filterList(inputEl, listId, (sysSettings.senders||[]).concat(sysSettings.customers||[])); }
 
+// ===== منطق انبارگردانی دوره‌ای =====
+let inventoryCountRows = [];
+let inventoryCountLoadedKey = '';
+
+function currentJalaliYear(){
+    try { return new Intl.DateTimeFormat('fa-IR-u-ca-persian',{year:'numeric'}).format(new Date()).replace(/[^0-9]/g,'') || '1405'; } catch(e){ return '1405'; }
+}
+function inventoryCountKey(){
+    return `${companyPrefix || 'default'}_inventory_count_draft`;
+}
+function getWarehouseList(){
+    const names = [];
+    const add = v => { const x=String(v??'').trim(); if(x && !names.includes(x)) names.push(x); };
+    (Array.isArray(sysSettings?.warehouses) ? sysSettings.warehouses : []).forEach(add);
+    (Array.isArray(historyLog) ? historyLog : []).forEach(log => add(log?.warehouse));
+    Object.values(inventory||{}).forEach(row => Object.keys(row?.stock||{}).forEach(add));
+    return names;
+}
+function ensureInventoryCountDropdown(){
+    const opts = document.getElementById('opt-inventoryCountWarehouse');
+    if(!opts) return;
+    const esc = v => String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;').replace(/'/g,'&#39;');
+    opts.innerHTML = getWarehouseList().map(w=>{
+        const val=esc(w), txt=esc(w);
+        return `<div class="custom-option" onclick="selectCS('inventoryCountWarehouse','${val}','${txt}'); setTimeout(()=>loadInventoryCount(),0)">${txt}</div>`;
+    }).join('');
+}
+function inventoryCountSystemPieces(pCode, wh){ return Math.max(0, Number(getActualStock(pCode, wh)) || 0); }
+function saveInventoryCountDraft(){
+    const wh=document.getElementById('inventoryCountWarehouse')?.value || '';
+    const year=document.getElementById('inventoryCountYear')?.value || '';
+    if(!wh) return;
+    try{ localStorage.setItem(inventoryCountKey(),JSON.stringify({year,warehouse:wh,rows:inventoryCountRows,savedAt:Date.now()})); }catch(e){}
+}
+function restoreInventoryCountDraft(year,wh){
+    try{
+        const raw=localStorage.getItem(inventoryCountKey()); if(!raw) return false;
+        const d=JSON.parse(raw); if(!d || String(d.year)!==String(year) || String(d.warehouse)!==String(wh) || !Array.isArray(d.rows)) return false;
+        inventoryCountRows=d.rows.filter(r=>Number(r.systemPieces)>0); return inventoryCountRows.length>0;
+    }catch(e){ return false; }
+}
+function clearInventoryCountDraft(){ try{ localStorage.removeItem(inventoryCountKey()); }catch(e){} }
+function loadInventoryCount(){
+    const yearEl=document.getElementById('inventoryCountYear');
+    if(yearEl && (!yearEl.value || yearEl.value==='1405')) yearEl.value=currentJalaliYear();
+    ensureInventoryCountDropdown();
+    const wh=document.getElementById('inventoryCountWarehouse')?.value || '';
+    const year=yearEl?.value || currentJalaliYear();
+    if(!wh){ updateInventoryCountStats(); return; }
+    const key=`${year}|${wh}`;
+    if(inventoryCountLoadedKey===key && inventoryCountRows.length) { renderInventoryCountTable(); return; }
+    inventoryCountLoadedKey=key;
+    inventoryCountRows=[];
+    const restored=restoreInventoryCountDraft(year,wh);
+    if(!restored){
+        inventoryCountRows=Object.keys(productsMap||{})
+            .sort((a,b)=>String(a).localeCompare(String(b),undefined,{numeric:true}))
+            .map(pCode=>({
+                pCode:String(pCode), name:productsMap[pCode]||pCode, units:Math.max(1,parseInt(productsUnitsMap[pCode])||1), systemPieces:inventoryCountSystemPieces(pCode,wh), countedPieces:null
+            }))
+            .filter(r=>Number(r.systemPieces)>0);
+    }
+    renderInventoryCountTable();
+}
+function countDiff(r){ return r.countedPieces==null ? null : Number(r.countedPieces)-Number(r.systemPieces); }
+function renderInventoryCountTable(){
+    const tbody=document.getElementById('inventoryCountTableBody'); if(!tbody) return;
+    tbody.innerHTML=inventoryCountRows.map((r,i)=>{
+        const diff=countDiff(r); const cls=diff===null?'':(diff===0?'match':'diff');
+        const safeName=String(r.name||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        const val=r.countedPieces==null?'':String(r.countedPieces);
+        return `<tr class="inventory-count-row ${cls}"><td style="font-weight:900;color:var(--primary);font-family:monospace;">${r.pCode}</td><td style="text-align:right;font-weight:900;">${safeName}</td><td style="font-weight:900;" dir="rtl">${Number(r.systemPieces).toLocaleString('fa-IR')} عدد</td><td><input class="inventory-count-input" type="number" min="0" value="${val}" placeholder="وارد کنید" onchange="setInventoryCountValue(${i},this.value)"></td><td style="font-weight:900;${diff===null?'color:var(--text-muted);':diff===0?'color:var(--success);':'color:var(--danger);'}">${diff===null?'—':(diff>0?'+':'')+diff.toLocaleString('fa-IR')+' عدد'}</td></tr>`;
+    }).join('') || '<tr><td colspan="5" style="padding:30px;text-align:center;">کالایی برای شمارش وجود ندارد.</td></tr>';
+    updateInventoryCountStats();
+}
+function setInventoryCountValue(i,value){
+    if(!inventoryCountRows[i]) return;
+    const n=Number(value); inventoryCountRows[i].countedPieces=(value===''||!Number.isFinite(n)||n<0)?null:Math.floor(n);
+    saveInventoryCountDraft(); renderInventoryCountTable();
+}
+function fillUncountedWithSystem(){
+    inventoryCountRows.forEach(r=>{if(r.countedPieces==null)r.countedPieces=Number(r.systemPieces)||0;});
+    saveInventoryCountDraft(); renderInventoryCountTable();
+}
+function clearInventoryCountInputs(){
+    if(!confirm('همه مقادیر شمارش واقعی این دوره پاک شود؟')) return;
+    inventoryCountRows.forEach(r=>r.countedPieces=null); saveInventoryCountDraft(); renderInventoryCountTable();
+}
+function handleInventoryCountBarcode(e){
+    if(e && e.key!=='Enter') return;
+    if(e) { e.preventDefault(); e.stopPropagation(); }
+    const input=document.getElementById('inventoryCountBarcode'); const raw=(input?.value||'').trim();
+    if(!raw) return;
+    const pCode=raw.startsWith('M-')?raw:(raw.length>=6?raw.substring(0,6):raw);
+    const i=inventoryCountRows.findIndex(r=>String(r.pCode).trim()===String(pCode).trim());
+    if(i<0){ playBeep('error'); showScanError(`کالای مربوط به این بارکد در دوره انبارگردانی پیدا نشد.\nبارکد: ${raw}`); return; }
+    const r=inventoryCountRows[i]; r.countedPieces=(Number(r.countedPieces)||0)+(Number(r.units)||1);
+    saveInventoryCountDraft(); renderInventoryCountTable(); input.value=''; input.focus(); playBeep('success');
+}
+function updateInventoryCountStats(){
+    const total=inventoryCountRows.length, done=inventoryCountRows.filter(r=>r.countedPieces!=null).length, diff=inventoryCountRows.filter(r=>r.countedPieces!=null && countDiff(r)!==0).length, remain=total-done;
+    ['countStatTotal','countStatDone','countStatDiff','countStatRemain'].forEach((id,i)=>{const el=document.getElementById(id); if(el)el.innerText=[total,done,diff,remain][i].toLocaleString('fa-IR');});
+}
+function finalizeInventoryCount(){
+    if(currentUser?.role==='viewer') return alert('کاربر فقط مشاهده مجاز به نهایی‌سازی انبارگردانی نیست.');
+    const wh=document.getElementById('inventoryCountWarehouse')?.value||''; const year=String(document.getElementById('inventoryCountYear')?.value||'').trim();
+    if(!wh) return alert('❌ انبار انبارگردانی را انتخاب کنید.');
+    if(!year) return alert('❌ سال دوره را وارد کنید.');
+    if(!inventoryCountRows.length) return alert('❌ لیست شمارش خالی است.');
+    const remain=inventoryCountRows.filter(r=>r.countedPieces==null);
+    if(remain.length) return alert(`❌ هنوز ${remain.length.toLocaleString('fa-IR')} کالا شمارش نشده است.`);
+    const diffs=inventoryCountRows.filter(r=>countDiff(r)!==0);
+    const approved=confirm(`⚠️ انبارگردانی انبار «${wh}» در سال ${year} ثبت شود؟\n\nکالاها: ${inventoryCountRows.length}\nاقلام دارای اختلاف: ${diffs.length}\n\nپس از تأیید، این شمارش مبنای موجودی جدید می‌شود و اسناد قبلی حذف نخواهند شد.`);
+    if(!approved) return;
+    if(!sysSettings.inventoryCountBaselines) sysSettings.inventoryCountBaselines=[];
+    const excludedDocIds=[...new Set((historyLog||[]).map(x=>String(x.docId)).filter(Boolean))];
+    const counts={}; inventoryCountRows.forEach(r=>counts[String(r.pCode)]=Math.max(0,Math.floor(Number(r.countedPieces)||0)));
+    const baseline={id:`${Date.now()}-${Math.floor(Math.random()*10000)}`,year,warehouse:wh,operator:currentUser?.name||'سیستم',createdAt:new Date().toISOString(),excludedDocIds,counts};
+    sysSettings.inventoryCountBaselines=sysSettings.inventoryCountBaselines.filter(x=>String(x.warehouse)!==String(wh));
+    sysSettings.inventoryCountBaselines.push(baseline);
+    localStorage.removeItem(inventoryCountKey()); inventoryCountLoadedKey=''; inventoryCountRows=[];
+    rebuildInventory(); renderInventory();
+    try{ saveData(); }catch(e){}
+    const st=document.getElementById('inventoryCountStatus'); if(st)st.innerText=`آخرین انبارگردانی: ${year} | ${wh}`;
+    alert('✅ انبارگردانی ثبت شد. اسناد قبلی باقی ماندند و موجودی از شمارش جدید ادامه پیدا می‌کند.');
+}
+
 function openTab(tabId, btn) {
     document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none'); 
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -5681,6 +6138,7 @@ function openTab(tabId, btn) {
     if(tabId === 'tab-dashboard') setTimeout(() => renderDashboard(), 50); 
     if(tabId === 'tab-inventory') renderInventory(); 
     if(tabId === 'tab-cardex') toggleCardexView();
+    if(tabId === 'tab-inventory-count') { loadInventoryCount(); }
     if(tabId === 'tab-settings') renderSettings();
 }
 
@@ -5690,6 +6148,7 @@ function toggleEntryType() {
 }
 
 function loadDropdowns() {
+    if(typeof renderTransferWarehouses==='function') renderTransferWarehouses();
     let fWh = document.getElementById('filterWarehouseSelect');
     let fWhVal = fWh ? fWh.value : '';
     let iWh = document.getElementById('inWarehouseSelect');
@@ -5980,6 +6439,7 @@ if(typeof updateTodayCounter === 'function') updateTodayCounter();
                 totalPieces: Number(i.totalPieces) || 0,
                 warehouse: i.warehouse || i.wh || docItems[0].warehouse || 'انبار مرکزی',
                 rawBarcode: i.rawBarcode || '',
+                movementType: i.movementType || null,
                 productNameSnapshot: i.productNameSnapshot || i.name || productsMap[i.pCode] || '',
                 unitsSnapshot: Number(i.unitsSnapshot ?? i.units ?? productsUnitsMap[i.pCode]) || 1,
                 weightSnapshot: Number(i.weightSnapshot ?? i.weight ?? productsWeightMap[i.pCode]) || 0
