@@ -1134,7 +1134,7 @@ td{border-bottom-color:#d0d8e2 !important;}
                 
                 <!-- کادر بازشونده دوربین دقیقاً زیر اینپوت اسکن بارکد -->
                 <div id="dispatchCameraContainer" style="display:none; width:100%; max-width:320px; margin:10px auto 6px; border-radius:10px; overflow:hidden; border:2px solid #8b5cf6; background:#111827;">
-                    <div id="dispatch-reader" style="width:100%; max-width:280px; height:145px; max-height:145px; margin:0 auto; overflow:hidden;"></div>
+                    <div id="dispatch-reader" style="width:100%; max-width:300px; height:190px; max-height:190px; margin:0 auto; overflow:hidden;"></div>
                     <button type="button" class="btn-red" style="width:100%; margin-top:0; border-radius:0; padding:8px; font-size:12px;" onclick="stopDispatchCamera()">بستن دوربین ❌</button>
                 </div>
 
@@ -2046,6 +2046,8 @@ td{border-bottom-color:#d0d8e2 !important;}
             const close = () => {
                 if (!document.body.contains(modal)) return;
                 modal.remove();
+                // فقط با فشردن OK قفل خطا آزاد می‌شود.
+                dispatchErrorLocked = false;
                 isDispatchScanning = false;
                 dispatchLastProcessed = '';
                 const inp=document.getElementById('dispatchBarcode');
@@ -3207,6 +3209,8 @@ async function deleteReceipt(docId, event) {
         let currentDispatchDocId = null;
         let dispatchReqs = {}; 
         let html5QrCode_dispatch = null;
+        // قفل خطای اسکن: فقط بعد از زدن OK آزاد می‌شود.
+        let dispatchErrorLocked = false;
 
         // ذخیره موقت پیشرفت بارگیری؛ تا Refresh یا بستن پنجره باعث از دست رفتن اسکن‌ها نشود.
         function dispatchProgressKey(docId) {
@@ -3697,6 +3701,8 @@ async function deleteReceipt(docId, event) {
         }
 
   function processDispatchScan(raw) {
+    // بعد از هر خطای اسکن، تا زمانی که کاربر OK را نزده هیچ ورودی جدیدی پذیرفته نمی‌شود.
+    if (dispatchErrorLocked || document.getElementById('scan-error-modal')) return false;
     raw = String(raw ?? '').trim();
     if(!raw) return false;
 
@@ -3806,60 +3812,141 @@ async function deleteReceipt(docId, event) {
 }
 
     let isDispatchScanning = false;
-let dispatchErrorLocked = false;
 let lastCameraScanTime = 0;
 
 function startDispatchCamera() {
-    document.getElementById('dispatchCameraContainer').style.display = 'block';
-    if (html5QrCode_dispatch) {
-        try { html5QrCode_dispatch.stop().catch(()=>{}); } catch(e){}
+    if (dispatchErrorLocked || document.getElementById('scan-error-modal')) return;
+
+    const container = document.getElementById('dispatchCameraContainer');
+    const reader = document.getElementById('dispatch-reader');
+    if (!container || !reader || typeof Html5Qrcode === 'undefined') {
+        showScanError('اسکنر دوربین در این صفحه بارگذاری نشده است.');
+        return;
     }
-    html5QrCode_dispatch = new Html5Qrcode("dispatch-reader"); 
+
+    container.style.display = 'block';
     isDispatchScanning = false;
-    
-    html5QrCode_dispatch.start(
-        { facingMode: "environment" }, 
-        { fps: 15, qrbox: { width: 250, height: 100 } }, 
-        (txt) => { 
-            if (dispatchErrorLocked || document.getElementById('scan-error-modal')) return;
-            const now = Date.now();
-            // وقفه ۱.۲ ثانیه‌ای هوشمند برای جلوگیری از اسکن چندباره یک فریم یکسان
-            if (isDispatchScanning || (now - lastCameraScanTime < 1200)) return;
-            
-            isDispatchScanning = true;
-            lastCameraScanTime = now;
-            
-            document.getElementById('dispatchBarcode').value = txt; 
-            const ok = processDispatchScan(txt);
-            
-            if (ok === false) {
-                // خطا یعنی کل مسیر اسکن تا تایید OK متوقف بماند.
-                stopDispatchCamera();
+    lastCameraScanTime = 0;
+
+    // مهم: اگر دوربین قبلی هنوز در حال خاموش شدن است، تا پایان stop صبر می‌کنیم.
+    // این کار جلوی تداخل دو MediaStream روی گوشی را می‌گیرد.
+    const startFresh = () => {
+        if (dispatchErrorLocked || document.getElementById('scan-error-modal')) return;
+
+        try { reader.innerHTML = ''; } catch(e) {}
+        html5QrCode_dispatch = new Html5Qrcode('dispatch-reader');
+
+        // تنظیمات پایه و سازگار با همان دوربین قدیمی که روی گوشی درست کار می‌کرد.
+        // فقط وضوح ورودی دوربین و سرعت decode را بهتر می‌کنیم.
+        const cameraConfig = {
+            fps: 20,
+            qrbox: { width: 280, height: 120 },
+            disableFlip: false,
+            videoConstraints: {
+                facingMode: { ideal: 'environment' },
+                width: { ideal: 1920 },
+                height: { ideal: 1080 },
+                frameRate: { ideal: 30, max: 60 }
+            }
+        };
+
+        // عمداً formatsToSupport و BarcodeDetector experimental را تحمیل نمی‌کنیم.
+        // محدودکردن فرمت‌ها در بعضی گوشی‌ها باعث افت تشخیص می‌شود؛ کتابخانه خودش
+        // فرمت‌های بارکد را تشخیص می‌دهد.
+        html5QrCode_dispatch.start(
+            { facingMode: 'environment' },
+            cameraConfig,
+            (txt) => {
+                if (dispatchErrorLocked || document.getElementById('scan-error-modal')) return;
+
+                const now = Date.now();
+                if (isDispatchScanning || (now - lastCameraScanTime < 650)) return;
+
+                const value = String(txt || '').trim();
+                if (!value) return;
+
                 isDispatchScanning = true;
-            } else {
-                // در صورت اسکن موفق، کادر پاک شده و دوربین برای کارتن بعدی باز می‌ماند
-                document.getElementById('dispatchBarcode').value = '';
-                
-                // بررسی تکمیل تمام کارتن‌های حواله
-                const allDone = Object.values(dispatchReqs || {}).every(r => (r.scanned || 0) >= (r.req || 0));
+                lastCameraScanTime = now;
+
+                const input = document.getElementById('dispatchBarcode');
+                if (input) input.value = value;
+
+                const ok = processDispatchScan(value);
+
+                if (ok === false) {
+                    // processDispatchScan خودش خطا را قفل می‌کند؛ دوربین هم بلافاصله بسته می‌شود.
+                    stopDispatchCamera();
+                    isDispatchScanning = true;
+                    return;
+                }
+
+                if (input) input.value = '';
+
+                const allDone = Object.values(dispatchReqs || {}).every(r =>
+                    Number(r.scanned || 0) >= Number(r.req || 0)
+                );
+
                 if (allDone) {
                     stopDispatchCamera();
-                    updateLiveInfoDispatch(false, "🎉 تمامی اقلام حواله با موفقیت اسکن و تکمیل گردید.");
+                    updateLiveInfoDispatch(false, '🎉 تمامی اقلام حواله با موفقیت اسکن و تکمیل گردید.');
+                    isDispatchScanning = false;
+                    return;
                 }
-            }
-            
-            // در حالت خطا، فقط دکمه OK مجاز به آزاد کردن قفل است.
-            if (!document.getElementById('scan-error-modal')) {
-                setTimeout(() => { if(!dispatchErrorLocked) isDispatchScanning = false; }, 800);
-            }
-        }, 
-        (err) => {}
-    ).catch(() => { 
-        showScanError("دوربین اسکنر باز نشد.\nمجوز دسترسی به دوربین را بررسی کنید."); 
-        stopDispatchCamera(); 
-    }); 
-}
 
+                // قفل کوتاه فقط برای جلوگیری از خواندن چندباره همان فریم است.
+                // بعد از آن، بارکد بعدی فوراً قابل اسکن است.
+                setTimeout(() => {
+                    if (!dispatchErrorLocked && !document.getElementById('scan-error-modal')) {
+                        isDispatchScanning = false;
+                    }
+                }, 650);
+            },
+            () => {}
+        ).then(() => {
+            // بعد از آماده‌شدن ویدئو، اگر گوشی واقعاً زوم/فوکوس پیوسته را پشتیبانی کند
+            // آن را اعمال می‌کنیم؛ اگر نکند، اسکن بدون هیچ خطایی ادامه پیدا می‌کند.
+            try {
+                const caps = html5QrCode_dispatch.getRunningTrackCapabilities();
+                const advanced = {};
+
+                if (caps && caps.zoom) {
+                    const zMin = Number(caps.zoom.min);
+                    const zMax = Number(caps.zoom.max);
+                    if (Number.isFinite(zMin) && Number.isFinite(zMax) && zMax > zMin) {
+                        const target = Math.min(zMax, Math.max(zMin, 1.5));
+                        advanced.zoom = target;
+                    }
+                }
+
+                if (caps && Array.isArray(caps.focusMode) && caps.focusMode.includes('continuous')) {
+                    advanced.focusMode = 'continuous';
+                }
+
+                if (Object.keys(advanced).length) {
+                    return html5QrCode_dispatch.applyVideoConstraints({ advanced: [advanced] }).catch(() => {});
+                }
+            } catch(e) {}
+        }).catch(() => {
+            showScanError('دوربین اسکنر باز نشد.\nمجوز دسترسی به دوربین را بررسی کنید.');
+            stopDispatchCamera();
+        });
+    };
+
+    if (html5QrCode_dispatch) {
+        try {
+            const stopPromise = html5QrCode_dispatch.stop();
+            if (stopPromise && typeof stopPromise.then === 'function') {
+                stopPromise.catch(() => {}).then(startFresh);
+            } else {
+                startFresh();
+            }
+        } catch(e) {
+            startFresh();
+        }
+    } else {
+        startFresh();
+    }
+}
  function finalizeDispatchDoc() {
             const targetDocId = String(currentDispatchDocId ?? '').trim();
             if (!targetDocId) return alert('❌ شماره حواله معتبر نیست.');
@@ -4970,9 +5057,8 @@ if(companyPrefix) {
             if(countEl) countEl.innerText=totalAlerts.toLocaleString('fa-IR');
             const cardHtml=(cls,label,items,buttonClass,buttonText,buttonFn,emptyText)=>{
                 const rows=items.slice(0,8).map(d=>{
-                    const meta=cls==='incomplete' ? (()=>{ const pr=dashboardGetProgress(d.docId); const required=(d.items||[]).reduce((a,i)=>a+Number(i.totalPieces||0),0); const scanned=pr?Object.values(pr.byCode||{}).reduce((a,b)=>a+b,0):0; return `${scanned.toLocaleString('fa-IR')} از ${required.toLocaleString('fa-IR')} عدد`; })() : (d.operator||'سیستم');
-                    const destination = d.ref || d.customer || d.target || d.destination || '—';
-                    return `<div class="dashboard-alert-row"><div class="dashboard-alert-main"><div class="dashboard-alert-invoice">مقصد: ${dashboardEscape(destination)}</div><div class="dashboard-alert-meta">${dashboardEscape(meta)}</div></div><button type="button" class="dashboard-alert-btn ${buttonClass}" onclick="event.stopPropagation();${buttonFn}('${dashboardEscape(String(d.docId))}')">${buttonText}</button></div>`;
+                    const meta=d.ref || 'نام مشتری ثبت نشده';
+                    return `<div class="dashboard-alert-row"><div class="dashboard-alert-main"><div class="dashboard-alert-invoice">فاکتور: ${dashboardEscape(d.officeDoc||'بدون شماره')}</div><div class="dashboard-alert-meta">مشتری: ${dashboardEscape(meta)}</div></div><button type="button" class="dashboard-alert-btn ${buttonClass}" onclick="event.stopPropagation();${buttonFn}('${dashboardEscape(String(d.docId))}')">${buttonText}</button></div>`;
                 }).join('');
                 return `<div class="dashboard-alert-card ${cls}"><div class="dashboard-alert-label">${label}</div><div class="dashboard-alert-total">${items.length.toLocaleString('fa-IR')}</div><div class="dashboard-alert-list">${rows || `<div class="dashboard-alert-empty">${emptyText}</div>`}</div>${items.length>8?`<button type="button" class="dashboard-alert-btn open" style="width:100%;margin-top:6px;" onclick="dashboardOpenDocuments('${cls==='receipt'?'receipt':'unsent'}')">مشاهده همه</button>`:''}</div>`;
             };
