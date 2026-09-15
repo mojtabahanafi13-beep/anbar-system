@@ -371,10 +371,20 @@
             .dispatch-manual-select{height:44px!important;font-size:13px!important;}
             .dispatch-manual-qty{width:76px!important;min-width:76px!important;flex-basis:76px!important;}
         }
-
-        /* اسکنر بارگیری: پنجره کوتاه و جمع‌وجور برای بارکد معمولی */
-        #dispatch-reader { height:180px !important; max-height:180px !important; }
-        #dispatch-reader video { width:100% !important; height:180px !important; max-height:180px !important; object-fit:cover !important; }
+/* اسکنر بارگیری: پنجره افقی و عریض برای بارکد خطی */
+        #dispatchCameraContainer {
+            max-width: 100% !important; /* استفاده از تمام عرض صفحه گوشی */
+        }
+        #dispatch-reader { 
+            height: 150px !important; /* ارتفاع کم برای افقی شدن کادر */
+            max-height: 150px !important; 
+        }
+        #dispatch-reader video { 
+            width: 100% !important; 
+            height: 150px !important; 
+            max-height: 150px !important; 
+            object-fit: cover !important; /* این دستور بالا و پایین ویدیوی عمودی را می‌بُرد و کادر را کاملاً افقی می‌کند */
+        }
         
 /* ===== UX3 — حرفه‌ای، تیره‌تر، کم‌تراکم و سریع ===== */
 :root{
@@ -3700,21 +3710,48 @@ async function deleteReceipt(docId, event) {
             document.getElementById('dispatchBarcode').focus();
         }
 
-  function processDispatchScan(raw) {
+ function processDispatchScan(raw) {
     // بعد از هر خطای اسکن، تا زمانی که کاربر OK را نزده هیچ ورودی جدیدی پذیرفته نمی‌شود.
     if (dispatchErrorLocked || document.getElementById('scan-error-modal')) return false;
     raw = String(raw ?? '').trim();
     if(!raw) return false;
 
-    // ۱. بررسی بارکد تکراری (در صورتی که قبلاً در این حواله اسکن شده باشد)
+    // ۱. بررسی بارکد تکراری (در کل سیستم و حواله فعلی)
     if (!raw.startsWith('MANUAL-')) {
-        const isDuplicate = currentDispatchScans.some(s => s.rawBarcode === raw);
-        if (isDuplicate) {
-            updateLiveInfoDispatch(true, `⛔ بارکد تکراری است! این کارتن قبلاً اسکن شده.`);
-            showScanError(`این بارکد تکراری است و قبلاً در این حواله اسکن شده است!\nبارکد: ${raw}`);
+        
+        // الف) بررسی امنیتی در کل اسناد قبلی سیستم
+        let duplicateOfficeDoc = null;
+        for (let i = 0; i < historyLog.length; i++) {
+            let log = historyLog[i];
+            // فقط حواله‌های خروجی که بارکد ثبت شده دارند را چک می‌کنیم
+            if (log.type === 'خروج' && log.rawBarcode) {
+                // چون بارکدها با کاراکتر | از هم جدا شده‌اند، آن‌ها را تفکیک می‌کنیم
+                let scannedBarcodes = log.rawBarcode.split('|').map(b => b.trim());
+                if (scannedBarcodes.includes(raw)) {
+                    duplicateOfficeDoc = log.officeDoc || log.docId;
+                    break;
+                }
+            }
+        }
+
+        // اگر بارکد در فاکتور دیگری پیدا شد، ارور بده و متوقف شو
+        if (duplicateOfficeDoc) {
+            updateLiveInfoDispatch(true, `⛔ خطای امنیتی: این کارتن قبلاً خارج شده است!`);
+            showScanError(`هشدار: این بارکد قبلاً در سیستم اسکن شده و متعلق به فاکتور/حواله شماره «${duplicateOfficeDoc}» است!\n\nبارکد: ${raw}`);
+            return false;
+        }
+
+        // ب) بررسی در همین حواله فعلی (جلوگیری از اسکن دوبار در یک لحظه)
+        const isDuplicateCurrent = currentDispatchScans.some(s => s.rawBarcode === raw);
+        if (isDuplicateCurrent) {
+            updateLiveInfoDispatch(true, `⛔ بارکد تکراری! در همین حواله اسکن شده است.`);
+            showScanError(`این کارتن چند لحظه پیش در همین حواله اسکن شده است!\n\nبارکد: ${raw}`);
             return false;
         }
     }
+
+    // ادامه کدهای قبلی... (بارکدهای معمولی: ۶ رقم اول = کد کالا و ...)
+    // ...
 
     // بارکدهای معمولی: ۶ رقم اول = کد کالا و ۳ رقم بعد = بچ
     const pCode = raw.startsWith('M-') ? raw : (raw.length >= 6 ? raw.substring(0, 6) : raw);
@@ -3796,11 +3833,27 @@ async function deleteReceipt(docId, event) {
 
     saveDispatchProgress();
 
-    if(looseInput) {
+   if(looseInput) {
         looseInput.value = 0;
         looseInput.setCustomValidity('');
         looseInput.style.borderColor = '#8b5cf6';
     }
+
+    // --- شروع: کدهای اضافه شده برای ویبره و افکت سبز ---
+    try { if (navigator.vibrate) navigator.vibrate(50); } catch(e){}
+
+    let camContainer = document.getElementById('dispatchCameraContainer');
+    if(camContainer) {
+        camContainer.style.transition = 'all 0.15s ease-out';
+        camContainer.style.borderColor = '#10b981';
+        camContainer.style.boxShadow = '0 0 30px rgba(16, 185, 129, 0.8) inset, 0 0 20px rgba(16, 185, 129, 0.6)';
+        
+        setTimeout(() => {
+            camContainer.style.borderColor = '#8b5cf6';
+            camContainer.style.boxShadow = 'none';
+        }, 300);
+    }
+    // --- پایان: کدهای اضافه شده ---
 
     playBeep('success');
     updateLiveInfoDispatch(false, c
@@ -3838,15 +3891,25 @@ function startDispatchCamera() {
 
         // تنظیمات پایه و سازگار با همان دوربین قدیمی که روی گوشی درست کار می‌کرد.
         // فقط وضوح ورودی دوربین و سرعت decode را بهتر می‌کنیم.
-        const cameraConfig = {
-            fps: 20,
-            qrbox: { width: 280, height: 120 },
+ const cameraConfig = {
+            fps: 15,
             disableFlip: false,
+            // تغییر کادر به حالت افقی (عرض زیاد، ارتفاع کم) متناسب با بارکد خطی
+            qrbox: { width: 280, height: 120 }, 
+            
+            experimentalFeatures: {
+                useBarCodeDetectorIfSupported: true
+            },
+            formatsToSupport: [
+                Html5QrcodeSupportedFormats.CODE_128,
+                Html5QrcodeSupportedFormats.EAN_13,
+                Html5QrcodeSupportedFormats.CODE_39
+            ],
             videoConstraints: {
                 facingMode: { ideal: 'environment' },
-                width: { ideal: 1920 },
-                height: { ideal: 1080 },
-                frameRate: { ideal: 30, max: 60 }
+                width: { ideal: 1280 },
+                height: { ideal: 720 },
+                advanced: [{ focusMode: "continuous" }] 
             }
         };
 
@@ -4577,23 +4640,62 @@ function viewSystemFactor(docId) {
             document.getElementById('exitScanSection').style.display = isScanNow ? 'block' : 'none';
         }
 
-        function startScanner(inputId) { 
-            document.getElementById('scanner-modal').style.display = 'flex'; 
-            html5QrCode_cam = new Html5Qrcode("reader"); 
-            html5QrCode_cam.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 100 } }, (txt) => { 
-                document.getElementById(inputId).value = txt; 
-                stopScanner(); 
-                parseLiveBarcode(inputId==='inBarcode'?'in':'out'); 
-                if(document.getElementById(inputId.replace('Barcode','') + 'AutoAdd') && document.getElementById(inputId.replace('Barcode','') + 'AutoAdd').checked) {
-                    if(inputId==='inBarcode') addToEntryDraft(true); else addToExitDraft(true);
-                }
-            }, (err) => {}).catch(() => { alert("خطای دوربین"); stopScanner(); }); 
-        }
+       let isScannerRunning = false;
 
-        function stopScanner() { 
-            if(html5QrCode_cam) html5QrCode_cam.stop().then(() => html5QrCode_cam.clear()); 
-            document.getElementById('scanner-modal').style.display = 'none'; 
-        }
+function startScanner(inputId) {
+    if (isScannerRunning) return;
+    document.getElementById('scanner-modal').style.display = 'flex';
+    
+    // استفاده از یک نمونه گلوبال و جلوگیری از ساخت نمونه‌های تکراری
+    if (!html5QrCode_cam) {
+        html5QrCode_cam = new Html5Qrcode("reader");
+    }
+    
+    // حذف qrbox برای اسکن تمام‌صفحه و بهینه‌سازی رزولوشن برای تشخیص سریع‌تر
+    const config = { 
+        fps: 15, 
+        disableFlip: false,
+        formatsToSupport: [
+            Html5QrcodeSupportedFormats.CODE_128,
+            Html5QrcodeSupportedFormats.EAN_13,
+            Html5QrcodeSupportedFormats.EAN_8,
+            Html5QrcodeSupportedFormats.CODE_39,
+            Html5QrcodeSupportedFormats.QR_CODE
+        ]
+    };
+
+    html5QrCode_cam.start(
+        { facingMode: "environment" }, 
+        config, 
+        (txt) => {
+            document.getElementById(inputId).value = txt;
+            stopScanner();
+            parseLiveBarcode(inputId === 'inBarcode' ? 'in' : 'out');
+            
+            let autoAddBtn = document.getElementById(inputId.replace('Barcode', '') + 'AutoAdd');
+            if (autoAddBtn && autoAddBtn.checked) {
+                if (inputId === 'inBarcode') addToEntryDraft(true); 
+                else addToExitDraft(true);
+            }
+        }, 
+        (err) => { /* نادیده گرفتن خطاهای فریم به فریم */ }
+    ).then(() => {
+        isScannerRunning = true;
+    }).catch((err) => {
+        alert("دسترسی به دوربین مسدود شده یا مرورگر از آن پشتیبانی نمی‌کند.");
+        stopScanner();
+    });
+}
+
+function stopScanner() {
+    if (html5QrCode_cam && isScannerRunning) {
+        html5QrCode_cam.stop().then(() => {
+            html5QrCode_cam.clear();
+            isScannerRunning = false;
+        }).catch(err => console.error("Error stopping scanner:", err));
+    }
+    document.getElementById('scanner-modal').style.display = 'none';
+}
 
         function parseLiveBarcode(mode) { 
             let raw = document.getElementById(mode + 'Barcode').value.trim(); 
