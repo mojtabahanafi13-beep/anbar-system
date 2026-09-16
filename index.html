@@ -3891,28 +3891,35 @@ function startDispatchCamera() {
 
         // تنظیمات پایه و سازگار با همان دوربین قدیمی که روی گوشی درست کار می‌کرد.
         // فقط وضوح ورودی دوربین و سرعت decode را بهتر می‌کنیم.
- const cameraConfig = {
-            fps: 15,
+const cameraConfig = {
+            // افزایش فریم ریت برای بررسی تعداد فریم بیشتر در ثانیه
+            fps: 30, 
             disableFlip: false,
-            // تغییر کادر به حالت افقی (عرض زیاد، ارتفاع کم) متناسب با بارکد خطی
-            qrbox: { width: 280, height: 120 }, 
+            
+            // ❌ خط qrbox کلاً حذف شده است تا کل تصویر اسکن شود
             
             experimentalFeatures: {
+                // روشن کردن موتور سخت‌افزاری کروم اندروید (فوق‌العاده سریع)
                 useBarCodeDetectorIfSupported: true
             },
+            
+            // ⚡ اگر فقط بارکد خطی Code128 دارید، بقیه را پاک کنید تا سرعت ۲ برابر شود
             formatsToSupport: [
                 Html5QrcodeSupportedFormats.CODE_128,
-                Html5QrcodeSupportedFormats.EAN_13,
-                Html5QrcodeSupportedFormats.CODE_39
+                Html5QrcodeSupportedFormats.EAN_13
             ],
+            
             videoConstraints: {
                 facingMode: { ideal: 'environment' },
-                width: { ideal: 1280 },
-                height: { ideal: 720 },
-                advanced: [{ focusMode: "continuous" }] 
+                // رزولوشن کمتر مساوی است با پردازش برق‌آسای جاوااسکریپت
+                width: { ideal: 640 },
+                height: { ideal: 480 },
+                advanced: [
+                    { focusMode: "continuous" }, // فوکوس پیوسته
+                    { zoom: 2.0 } // زوم دو برابری تا نیازی نباشد گوشی را به کارتن بچسبانید
+                ] 
             }
         };
-
         // عمداً formatsToSupport و BarcodeDetector experimental را تحمیل نمی‌کنیم.
         // محدودکردن فرمت‌ها در بعضی گوشی‌ها باعث افت تشخیص می‌شود؛ کتابخانه خودش
         // فرمت‌های بارکد را تشخیص می‌دهد.
