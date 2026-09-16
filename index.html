@@ -371,10 +371,10 @@
             .dispatch-manual-select{height:44px!important;font-size:13px!important;}
             .dispatch-manual-qty{width:76px!important;min-width:76px!important;flex-basis:76px!important;}
         }
-/* تنظیمات صحیح برای کادر دوربین بدون تغییر تناسب تصویر */
-#dispatchCameraContainer { width: 100%; margin: 10px auto; background: #000; border-radius: 8px; overflow: hidden; }
-#dispatch-reader { width: 100%; }
-#dispatch-reader video { width: 100% !important; height: auto !important; object-fit: cover !important; }    
+/* کدهای کاملاً خام برای دوربین بدون هیچ برش و کشیدگی */
+#dispatchCameraContainer { width: 100%; max-width: 400px; margin: 10px auto; background: #111827; border-radius: 10px; overflow: hidden; border: 2px solid #8b5cf6; }
+#dispatch-reader { width: 100%; height: auto; }
+#dispatch-reader video { width: 100% !important; height: auto !important; object-fit: contain !important; display: block; }
 /* ===== UX3 — حرفه‌ای، تیره‌تر، کم‌تراکم و سریع ===== */
 :root{
  --bg-color:#eef2f7;
@@ -3876,25 +3876,10 @@ function startDispatchCamera() {
             try { reader.innerHTML = ''; } catch(e) {}
             html5QrCode_dispatch = new Html5Qrcode('dispatch-reader');
 
-            // 🎯 محاسبه دقیق تناسب تصویر گوشی (حل مشکل اصلی نخواندن بارکد)
-            const screenWidth = window.innerWidth;
-            const screenHeight = window.innerHeight;
-            const screenRatio = screenHeight > screenWidth ? screenHeight / screenWidth : screenWidth / screenHeight;
-
+            // 🎯 حالت لخت و خام: بدون کادر، بدون فیلتر فرمت، بدون دستکاری رزولوشن
             const cameraConfig = {
-                fps: 15,
-                disableFlip: false,
-                // این خط معجزه می‌کند: به اسکنر می‌فهماند که گوشی عمودی است!
-                aspectRatio: screenHeight > screenWidth ? 1 / screenRatio : screenRatio,
-                
-                // یک کادر فوکوس هوشمند که متناسب با رزولوشن خودش را تنظیم می‌کند
-                qrbox: function(videoWidth, videoHeight) {
-                    const minEdge = Math.min(videoWidth, videoHeight);
-                    // یک مستطیل افقی در مرکز تصویر (۸۰ درصد عرض تصویر)
-                    return { width: minEdge * 0.85, height: minEdge * 0.4 };
-                }
-                
-                // ❌ فرمت‌های محدودکننده و قابلیت‌های اکسپریمنتال را کلاً حذف کردیم تا همه مدل بارکدی خوانده شود
+                fps: 10, // سرعت ۱۰ فریم برای اینکه گوشی فرصت پردازش بارکد خطی را داشته باشد
+                disableFlip: false
             };
 
             html5QrCode_dispatch.start(
