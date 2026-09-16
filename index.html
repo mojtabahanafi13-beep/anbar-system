@@ -371,20 +371,10 @@
             .dispatch-manual-select{height:44px!important;font-size:13px!important;}
             .dispatch-manual-qty{width:76px!important;min-width:76px!important;flex-basis:76px!important;}
         }
-/* اسکنر بارگیری: پنجره افقی و عریض برای بارکد خطی */
-        #dispatchCameraContainer {
-            max-width: 100% !important; /* استفاده از تمام عرض صفحه گوشی */
-        }
-        #dispatch-reader { 
-            height: 150px !important; /* ارتفاع کم برای افقی شدن کادر */
-            max-height: 150px !important; 
-        }
-        #dispatch-reader video { 
-            width: 100% !important; 
-            height: 150px !important; 
-            max-height: 150px !important; 
-            object-fit: cover !important; /* این دستور بالا و پایین ویدیوی عمودی را می‌بُرد و کادر را کاملاً افقی می‌کند */
-        }
+/* اصلاح کادر دوربین: تطابق دقیق تصویر با موتور اسکنر */
+#dispatchCameraContainer { width: 100% !important; margin: 0 auto; }
+#dispatch-reader { width: 100% !important; height: auto !important; max-height: none !important; background: #000; border-radius: 8px; }
+#dispatch-reader video { width: 100% !important; height: auto !important; object-fit: contain !important; border-radius: 8px; }
         
 /* ===== UX3 — حرفه‌ای، تیره‌تر، کم‌تراکم و سریع ===== */
 :root{
@@ -3892,17 +3882,11 @@ function startDispatchCamera() {
         // تنظیمات پایه و سازگار با همان دوربین قدیمی که روی گوشی درست کار می‌کرد.
         // فقط وضوح ورودی دوربین و سرعت decode را بهتر می‌کنیم.
 const cameraConfig = {
-            // افزایش فریم ریت برای بررسی تعداد فریم بیشتر در ثانیه
-            fps: 30, 
-            disableFlip: false,
-            
-            // ❌ خط qrbox کلاً حذف شده است تا کل تصویر اسکن شود
-            
-            experimentalFeatures: {
-                // روشن کردن موتور سخت‌افزاری کروم اندروید (فوق‌العاده سریع)
-                useBarCodeDetectorIfSupported: true
-            },
-            
+            fps: 12, // سرعت استاندارد برای فرصت دادن به گوشی جهت تشخیص بارکدهای متراکم
+            qrbox: { width: 280, height: 120 }, // ایجاد یک شیار استاندارد برای خواندن بارکد خطی
+            disableFlip: false
+        };
+        // تمام تنظیمات دیگر (مثل experimentalFeatures یا formatsToSupport و videoConstraints) را کلاً پاک کنید! 
             // ⚡ اگر فقط بارکد خطی Code128 دارید، بقیه را پاک کنید تا سرعت ۲ برابر شود
             formatsToSupport: [
                 Html5QrcodeSupportedFormats.CODE_128,
