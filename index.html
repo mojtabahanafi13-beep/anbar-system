@@ -371,11 +371,10 @@
             .dispatch-manual-select{height:44px!important;font-size:13px!important;}
             .dispatch-manual-qty{width:76px!important;min-width:76px!important;flex-basis:76px!important;}
         }
-/* اصلاح کادر دوربین: تطابق دقیق تصویر با موتور اسکنر */
-#dispatchCameraContainer { width: 100% !important; margin: 0 auto; }
-#dispatch-reader { width: 100% !important; height: auto !important; max-height: none !important; background: #000; border-radius: 8px; }
-#dispatch-reader video { width: 100% !important; height: auto !important; object-fit: contain !important; border-radius: 8px; }
-        
+/* تنظیمات صحیح برای کادر دوربین بدون تغییر تناسب تصویر */
+#dispatchCameraContainer { width: 100%; margin: 10px auto; background: #000; border-radius: 8px; overflow: hidden; }
+#dispatch-reader { width: 100%; }
+#dispatch-reader video { width: 100% !important; height: auto !important; object-fit: cover !important; }    
 /* ===== UX3 — حرفه‌ای، تیره‌تر، کم‌تراکم و سریع ===== */
 :root{
  --bg-color:#eef2f7;
@@ -3877,31 +3876,25 @@ function startDispatchCamera() {
             try { reader.innerHTML = ''; } catch(e) {}
             html5QrCode_dispatch = new Html5Qrcode('dispatch-reader');
 
-            // 🎯 تنظیمات جادویی برای بارکدهای خطی (حل مشکل دیر خواندن)
+            // 🎯 محاسبه دقیق تناسب تصویر گوشی (حل مشکل اصلی نخواندن بارکد)
+            const screenWidth = window.innerWidth;
+            const screenHeight = window.innerHeight;
+            const screenRatio = screenHeight > screenWidth ? screenHeight / screenWidth : screenWidth / screenHeight;
+
             const cameraConfig = {
-                // ۱. فریم ریت پایین (10) تا گوشی فرصت کند خطوط متراکم بارکد را پردازش کند
-                fps: 10, 
+                fps: 15,
                 disableFlip: false,
+                // این خط معجزه می‌کند: به اسکنر می‌فهماند که گوشی عمودی است!
+                aspectRatio: screenHeight > screenWidth ? 1 / screenRatio : screenRatio,
                 
-                // کادر (qrbox) را کلاً حذف کردیم تا کل تصویر در لحظه اسکن شود
-                
-                experimentalFeatures: {
-                    useBarCodeDetectorIfSupported: true // استفاده از لنز بومی اندروید
-                },
-                
-                // ۲. تمرکز ۱۰۰٪ فقط روی بارکد خطی (سرعت را ۱۰ برابر می‌کند چون دنبال QR نمی‌گردد)
-                formatsToSupport: [
-                    Html5QrcodeSupportedFormats.CODE_128,
-                    Html5QrcodeSupportedFormats.EAN_13,
-                    Html5QrcodeSupportedFormats.CODE_39
-                ],
-                
-                videoConstraints: {
-                    facingMode: 'environment',
-                    width: { ideal: 1280 }, // کیفیت HD برای واضح شدن خطوطِ به هم چسبیده
-                    height: { ideal: 720 },
-                    advanced: [{ focusMode: "continuous" }]
+                // یک کادر فوکوس هوشمند که متناسب با رزولوشن خودش را تنظیم می‌کند
+                qrbox: function(videoWidth, videoHeight) {
+                    const minEdge = Math.min(videoWidth, videoHeight);
+                    // یک مستطیل افقی در مرکز تصویر (۸۰ درصد عرض تصویر)
+                    return { width: minEdge * 0.85, height: minEdge * 0.4 };
                 }
+                
+                // ❌ فرمت‌های محدودکننده و قابلیت‌های اکسپریمنتال را کلاً حذف کردیم تا همه مدل بارکدی خوانده شود
             };
 
             html5QrCode_dispatch.start(
