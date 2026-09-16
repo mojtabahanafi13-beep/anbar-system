@@ -3877,11 +3877,31 @@ function startDispatchCamera() {
             try { reader.innerHTML = ''; } catch(e) {}
             html5QrCode_dispatch = new Html5Qrcode('dispatch-reader');
 
-            // تنظیمات صحیح، ساده و بدون ارور برای جلوگیری از کِرَش کردن جاوااسکریپت
+            // 🎯 تنظیمات جادویی برای بارکدهای خطی (حل مشکل دیر خواندن)
             const cameraConfig = {
-                fps: 12, 
-                qrbox: { width: 280, height: 120 }, 
-                disableFlip: false
+                // ۱. فریم ریت پایین (10) تا گوشی فرصت کند خطوط متراکم بارکد را پردازش کند
+                fps: 10, 
+                disableFlip: false,
+                
+                // کادر (qrbox) را کلاً حذف کردیم تا کل تصویر در لحظه اسکن شود
+                
+                experimentalFeatures: {
+                    useBarCodeDetectorIfSupported: true // استفاده از لنز بومی اندروید
+                },
+                
+                // ۲. تمرکز ۱۰۰٪ فقط روی بارکد خطی (سرعت را ۱۰ برابر می‌کند چون دنبال QR نمی‌گردد)
+                formatsToSupport: [
+                    Html5QrcodeSupportedFormats.CODE_128,
+                    Html5QrcodeSupportedFormats.EAN_13,
+                    Html5QrcodeSupportedFormats.CODE_39
+                ],
+                
+                videoConstraints: {
+                    facingMode: 'environment',
+                    width: { ideal: 1280 }, // کیفیت HD برای واضح شدن خطوطِ به هم چسبیده
+                    height: { ideal: 720 },
+                    advanced: [{ focusMode: "continuous" }]
+                }
             };
 
             html5QrCode_dispatch.start(
