@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>سیستم انبارداری هولدینگ</title>
     
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -371,10 +371,10 @@
             .dispatch-manual-select{height:44px!important;font-size:13px!important;}
             .dispatch-manual-qty{width:76px!important;min-width:76px!important;flex-basis:76px!important;}
         }
-/* کدهای کاملاً خام برای دوربین بدون هیچ برش و کشیدگی */
+/* کدهای اصلاح‌شده - کنترل ابعاد به خود کتابخانه واگذار شد */
 #dispatchCameraContainer { width: 100%; max-width: 400px; margin: 10px auto; background: #111827; border-radius: 10px; overflow: hidden; border: 2px solid #8b5cf6; }
-#dispatch-reader { width: 100%; height: auto; }
-#dispatch-reader video { width: 100% !important; height: auto !important; object-fit: contain !important; display: block; }
+#dispatch-reader { width: 100%; }
+/* هیچ استایلی به video ندهید تا کتابخانه خودش ابعاد را تنظیم کند */
 /* ===== UX3 — حرفه‌ای، تیره‌تر، کم‌تراکم و سریع ===== */
 :root{
  --bg-color:#eef2f7;
@@ -1131,12 +1131,10 @@ td{border-bottom-color:#d0d8e2 !important;}
                     <button type="button" class="btn-scan" style="background:#8b5cf6; padding:0 14px;" onclick="startDispatchCamera()">📷 دوربین</button>
                 </div>
                 
-                <!-- کادر بازشونده دوربین دقیقاً زیر اینپوت اسکن بارکد -->
-                <div id="dispatchCameraContainer" style="display:none; width:100%; max-width:320px; margin:10px auto 6px; border-radius:10px; overflow:hidden; border:2px solid #8b5cf6; background:#111827;">
-                    <div id="dispatch-reader" style="width:100%; max-width:300px; height:190px; max-height:190px; margin:0 auto; overflow:hidden;"></div>
-                    <button type="button" class="btn-red" style="width:100%; margin-top:0; border-radius:0; padding:8px; font-size:12px;" onclick="stopDispatchCamera()">بستن دوربین ❌</button>
-                </div>
-
+            <div id="dispatchCameraContainer" style="display:none; width:100%; max-width:350px; margin:10px auto 6px; border-radius:10px; border:2px solid #8b5cf6; background:#000; transform: translateZ(0); will-change: transform;">
+    <div id="dispatch-scanner-box" style="width:100%; margin:0 auto; transform: translateZ(0);"></div>
+    <button type="button" class="btn-red" style="width:100%; margin-top:0; border-radius:0; padding:10px; font-size:14px; font-weight:bold;" onclick="stopDispatchCamera()">بستن دوربین ❌</button>
+</div>
                 <!-- کنترل‌های ثبت دستی خرده و کارتن بدون لیبل -->
                 <div class="dispatch-manual-grid" style="margin-top:10px;">
                     <div class="dispatch-control-card" style="background:#f1f5f9; border:1px solid #cbd5e1;">
@@ -1520,12 +1518,13 @@ td{border-bottom-color:#d0d8e2 !important;}
                             <h4 style="margin:0 0 10px 0; font-size:14px; color:var(--primary); font-weight:900;">📋 اقلام فاکتور (سفارش‌برداری دستی)</h4>
                             <div class="req-entry-row">
                                 <div class="autocomplete-wrapper req-entry-product">
-                                    <input type="text" id="reqProductSelect" placeholder="🔍 جستجوی نام یا کد کالا..." onkeyup="filterProds(this, 'dl-prods')" onfocus="filterProds(this, 'dl-prods')" onkeydown="if(event.key==='Enter'){ event.preventDefault(); document.getElementById('reqTotalPieces').focus(); }">
+                                    <input type="text" id="reqProductSelect" placeholder="🔍 جستجوی نام یا کد کالا..." oninput="updateRequirementStockInfo()" onkeyup="filterProds(this, 'dl-prods')" onfocus="filterProds(this, 'dl-prods')" onkeydown="if(event.key==='Enter'){ event.preventDefault(); document.getElementById('reqTotalPieces').focus(); }">
                                     <div id="dl-prods" class="autocomplete-list"></div>
                                 </div>
                                 <input type="number" id="reqTotalPieces" class="req-entry-qty" placeholder="تعداد (عدد)" min="1" inputmode="numeric" onkeydown="if(event.key==='Enter'){ event.preventDefault(); addRequirement(); }">
                                 <button class="btn-blue req-entry-btn" onclick="addRequirement()">➕ درج در فاکتور</button>
                             </div>
+                            <div id="reqStockInfo" style="display:none; margin-top:10px; padding:10px 12px; border:1.5px solid #cbd5e1; border-radius:9px; background:#f8fafc; text-align:center; font-weight:900; line-height:1.8;"></div>
                             <div id="reqListContainer" style="margin-top:12px; max-height:180px; overflow-y:auto; padding-right:5px;"></div>
                             <div id="reqListTotal" class="draft-total" style="display:none; background:#eff6ff; color:var(--primary); border-color:#bfdbfe; margin-top:12px;"></div>
                         </div>
@@ -1928,7 +1927,14 @@ td{border-bottom-color:#d0d8e2 !important;}
         </p>
     </div>
 </div>
-
+<!-- لایه اسکنر تمام‌صفحه -->
+<div id="fullscreen-scanner-overlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:#0f172a; z-index:999999; overflow-y:auto;">
+    <div style="padding:15px 20px; background:#1e293b; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; z-index:10; border-bottom:2px solid #334155;">
+        <span style="color:#fff; font-weight:bold; font-size:16px;">📷 اسکنر بارکد</span>
+        <button type="button" onclick="stopDispatchCamera()" style="background:#ef4444; color:#fff; border:none; padding:8px 16px; border-radius:8px; font-weight:bold; font-size:14px;">بستن ❌</button>
+    </div>
+    <div id="fullscreen-reader" style="width:100%; max-width:450px; margin:30px auto; background:#000; border-radius:12px; overflow:hidden; border:2px solid #3b82f6;"></div>
+</div>
     <script>
     const DB_URL = "https://anbar-db.mojtaba-hanafi13.workers.dev";
         let autoSyncInterval = null;
@@ -2411,6 +2417,44 @@ td{border-bottom-color:#d0d8e2 !important;}
             return total;
         }
 
+        function updateRequirementStockInfo() {
+            const box = document.getElementById('reqStockInfo');
+            const input = document.getElementById('reqProductSelect');
+            const whEl = document.getElementById('outWarehouseSelect');
+            if (!box || !input || !whEl) return;
+
+            const raw = String(input.value || '').trim();
+            const wh = String(whEl.value || '').trim();
+            if (!raw || !wh) {
+                box.style.display = 'none';
+                box.innerHTML = '';
+                return;
+            }
+
+            const pCode = raw.includes(' - ') ? raw.split(' - ')[0].trim() : raw;
+            if (!productsMap[pCode]) {
+                box.style.display = 'none';
+                box.innerHTML = '';
+                return;
+            }
+
+            const stock = Math.max(0, Number(getActualStock(pCode, wh, editingExitDocId)) || 0);
+            const requested = Math.max(0, Number(getRequestedExitStock(pCode, wh)) || 0);
+            const free = Math.max(0, stock - requested);
+            const units = Math.max(1, Number(productsUnitsMap?.[pCode]) || 1);
+            const cartons = Math.floor(stock / units);
+            const loose = stock % units;
+
+            box.style.display = 'block';
+            box.style.borderColor = free > 0 ? '#059669' : '#dc2626';
+            box.style.background = free > 0 ? '#ecfdf5' : '#fef2f2';
+            box.style.color = free > 0 ? '#047857' : '#b91c1c';
+            box.innerHTML = `📦 <b>${productsMap[pCode]}</b> <span style="font-size:11px;font-weight:700;">(${pCode})</span><br>` +
+                `<span>موجودی فعلی: <b style="font-size:18px;">${stock.toLocaleString('fa-IR')} عدد</b></span>` +
+                `<span style="font-size:12px;"> | ${cartons.toLocaleString('fa-IR')} کارتن + ${loose.toLocaleString('fa-IR')} خرده</span><br>` +
+                `<span style="font-size:11px;">درخواست ثبت‌شده برای این کالا: ${requested.toLocaleString('fa-IR')} عدد | قابل سفارش: <b>${free.toLocaleString('fa-IR')} عدد</b></span>`;
+        }
+
 function fetchDataFromServer() {
             if (!companyPrefix) return;
             const statusDiv = document.getElementById("cloudStatus");
@@ -2632,6 +2676,7 @@ function uploadLocalToCloud() {
             
             if(id === 'filterWarehouseSelect') renderInventory();
             if(id === 'dashLowStockWh') renderDashboard();
+            if(id === 'outWarehouseSelect') updateRequirementStockInfo();
         }
 
         document.addEventListener('click', function(e) { 
@@ -3345,23 +3390,63 @@ async function deleteReceipt(docId, event) {
             }
         }
 
-        function stopDispatchCamera() {
-            try {
-                if(html5QrCode_dispatch) {
-                    try { html5QrCode_dispatch.stop().catch(e=>{}); } catch(e){}
-                    try { html5QrCode_dispatch.clear(); } catch(e){}
-                }
-            } catch(e) {}
-            document.getElementById('dispatchCameraContainer').style.display = 'none';
-        }
+   function stopDispatchCamera() {
+    // ۱. ابتدا لایه‌های بصری را می‌بندیم تا صفحه تحت هیچ شرایطی قفل نماند
+    try {
+        const overlay = document.getElementById('fullscreen-scanner-overlay');
+        if (overlay) overlay.style.display = 'none';
+        const oldContainer = document.getElementById('dispatchCameraContainer');
+        if (oldContainer) oldContainer.style.display = 'none';
+    } catch(e) {}
 
-        function closeDispatchScanner() {
-            if (currentDispatchDocId && currentDispatchScans.length) saveDispatchProgress();
-            stopDispatchCamera();
-            document.getElementById('dispatch-modal').style.display = 'none';
-            currentDispatchDocId = null;
-            currentDispatchScans = [];
+    isDispatchScanning = false;
+    dispatchErrorLocked = false;
+
+    // ۲. خاموش کردن و نابودی کامل دوربین با مهار خطاهای پنهان
+    if (html5QrCode_dispatch) {
+        try {
+            const stopPromise = html5QrCode_dispatch.stop();
+            if (stopPromise && typeof stopPromise.then === 'function') {
+                stopPromise.then(() => {
+                    try { html5QrCode_dispatch.clear(); } catch(e){}
+                    html5QrCode_dispatch = null; // نابودی کامل شیء
+                }).catch(() => {
+                    try { html5QrCode_dispatch.clear(); } catch(e){}
+                    html5QrCode_dispatch = null;
+                });
+            } else {
+                html5QrCode_dispatch = null;
+            }
+        } catch (err) {
+            // مهار خطای کرش کتابخانه
+            try { html5QrCode_dispatch.clear(); } catch(e){}
+            html5QrCode_dispatch = null;
         }
+    }
+}
+
+function closeDispatchScanner() {
+    // ۱. ذخیره پیشرفت قبل از خروج
+    try {
+        if (currentDispatchDocId && currentDispatchScans.length) saveDispatchProgress();
+    } catch(e) {}
+    
+    // ۲. بستن کامل پنجره بارگیری در همان ابتدا
+    try {
+        const modal = document.getElementById('dispatch-modal');
+        if (modal) modal.style.display = 'none';
+    } catch(e) {}
+    
+    // ۳. توقف دوربین
+    stopDispatchCamera();
+    
+    // ۴. ریست متغیرها برای حواله بعدی
+    currentDispatchDocId = null;
+    currentDispatchScans = [];
+    dispatchReqs = {};
+    isDispatchScanning = false;
+    dispatchErrorLocked = false;
+}
 
         function renderDispatchTable() {
             let tbody = document.getElementById('dispatchTableBody');
@@ -3853,37 +3938,38 @@ async function deleteReceipt(docId, event) {
     return true;
 }
 
-    let isDispatchScanning = false;
+ let isDispatchScanning = false;
 let lastCameraScanTime = 0;
 
 function startDispatchCamera() {
+    if (dispatchErrorLocked || document.getElementById('scan-error-modal')) return;
+
+    const overlay = document.getElementById('fullscreen-scanner-overlay');
+    const readerId = 'fullscreen-reader';
+    if (!overlay) return;
+
+    overlay.style.display = 'block';
+    isDispatchScanning = false;
+    lastCameraScanTime = 0;
+
+    const startFresh = () => {
         if (dispatchErrorLocked || document.getElementById('scan-error-modal')) return;
+        document.getElementById(readerId).innerHTML = '';
+        
+        // ساخت موتور جدید و شتاب‌دهنده سخت‌افزاری
+        html5QrCode_dispatch = new Html5Qrcode(readerId, {
+            experimentalFeatures: { useBarCodeDetectorIfSupported: true }
+        });
 
-        const container = document.getElementById('dispatchCameraContainer');
-        const reader = document.getElementById('dispatch-reader');
-        if (!container || !reader || typeof Html5Qrcode === 'undefined') {
-            showScanError('اسکنر دوربین در این صفحه بارگذاری نشده است.');
-            return;
-        }
+        const cameraConfig = {
+            fps: 20, 
+            qrbox: { width: 300, height: 150 }, 
+            disableFlip: false
+        };
 
-        container.style.display = 'block';
-        isDispatchScanning = false;
-        lastCameraScanTime = 0;
-
-        const startFresh = () => {
-            if (dispatchErrorLocked || document.getElementById('scan-error-modal')) return;
-
-            try { reader.innerHTML = ''; } catch(e) {}
-            html5QrCode_dispatch = new Html5Qrcode('dispatch-reader');
-
-            // 🎯 حالت لخت و خام: بدون کادر، بدون فیلتر فرمت، بدون دستکاری رزولوشن
-            const cameraConfig = {
-                fps: 10, // سرعت ۱۰ فریم برای اینکه گوشی فرصت پردازش بارکد خطی را داشته باشد
-                disableFlip: false
-            };
-
+        const startWithConfig = (cameraConstraint) => {
             html5QrCode_dispatch.start(
-                { facingMode: 'environment' },
+                cameraConstraint,
                 cameraConfig,
                 (txt) => {
                     if (dispatchErrorLocked || document.getElementById('scan-error-modal')) return;
@@ -3900,56 +3986,90 @@ function startDispatchCamera() {
                     const input = document.getElementById('dispatchBarcode');
                     if (input) input.value = value;
 
-                    const ok = processDispatchScan(value);
-
-                    if (ok === false) {
+                    try {
+                        const ok = processDispatchScan(value);
+                        if (ok === false) {
+                            stopDispatchCamera();
+                            isDispatchScanning = true;
+                            return;
+                        }
+                    } catch (err) {
+                        alert("خطای پردازش: " + err.message);
                         stopDispatchCamera();
-                        isDispatchScanning = true;
+                        isDispatchScanning = false;
                         return;
                     }
 
-                    if (input) input.value = '';
-
-                    const allDone = Object.values(dispatchReqs || {}).every(r =>
-                        Number(r.scanned || 0) >= Number(r.req || 0)
-                    );
-
+                    const allDone = Object.values(dispatchReqs || {}).every(r => Number(r.scanned || 0) >= Number(r.req || 0));
                     if (allDone) {
                         stopDispatchCamera();
-                        updateLiveInfoDispatch(false, '🎉 تمامی اقلام حواله با موفقیت اسکن و تکمیل گردید.');
+                        updateLiveInfoDispatch(false, '🎉 تمامی اقلام حواله اسکن شد.');
                         isDispatchScanning = false;
                         return;
                     }
 
                     setTimeout(() => {
-                        if (!dispatchErrorLocked && !document.getElementById('scan-error-modal')) {
-                            isDispatchScanning = false;
-                        }
+                        if (!dispatchErrorLocked && !document.getElementById('scan-error-modal')) isDispatchScanning = false;
                     }, 650);
                 },
-                () => {}
-            ).catch(() => {
-                showScanError('دوربین اسکنر باز نشد.\nمجوز دسترسی به دوربین را بررسی کنید.');
+                (err) => {}
+            ).catch((err) => {
+                showScanError('خطا در دسترسی به دوربین: ' + err.message);
                 stopDispatchCamera();
             });
         };
 
-        if (html5QrCode_dispatch) {
-            try {
-                const stopPromise = html5QrCode_dispatch.stop();
-                if (stopPromise && typeof stopPromise.then === 'function') {
-                    stopPromise.catch(() => {}).then(startFresh);
-                } else {
+        Html5Qrcode.getCameras().then(devices => {
+            if (devices && devices.length > 0) {
+                let backCameras = devices.filter(d => d.label.toLowerCase().includes('back') || d.label.toLowerCase().includes('rear') || d.label.toLowerCase().includes('environment'));
+                let selectedCameraId = backCameras.length > 0 ? backCameras[0].id : devices[devices.length - 1].id;
+                startWithConfig({ deviceId: { exact: selectedCameraId } });
+            } else {
+                startWithConfig({ facingMode: 'environment' });
+            }
+        }).catch(err => {
+            startWithConfig({ facingMode: 'environment' });
+        });
+    };
+
+    // اگر دوربینی از قبل در حافظه گیر کرده، با ایمنی کامل نابودش کن
+    if (html5QrCode_dispatch) {
+        try {
+            let stopResult = html5QrCode_dispatch.stop();
+            if (stopResult && typeof stopResult.then === 'function') {
+                stopResult.catch(() => {}).then(() => {
+                    html5QrCode_dispatch = null;
                     startFresh();
-                }
-            } catch(e) {
+                });
+            } else {
+                html5QrCode_dispatch = null;
                 startFresh();
             }
-        } else {
+        } catch(e) {
+            html5QrCode_dispatch = null;
             startFresh();
         }
+    } else {
+        startFresh();
     }
- function finalizeDispatchDoc() {
+}
+
+function stopDispatchCamera() {
+    if (html5QrCode_dispatch) {
+        html5QrCode_dispatch.stop().catch(e => {}).then(() => {
+            html5QrCode_dispatch.clear();
+        });
+    }
+    
+    // پنهان کردن لایه تمام‌صفحه
+    const overlay = document.getElementById('fullscreen-scanner-overlay');
+    if (overlay) overlay.style.display = 'none';
+    
+    // پنهان کردن کانتینر قبلی در صورت وجود (برای جلوگیری از تداخل)
+    const oldContainer = document.getElementById('dispatchCameraContainer');
+    if (oldContainer) oldContainer.style.display = 'none';
+}
+function finalizeDispatchDoc() {
             const targetDocId = String(currentDispatchDocId ?? '').trim();
             if (!targetDocId) return alert('❌ شماره حواله معتبر نیست.');
             const oldItems = historyLog.filter(log => String(log.docId) === targetDocId);
@@ -4550,12 +4670,14 @@ function viewSystemFactor(docId) {
             else outRequirements.push({ pCode: pCode, name: productsMap[pCode], uPerCarton: parseInt(productsUnitsMap[pCode]) || 1, reqPieces: reqP, scannedPieces: 0, wh: wh }); 
             
             document.getElementById('reqProductSelect').value = ''; 
-            document.getElementById('reqTotalPieces').value = ''; 
+            document.getElementById('reqTotalPieces').value = '';
+            updateRequirementStockInfo(); 
             
             let dl = document.getElementById('dl-prods');
             if(dl) dl.style.display = 'none';
 
             renderRequirements(); 
+            updateRequirementStockInfo();
             playBeep('success');
             document.getElementById('reqProductSelect').focus();
         }
@@ -4566,10 +4688,12 @@ function viewSystemFactor(docId) {
             let tC=0,tL=0,tP=0,tW=0;
             container.innerHTML=outRequirements.map((req,idx)=>{
                 let c=Math.floor(req.reqPieces/req.uPerCarton),l=req.reqPieces%req.uPerCarton;tC+=c;tL+=l;tP+=req.reqPieces;tW+=getWeight(req.pCode,req.reqPieces);
+                const rowStock = Math.max(0, Number(getActualStock(req.pCode, req.wh || document.getElementById('outWarehouseSelect').value, editingExitDocId)) || 0);
                 return `<div class="req-item"><div style="flex:1;"><b>${req.name}</b><br><span class="qty-primary">${getPersianQtyStr(c,l)}</span> <span class="qty-secondary">| کل: ${req.reqPieces} عدد</span> <span class="qty-weight">${formatWeight(getWeight(req.pCode,req.reqPieces))}</span>
-                <div style="margin-top:6px;"><span style="font-size:10px;font-weight:900;">انبار مبدأ: </span><select class="item-wh-select" onchange="const old=outRequirements[${idx}].wh; this.value=this.value; outRequirements[${idx}].wh=this.value; if(getActualStock(outRequirements[${idx}].pCode,this.value,editingExitDocId)<outRequirements[${idx}].reqPieces){alert('⛔ موجودی این کالا در انبار انتخابی کافی نیست.'); outRequirements[${idx}].wh=old||document.getElementById('outWarehouseSelect').value;} renderRequirements();">${warehouseOptions(req.wh||document.getElementById('outWarehouseSelect').value)}</select></div>
+                <div style="margin-top:6px;"><span style="font-size:10px;font-weight:900;">انبار مبدأ: </span><select class="item-wh-select" onchange="const old=outRequirements[${idx}].wh; this.value=this.value; outRequirements[${idx}].wh=this.value; if(getActualStock(outRequirements[${idx}].pCode,this.value,editingExitDocId)<outRequirements[${idx}].reqPieces){alert('⛔ موجودی این کالا در انبار انتخابی کافی نیست.'); outRequirements[${idx}].wh=old||document.getElementById('outWarehouseSelect').value;} renderRequirements(); updateRequirementStockInfo();">${warehouseOptions(req.wh||document.getElementById('outWarehouseSelect').value)}</select></div>
+                <div style="margin-top:4px;font-size:11px;font-weight:900;color:${rowStock > 0 ? 'var(--success)' : 'var(--danger)'};">📦 موجودی انبار: ${rowStock.toLocaleString('fa-IR')} عدد</div>
                 <span style="font-size:11px;color:var(--text-muted);">اسکن شده: <b style="color:var(--danger);">${req.scannedPieces}</b> عدد</span></div>
-                <button style="width:auto;padding:4px 8px;font-size:11px;background:var(--danger);color:#fff;" onclick="outRequirements.splice(${idx},1);renderRequirements();">حذف</button></div>`;
+                <button style="width:auto;padding:4px 8px;font-size:11px;background:var(--danger);color:#fff;" onclick="outRequirements.splice(${idx},1);renderRequirements(); updateRequirementStockInfo();">حذف</button></div>`;
             }).join('');
             totalDiv.style.display='block';totalDiv.innerHTML=`<span class="qty-primary">جمع: ${tC} کارتن</span> | <span class="qty-secondary">${tL} عدد خرد</span> | <span class="qty-secondary">کل: ${tP} عدد</span> <span class="qty-weight">| وزن: ${tW.toFixed(2)} kg</span>`;
         }
@@ -6114,7 +6238,7 @@ function filterList(inputEl, listId, dataArray) {
 function selectAutocomplete(inputId, listId, val) { 
     document.getElementById(inputId).value = val; 
     document.getElementById(listId).style.display = 'none'; 
-    if(inputId === 'reqProductSelect') document.getElementById('reqTotalPieces').focus();
+    if(inputId === 'reqProductSelect') { updateRequirementStockInfo(); document.getElementById('reqTotalPieces').focus(); }
     if(inputId === 'inProductSelect') {
         let pCode = val.split(' - ')[0].trim();
         document.getElementById('inBarcode').value = pCode;
@@ -6762,6 +6886,48 @@ if(typeof updateTodayCounter === 'function') updateTodayCounter();
     };
 
   // ۸. نهایی‌سازی اسکن بارگیری کامیون
+    // --- رفع نشتی همگام‌سازی: اگر ارسال به D1 ناموفق شود، سند در همان صف
+    //     آفلاین موجود (offlineDocQueue) قرار می‌گیرد تا با اتصال بعدی
+    //     خودکار دوباره ارسال شود، و به کاربر هم صادقانه اطلاع داده می‌شود ---
+    function buildDispatchSyncPayload(docId, docItems) {
+        return {
+            allowReplace: true,
+            companyTarget: companyPrefix,
+            docId: String(docId),
+            type: docItems[0].type,
+            date: docItems[0].date,
+            officeDoc: docItems[0].officeDoc || 'بدون شماره',
+            ref: docItems[0].ref || '',
+            warehouse: docItems[0].warehouse || '',
+            operator: docItems[0].operator || 'سیستم',
+            dispatchStatus: docItems[0].dispatchStatus || 'done',
+            dispatchDate: docItems[0].dispatchDate || null,
+            items: docItems.map(i => ({
+                pCode: i.pCode,
+                batch: i.batch || 'نامشخص',
+                qtyCarton: Number(i.qtyCarton) || 0,
+                qtyLoose: Number(i.qtyLoose) || 0,
+                totalPieces: Number(i.totalPieces) || 0,
+                warehouse: i.warehouse || i.wh || docItems[0].warehouse || 'انبار مرکزی',
+                rawBarcode: i.rawBarcode || '',
+                movementType: i.movementType || null,
+                productNameSnapshot: i.productNameSnapshot || i.name || productsMap[i.pCode] || '',
+                unitsSnapshot: Number(i.unitsSnapshot ?? i.units ?? productsUnitsMap[i.pCode]) || 1,
+                weightSnapshot: Number(i.weightSnapshot ?? i.weight ?? productsWeightMap[i.pCode]) || 0
+            }))
+        };
+    }
+
+    function queueDispatchDocForRetry(docId, docItems) {
+        try {
+            const payload = buildDispatchSyncPayload(docId, docItems);
+            if (!Array.isArray(window.offlineDocQueue)) window.offlineDocQueue = [];
+            window.offlineDocQueue.push(payload);
+            if (typeof window.saveOfflineQueue === 'function') window.saveOfflineQueue();
+            if (typeof window.processOfflineQueue === 'function') window.processOfflineQueue();
+        } catch(qe){ console.error('queueDispatchDocForRetry error:', qe); }
+    }
+
     const originalFinalizeDispatch = window.finalizeDispatchDoc;
     window.finalizeDispatchDoc = async function() {
         const targetDocId = currentDispatchDocId;
@@ -6770,7 +6936,12 @@ if(typeof updateTodayCounter === 'function') updateTodayCounter();
             let updatedDocs = historyLog.filter(log => String(log.docId) === String(targetDocId));
             if(updatedDocs.length > 0) {
                 updatedDocs.forEach(d => { d.dispatchStatus = 'done'; d.dispatchDate = new Date().toLocaleString('fa-IR'); });
-                await syncSingleDocToServerStrict(targetDocId, updatedDocs, true);
+                try {
+                    await syncSingleDocToServerStrict(targetDocId, updatedDocs, true);
+                } catch(e) {
+                    queueDispatchDocForRetry(targetDocId, updatedDocs);
+                    alert('⚠️ اسکن‌های بارگیری محلی ذخیره شد، اما ارسال آن به دیتابیس ابری ناموفق بود (اتصال اینترنت؟).\nبه‌محض اتصال مجدد، به‌صورت خودکار ارسال می‌شود.\n\nخطا: ' + e.message);
+                }
             }
         }
     };
@@ -6783,7 +6954,12 @@ if(typeof updateTodayCounter === 'function') updateTodayCounter();
             let updatedDocs = historyLog.filter(log => String(log.docId) === String(targetDocId));
             if(updatedDocs.length > 0) {
                 updatedDocs.forEach(d => { d.dispatchStatus = 'done'; d.dispatchDate = new Date().toLocaleString('fa-IR'); });
+                try {
                 await syncSingleDocToServerStrict(targetDocId, updatedDocs, true);
+                } catch(e) {
+                    queueDispatchDocForRetry(targetDocId, updatedDocs);
+                    alert('⚠️ اسکن‌های بارگیری محلی ذخیره شد، اما ارسال آن به دیتابیس ابری ناموفق بود (اتصال اینترنت؟).\nبه‌محض اتصال مجدد، به‌صورت خودکار ارسال می‌شود.\n\nخطا: ' + e.message);
+                }
             }
         }
     };
@@ -6910,5 +7086,1676 @@ function openDocActionMenu(docId,event){
   setTimeout(()=>document.addEventListener('click',closeDocActionMenu,{once:true}),0);
 }
 </script>
+<!-- ===================== پچ اسکنر شناور + موتور بارکد خطی (v3) ===================== -->
+<style id="inline-scan-dock-css">
+#inlineScanDock{position:fixed; z-index:20000; right:10px; bottom:10px; width:320px; background:#0f172a; border:2px solid #8b5cf6; border-radius:14px; box-shadow:0 10px 30px rgba(0,0,0,.45); overflow:hidden; display:none; direction:rtl; font-family:inherit; touch-action:none;}
+#inlineScanDock.big{width:min(480px,95vw);}
+#inlineScanDockHead{display:flex; align-items:center; justify-content:space-between; gap:6px; padding:6px 8px; background:#1e293b; cursor:move; user-select:none;}
+#inlineScanDockHead .ttl{color:#e2e8f0; font-size:11px; font-weight:900; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+#inlineScanDockHead button{width:auto!important; margin:0!important; padding:3px 7px!important; font-size:11px!important; font-weight:900!important; border:0!important; border-radius:6px!important; color:#fff!important; line-height:1.4!important; min-height:0!important; cursor:pointer;}
+#inlineScanStage{position:relative; width:100%; min-height:150px; background:#000; overflow:hidden;}
+#inlineScanVideo{width:100%; display:block; max-height:62vh; object-fit:contain; background:#000;}
+#inlineScanHost{width:100%;}
+#inlineScanHost video{width:100%!important; height:auto!important; display:block;}
+#inlineScanFrame{position:absolute; left:3%; right:3%; top:32%; bottom:32%; border:2px solid rgba(139,92,246,.95); border-radius:6px; pointer-events:none;}
+#inlineScanLaser{position:absolute; left:3%; right:3%; top:50%; height:2px; background:#ef4444; box-shadow:0 0 10px #ef4444; transform:translateY(-50%); pointer-events:none;}
+#inlineScanBadge{padding:6px 8px; background:#fff; color:#111827; font-size:11px; font-weight:900; text-align:center; line-height:1.7;}
+#inlineScanStatus{padding:4px 8px 6px; background:#f1f5f9; color:#334155; font-size:9px; font-weight:800; text-align:center; word-break:break-word;}
+#inlineScanCtrl{display:flex; align-items:center; gap:6px; padding:5px 9px; background:#e2e8f0;}
+#inlineScanCtrl span{font-size:10px; font-weight:900; color:#334155; white-space:nowrap;}
+#inlineScanZoom{flex:1; width:auto!important; margin:0!important; min-height:0!important; padding:0!important;}
+</style>
+<script>
+/* ============================================================================
+   ریشه‌یابی مشکل نسخه ۲ و اصلاحات این نسخه
+   ----------------------------------------------------------------------------
+   ۱) چرا موتور سخت‌افزاری بارکد را نمی‌خواند؟
+      روی اندروید، BarcodeDetector در لیست getSupportedFormats() فرمت‌های خطی را
+      اعلام می‌کند، ولی موتور واقعی (ماژول Google Play Services) ممکن است هنوز روی
+      دستگاه دانلود/فعال نشده باشد. در این حالت detect() هیچ خطایی نمی‌دهد و فقط
+      آرایه خالی برمی‌گرداند؛ یعنی دوربین سالم است ولی هیچ‌وقت چیزی تشخیص داده
+      نمی‌شود. دقیقاً همان چیزی که دیدید.
+      ← راه‌حل: موتور پیش‌فرض دیگر ZXING است (همان موتوری که در نسخه اصلی برنامه
+        شما کار می‌کرد) و فقط با فشار دکمه 🔁 می‌توان موتور سخت‌افزاری را امتحان کرد.
+
+   ۲) چرا «تعویض موتور ناموفق» می‌داد و پنجره خالی می‌شد؟
+      الف) دوربین قبلی بلافاصله stop می‌شد و همان لحظه getUserMedia جدید صدا زده
+           می‌شد؛ اندروید هنوز دوربین را آزاد نکرده و خطای NotReadableError می‌دهد.
+           ← راه‌حل: ۸۰۰ میلی‌ثانیه مکث برای آزادسازی + سه بار تلاش مجدد.
+      ب) نمونه قبلی html5-qrcode هنگام بسته شدن به صورت غیرهمزمان clear() را روی
+           همان id اجرا می‌کرد و محتوای اسکنر تازه‌ساخته‌شده را پاک می‌کرد.
+           ← راه‌حل: برای هر نشست یک المان با id یکتا ساخته می‌شود.
+      ج) در صورت شکست، هیچ بازگشتی وجود نداشت و پنجره مرده می‌ماند.
+           ← راه‌حل: اگر موتور جدید بالا نیامد، موتور قبلی خودکار برمی‌گردد و متن
+             دقیق خطا در نوار وضعیت نمایش داده می‌شود.
+
+   ۳) بهینه‌سازی مخصوص بارکد خطی عددی: فقط فرمت‌های ۱بعدی، حذف QR، کادر پهن و
+      کم‌ارتفاع، غیرفعال‌کردن اسکن آینه‌ای، فوکوس پیوسته، لمس تصویر = فوکوس مجدد،
+      و اسلایدر زوم برای بارکدهای ریز.
+   ============================================================================ */
+(function(){
+'use strict';
+
+var ONE_D = ['code_128','code_39','code_93','ean_13','ean_8','itf','codabar','upc_a','upc_e'];
+var nativeInfo = null;
+var seq = 0;
+
+function probeNative(){
+    if (nativeInfo) return Promise.resolve(nativeInfo);
+    if (!('BarcodeDetector' in window)) { nativeInfo = { formats:[], has1D:false }; return Promise.resolve(nativeInfo); }
+    return window.BarcodeDetector.getSupportedFormats().then(function(has){
+        var f = ONE_D.filter(function(x){ return has.indexOf(x) >= 0; });
+        nativeInfo = { formats:f, has1D: f.length > 0 };
+        return nativeInfo;
+    }).catch(function(){ nativeInfo = { formats:[], has1D:false }; return nativeInfo; });
+}
+
+/* ---------------- پنجره شناور ---------------- */
+var dock, dockVideo, dockHost, dockBadge, dockStatus, dockTitle, dockTorch, dockCtrl, dockZoom, dockFrame, dockLaser;
+
+function buildDock(){
+    if (dock) return dock;
+    dock = document.createElement('div');
+    dock.id = 'inlineScanDock';
+    dock.innerHTML =
+        '<div id="inlineScanDockHead">' +
+            '<span class="ttl">📷 اسکنر بارکد</span>' +
+            '<span style="display:flex;gap:5px;">' +
+                '<button type="button" id="inlineScanTorch" title="چراغ" style="background:#f59e0b;">🔦</button>' +
+                '<button type="button" id="inlineScanSwap" title="تعویض موتور تشخیص" style="background:#0ea5e9;">🔁</button>' +
+                '<button type="button" id="inlineScanSize" title="بزرگ/کوچک" style="background:#3b82f6;">⤢</button>' +
+                '<button type="button" id="inlineScanClose" title="بستن" style="background:#ef4444;">✕</button>' +
+            '</span>' +
+        '</div>' +
+        '<div id="inlineScanStage">' +
+            '<video id="inlineScanVideo" playsinline muted autoplay style="display:none;"></video>' +
+            '<div id="inlineScanHost"></div>' +
+            '<div id="inlineScanFrame" style="display:none;"></div>' +
+            '<div id="inlineScanLaser" style="display:none;"></div>' +
+        '</div>' +
+        '<div id="inlineScanCtrl" style="display:none;"><span>زوم</span><input type="range" id="inlineScanZoom" min="1" max="5" step="0.1" value="1"></div>' +
+        '<div id="inlineScanBadge">در حال آماده‌سازی دوربین…</div>' +
+        '<div id="inlineScanStatus">—</div>';
+    document.body.appendChild(dock);
+
+    dockVideo  = dock.querySelector('#inlineScanVideo');
+    dockHost   = dock.querySelector('#inlineScanHost');
+    dockBadge  = dock.querySelector('#inlineScanBadge');
+    dockStatus = dock.querySelector('#inlineScanStatus');
+    dockTitle  = dock.querySelector('.ttl');
+    dockTorch  = dock.querySelector('#inlineScanTorch');
+    dockCtrl   = dock.querySelector('#inlineScanCtrl');
+    dockZoom   = dock.querySelector('#inlineScanZoom');
+    dockFrame  = dock.querySelector('#inlineScanFrame');
+    dockLaser  = dock.querySelector('#inlineScanLaser');
+
+    dock.querySelector('#inlineScanClose').onclick = function(){ stopInlineScanner(); };
+    dock.querySelector('#inlineScanSize').onclick  = function(){ dock.classList.toggle('big'); };
+    dock.querySelector('#inlineScanSwap').onclick  = function(){ swapEngine(); };
+    dockTorch.onclick = toggleTorch;
+    dockZoom.oninput  = function(){ applyZoom(parseFloat(this.value)); };
+    dock.querySelector('#inlineScanStage').addEventListener('click', refocus);
+
+    makeDraggable(dock, dock.querySelector('#inlineScanDockHead'));
+    return dock;
+}
+
+function makeDraggable(el, handle){
+    var sx=0, sy=0, ox=0, oy=0, dragging=false;
+    handle.addEventListener('pointerdown', function(e){
+        if (e.target.tagName === 'BUTTON') return;
+        dragging = true;
+        var r = el.getBoundingClientRect();
+        ox=r.left; oy=r.top; sx=e.clientX; sy=e.clientY;
+        el.style.right='auto'; el.style.bottom='auto'; el.style.left=ox+'px'; el.style.top=oy+'px';
+        try { handle.setPointerCapture(e.pointerId); } catch(err){}
+    });
+    handle.addEventListener('pointermove', function(e){
+        if (!dragging) return;
+        el.style.left = Math.max(2, Math.min(window.innerWidth  - el.offsetWidth  - 2, ox + e.clientX - sx)) + 'px';
+        el.style.top  = Math.max(2, Math.min(window.innerHeight - el.offsetHeight - 2, oy + e.clientY - sy)) + 'px';
+    });
+    handle.addEventListener('pointerup',     function(){ dragging=false; });
+    handle.addEventListener('pointercancel', function(){ dragging=false; });
+}
+
+/* ---------------- وضعیت موتور ---------------- */
+var engine = { mode:'', running:false, raf:null, stream:null, track:null, detector:null,
+               h5:null, hostId:'', torchOn:false, hits:0, frames:0, lastCode:'', lastTime:0,
+               opts:null, badgeTimer:null, canvas:null, ctx:null, busySwap:false };
+
+function setStatus(t){ if (dockStatus) dockStatus.innerHTML = t; }
+
+function statusLine(extra){
+    var res = '';
+    if (engine.track){ try { var s = engine.track.getSettings(); res = ' • ' + (s.width||'?') + '×' + (s.height||'?'); } catch(e){} }
+    setStatus('موتور: <b>' + (engine.mode === 'native' ? 'سخت‌افزاری' : 'ZXing') + '</b>' + res +
+              ' • فریم: ' + engine.frames + ' • خوانده: ' + engine.hits + (extra ? ' • ' + extra : ''));
+}
+
+function handleRaw(txt){
+    var v = String(txt == null ? '' : txt).trim();
+    if (!v) return;
+    var now = Date.now();
+    if (v === engine.lastCode && now - engine.lastTime < 2500) return;
+    engine.lastCode = v; engine.lastTime = now; engine.hits++;
+    statusLine();
+    if (engine.opts && typeof engine.opts.onCode === 'function'){ try { engine.opts.onCode(v); } catch(e){} }
+}
+
+/* ---------------- کنترل دوربین ---------------- */
+function bindTrack(track){
+    engine.track = track || null;
+    if (!engine.track){ dockCtrl.style.display='none'; return; }
+    var caps = {};
+    try { caps = engine.track.getCapabilities ? engine.track.getCapabilities() : {}; } catch(e){}
+    try { engine.track.applyConstraints({ advanced:[{ focusMode:'continuous' }] }).catch(function(){}); } catch(e){}
+    if (caps.zoom){
+        dockCtrl.style.display = 'flex';
+        dockZoom.min = caps.zoom.min || 1;
+        dockZoom.max = caps.zoom.max || 5;
+        dockZoom.step = caps.zoom.step || 0.1;
+        dockZoom.value = caps.zoom.min || 1;
+    } else dockCtrl.style.display = 'none';
+    dockTorch.style.display = caps.torch ? '' : 'none';
+}
+
+function toggleTorch(e){
+    if (e) e.stopPropagation();
+    if (!engine.track) return;
+    engine.torchOn = !engine.torchOn;
+    try {
+        engine.track.applyConstraints({ advanced:[{ torch: engine.torchOn }] })
+            .then(function(){ dockTorch.style.background = engine.torchOn ? '#16a34a' : '#f59e0b'; })
+            .catch(function(){ engine.torchOn = false; });
+    } catch(err){ engine.torchOn = false; }
+}
+
+function applyZoom(z){
+    if (!engine.track) return;
+    try { engine.track.applyConstraints({ advanced:[{ zoom:z }] }).catch(function(){}); } catch(e){}
+}
+
+/* لمس تصویر = درخواست فوکوس مجدد (بعضی دوربین‌ها بدون این کار قفل فوکوس می‌مانند) */
+function refocus(){
+    if (!engine.track) return;
+    try {
+        engine.track.applyConstraints({ advanced:[{ focusMode:'manual' }] })
+            .catch(function(){})
+            .then(function(){
+                setTimeout(function(){
+                    try { engine.track.applyConstraints({ advanced:[{ focusMode:'continuous' }] }).catch(function(){}); } catch(e){}
+                }, 120);
+            });
+    } catch(e){}
+}
+
+function releaseCamera(){
+    engine.running = false;
+    if (engine.raf){ cancelAnimationFrame(engine.raf); engine.raf = null; }
+    var jobs = [];
+    if (engine.h5){
+        var inst = engine.h5, hostId = engine.hostId;
+        engine.h5 = null; engine.hostId = '';
+        jobs.push(new Promise(function(res){
+            try {
+                inst.stop().catch(function(){}).then(function(){
+                    try { inst.clear(); } catch(e){}
+                    var el = document.getElementById(hostId);
+                    if (el && el.parentNode) el.parentNode.removeChild(el);   /* المان یکتا حذف می‌شود */
+                    res();
+                });
+            } catch(e){ res(); }
+        }));
+    }
+    if (engine.stream){
+        try { engine.stream.getTracks().forEach(function(t){ t.stop(); }); } catch(e){}
+        engine.stream = null;
+    }
+    engine.track = null; engine.torchOn = false; engine.mode = '';
+    if (dockVideo){ try { dockVideo.srcObject = null; } catch(e){} dockVideo.style.display = 'none'; }
+    if (dockTorch){ dockTorch.style.background = '#f59e0b'; dockTorch.style.display = ''; }
+    if (dockFrame) dockFrame.style.display = 'none';
+    if (dockLaser) dockLaser.style.display = 'none';
+    return Promise.all(jobs).then(function(){
+        /* مکث اجباری تا سیستم‌عامل دوربین را واقعاً آزاد کند */
+        return new Promise(function(r){ setTimeout(r, 800); });
+    });
+}
+
+function retry(fn, tries, gap){
+    return new Promise(function(resolve, reject){
+        var n = 0;
+        (function attempt(){
+            fn().then(resolve).catch(function(err){
+                n++;
+                if (n >= tries) return reject(err);
+                setStatus('تلاش مجدد برای روشن‌کردن دوربین (' + n + ')…');
+                setTimeout(attempt, gap);
+            });
+        })();
+    });
+}
+
+/* ---------------- موتور ZXing (پیش‌فرض و مطمئن) ---------------- */
+function startZxing(){
+    var hostId = 'inlineScanBox_' + (++seq);      /* id یکتا برای هر نشست */
+    var box = document.createElement('div');
+    box.id = hostId;
+    box.style.width = '100%';
+    dockHost.innerHTML = '';
+    dockHost.appendChild(box);
+    dockVideo.style.display = 'none';
+
+    var fmts = [];
+    var F = window.Html5QrcodeSupportedFormats;
+    if (F){
+        [F.CODE_128, F.CODE_39, F.CODE_93, F.EAN_13, F.EAN_8, F.ITF, F.CODABAR, F.UPC_A, F.UPC_E]
+            .forEach(function(x){ if (x !== undefined && x !== null) fmts.push(x); });
+    }
+
+    var inst = new Html5Qrcode(hostId, {
+        verbose:false,
+        formatsToSupport: fmts.length ? fmts : undefined,
+        /* عمداً خاموش: موتور سخت‌افزاری روی بعضی دستگاه‌ها بی‌صدا هیچ‌چیز برنمی‌گرداند */
+        experimentalFeatures:{ useBarCodeDetectorIfSupported:false }
+    });
+
+    return inst.start(
+        { facingMode:{ ideal:'environment' }, width:{ ideal:1280 }, height:{ ideal:720 } },
+        {
+            fps: 20,
+            qrbox: function(w,h){
+                return { width: Math.floor(w * 0.97), height: Math.floor(Math.max(70, Math.min(h * 0.55, 240))) };
+            },
+            disableFlip: true,
+            aspectRatio: 1.3333
+        },
+        function(txt){ engine.frames++; handleRaw(txt); },
+        function(){ engine.frames++; }
+    ).then(function(){
+        engine.h5 = inst; engine.hostId = hostId;
+        engine.mode = 'zxing'; engine.running = true;
+        try {
+            var v = box.getElementsByTagName('video')[0];
+            if (v && v.srcObject){ engine.stream = v.srcObject; bindTrack(v.srcObject.getVideoTracks()[0]); }
+        } catch(e){}
+        statusLine();
+    }).catch(function(err){
+        try { inst.clear(); } catch(e){}
+        if (box.parentNode) box.parentNode.removeChild(box);
+        throw err;
+    });
+}
+
+/* ---------------- موتور سخت‌افزاری (اختیاری، با دکمه 🔁) ---------------- */
+function startNative(){
+    if (!(nativeInfo && nativeInfo.has1D)) return Promise.reject(new Error('این مرورگر موتور سخت‌افزاری بارکد خطی ندارد'));
+    dockHost.innerHTML = '';
+    return navigator.mediaDevices.getUserMedia({ audio:false, video:{
+        facingMode:{ ideal:'environment' }, width:{ ideal:1920 }, height:{ ideal:1080 }, frameRate:{ ideal:30 }
+    }}).then(function(stream){
+        engine.stream = stream;
+        bindTrack(stream.getVideoTracks()[0]);
+        dockVideo.style.display = 'block';
+        dockFrame.style.display = 'block';
+        dockLaser.style.display = 'block';
+        dockVideo.srcObject = stream;
+        var p = dockVideo.play(); if (p && p.catch) p.catch(function(){});
+        engine.detector = new window.BarcodeDetector({ formats: nativeInfo.formats });
+        engine.mode = 'native'; engine.running = true;
+        if (!engine.canvas){ engine.canvas = document.createElement('canvas'); engine.ctx = engine.canvas.getContext('2d', { willReadFrequently:true }); }
+        statusLine();
+        var busy = false, alt = 0;
+        (function loop(){
+            if (!engine.running || engine.mode !== 'native') return;
+            engine.raf = requestAnimationFrame(loop);
+            if (busy || dockVideo.readyState < 2 || !dockVideo.videoWidth) return;
+            busy = true; engine.frames++;
+            var target = dockVideo;
+            /* یک فریم در میان، فقط نوار میانی تصویر بررسی می‌شود:
+               ناحیه جستجو کوچک‌تر = تشخیص سریع‌تر و دقیق‌تر برای بارکد خطی */
+            if ((alt++ % 2) === 1){
+                try {
+                    var vw = dockVideo.videoWidth, vh = dockVideo.videoHeight;
+                    var bh = Math.floor(vh * 0.45), by = Math.floor((vh - bh) / 2);
+                    engine.canvas.width = vw; engine.canvas.height = bh;
+                    engine.ctx.drawImage(dockVideo, 0, by, vw, bh, 0, 0, vw, bh);
+                    target = engine.canvas;
+                } catch(e){ target = dockVideo; }
+            }
+            engine.detector.detect(target).then(function(codes){
+                busy = false;
+                if (engine.frames % 15 === 0) statusLine();
+                if (codes && codes.length) handleRaw(codes[0].rawValue);
+            }).catch(function(){ busy = false; });
+        })();
+    });
+}
+
+/* ---------------- راه‌اندازی / تعویض ---------------- */
+function launch(mode){
+    var starter = (mode === 'native') ? startNative : startZxing;
+    return releaseCamera().then(function(){ return retry(starter, 3, 700); });
+}
+
+function swapEngine(){
+    if (!engine.opts || engine.busySwap) return;
+    var from = engine.mode;
+    var next = (from === 'native') ? 'zxing' : 'native';
+    if (next === 'native' && !(nativeInfo && nativeInfo.has1D)){
+        setStatus('⚠️ این مرورگر موتور سخت‌افزاری بارکد خطی ندارد؛ ZXing فعال می‌ماند.');
+        return;
+    }
+    engine.busySwap = true;
+    setStatus('در حال تعویض موتور به ' + (next === 'native' ? 'سخت‌افزاری' : 'ZXing') + '…');
+    engine.frames = 0;
+    launch(next).then(function(){
+        engine.busySwap = false;
+    }).catch(function(err){
+        /* شکست = بازگشت خودکار به موتور قبلی، نه پنجره مرده */
+        var msg = (err && err.message) ? err.message : String(err);
+        launch(from || 'zxing').then(function(){
+            engine.busySwap = false;
+            setStatus('⚠️ تعویض ناموفق (' + msg + ') — موتور قبلی برگشت.');
+        }).catch(function(e2){
+            engine.busySwap = false;
+            setStatus('⛔ دوربین در دسترس نیست: ' + ((e2 && e2.message) || e2));
+        });
+    });
+}
+
+function startInlineScanner(opts){
+    buildDock();
+    engine.opts = opts;
+    engine.hits = 0; engine.frames = 0; engine.lastCode = ''; engine.lastTime = 0; engine.busySwap = false;
+    dockTitle.textContent = opts.title || '📷 اسکنر بارکد';
+    dockBadge.innerHTML = 'در حال آماده‌سازی دوربین…';
+    setStatus('…');
+    dock.style.display = 'block';
+
+    probeNative().then(function(){
+        return launch('zxing');                       /* پیش‌فرض: ZXing */
+    }).then(function(){
+        if (opts.badge){ opts.badge(); engine.badgeTimer = setInterval(opts.badge, 400); }
+        else dockBadge.innerHTML = 'آماده اسکن ✅ — بارکد عرض کادر را پر کند';
+    }).catch(function(err){
+        var msg = (err && err.message) ? err.message : String(err);
+        setStatus('⛔ ' + msg);
+        if (nativeInfo && nativeInfo.has1D){
+            launch('native').then(function(){
+                if (opts.badge){ opts.badge(); engine.badgeTimer = setInterval(opts.badge, 400); }
+            }).catch(function(){
+                dock.style.display = 'none';
+                if (typeof showScanError === 'function') showScanError('خطا در دسترسی به دوربین: ' + msg);
+                else alert('خطا در دسترسی به دوربین: ' + msg);
+            });
+        } else {
+            dock.style.display = 'none';
+            if (typeof showScanError === 'function') showScanError('خطا در دسترسی به دوربین: ' + msg);
+            else alert('خطا در دسترسی به دوربین: ' + msg);
+        }
+    });
+}
+
+function stopInlineScanner(){
+    if (engine.badgeTimer){ clearInterval(engine.badgeTimer); engine.badgeTimer = null; }
+    releaseCamera();
+    if (dock) dock.style.display = 'none';
+}
+window.stopInlineScanner = stopInlineScanner;
+
+/* ---------------- اتصال به بارگیری حواله ---------------- */
+function dispatchBadge(){
+    var s = document.getElementById('dispatchScannedCount');
+    var r = document.getElementById('dispatchRequiredCount');
+    var m = document.getElementById('dispatchRemainingCount');
+    if (!dockBadge) return;
+    dockBadge.innerHTML =
+        '📦 اسکن‌شده: <b style="color:#6d28d9;">' + (s ? s.innerText : '0') + '</b> &nbsp;|&nbsp; 🎯 موردنیاز: <b style="color:#6d28d9;">' + (r ? r.innerText : '0') + '</b><br>' +
+        '📊 باقی‌مانده: <b style="color:#6d28d9;">' + (m ? m.innerText : '0') + '</b>';
+}
+
+window.startDispatchCamera = function(){
+    if (typeof dispatchErrorLocked !== 'undefined' && dispatchErrorLocked) return;
+    if (document.getElementById('scan-error-modal')) return;
+    var ov = document.getElementById('fullscreen-scanner-overlay'); if (ov) ov.style.display = 'none';
+    var oc = document.getElementById('dispatchCameraContainer');    if (oc) oc.style.display = 'none';
+    try { isDispatchScanning = false; } catch(e){}
+
+    startInlineScanner({
+        title: '📷 اسکن بارگیری',
+        badge: dispatchBadge,
+        onCode: function(value){
+            if (typeof dispatchErrorLocked !== 'undefined' && dispatchErrorLocked) return;
+            if (document.getElementById('scan-error-modal')) return;
+            var input = document.getElementById('dispatchBarcode');
+            if (input) input.value = value;
+            var ok;
+            try { ok = processDispatchScan(value); }
+            catch(err){ stopInlineScanner(); alert('خطای پردازش: ' + err.message); return; }
+            if (ok === false){ stopInlineScanner(); return; }
+            try { playBeep('success'); } catch(e){}
+            try { if (navigator.vibrate) navigator.vibrate(60); } catch(e){}
+            setTimeout(dispatchBadge, 0);
+            try {
+                var allDone = Object.values(dispatchReqs || {}).every(function(r){
+                    return Number(r.scanned || 0) >= Number(r.req || 0);
+                });
+                if (allDone){
+                    stopInlineScanner();
+                    updateLiveInfoDispatch(false, '🎉 تمامی اقلام حواله اسکن شد.');
+                }
+            } catch(e){}
+        }
+    });
+};
+
+window.stopDispatchCamera = function(){
+    stopInlineScanner();
+    var ov = document.getElementById('fullscreen-scanner-overlay'); if (ov) ov.style.display = 'none';
+    var oc = document.getElementById('dispatchCameraContainer');    if (oc) oc.style.display = 'none';
+    try { isDispatchScanning = false; } catch(e){}
+    try { dispatchErrorLocked = false; } catch(e){}
+    try { if (html5QrCode_dispatch){ html5QrCode_dispatch.stop().catch(function(){}).then(function(){ try{ html5QrCode_dispatch.clear(); }catch(e){} html5QrCode_dispatch = null; }); } } catch(e){}
+};
+
+/* ---------------- اتصال به تب ورود / خروج ---------------- */
+window.startScanner = function(inputId){
+    var sm = document.getElementById('scanner-modal'); if (sm) sm.style.display = 'none';
+    startInlineScanner({
+        title: '📷 اسکن کالا',
+        onCode: function(txt){
+            var el = document.getElementById(inputId);
+            if (el) el.value = txt;
+            stopInlineScanner();
+            try { playBeep('success'); } catch(e){}
+            try { if (navigator.vibrate) navigator.vibrate(60); } catch(e){}
+            try { parseLiveBarcode(inputId === 'inBarcode' ? 'in' : 'out'); } catch(e){}
+            var autoAddBtn = document.getElementById(inputId.replace('Barcode','') + 'AutoAdd');
+            if (autoAddBtn && autoAddBtn.checked){
+                try { inputId === 'inBarcode' ? addToEntryDraft(true) : addToExitDraft(true); } catch(e){}
+            }
+        }
+    });
+};
+
+window.stopScanner = function(){
+    stopInlineScanner();
+    var sm = document.getElementById('scanner-modal'); if (sm) sm.style.display = 'none';
+    try { if (html5QrCode_cam && isScannerRunning){ html5QrCode_cam.stop().catch(function(){}).then(function(){ try{ html5QrCode_cam.clear(); }catch(e){} isScannerRunning = false; }); } } catch(e){}
+};
+
+(function(){
+    var orig = window.closeDispatchScanner;
+    window.closeDispatchScanner = function(){
+        stopInlineScanner();
+        if (typeof orig === 'function'){ try { return orig.apply(this, arguments); } catch(e){} }
+    };
+})();
+
+document.addEventListener('visibilitychange', function(){
+    if (document.hidden && engine.running) stopInlineScanner();
+});
+
+})();
+</script>
+
+<!-- ===================== پچ عکس‌گرفتن v5 — رفع خطای بی‌صدا + تشخیص کامل ===================== -->
+<style id="inline-scan-photo-css-v5">
+#inlineScanPhotoBtn{display:block; width:calc(100% - 16px); margin:8px; padding:12px; background:#059669; color:#fff; border:0; border-radius:10px; font-size:14px; font-weight:900; cursor:pointer;}
+#inlineScanPhotoBtn:active{background:#047857;}
+#inlineScanPhotoStatus{padding:0 9px 8px; font-size:10px; font-weight:800; color:#b45309; text-align:center; min-height:14px;}
+#inlineScanDiag{padding:6px 9px; background:#111827; color:#a5f3fc; font-size:9px; font-family:monospace; text-align:left; direction:ltr; max-height:110px; overflow:auto; white-space:pre-wrap; word-break:break-all;}
+</style>
+<script>
+/* ============================================================================
+   چرا «هیچ اتفاقی نمی‌افتد و خطایی هم نیست»؟
+   دو دلیل محتمل که نسخه قبلی رفعشان نکرده بود:
+   ۱) اگر کانتینر مخفی html5-qrcode با display:none باشد، بعضی نسخه‌های مرورگر
+      اندازهٔ آن را صفر می‌بینند و decode بی‌صدا شکست می‌خورد — نه خطا، نه نتیجه.
+      ← رفع شد: کانتینر دیگر display:none نیست؛ با موقعیت ثابت خارج از صفحه
+        (left:-99999px) پنهان می‌شود تا اندازه واقعی داشته باشد.
+   ۲) اگر scanFile() یک خطای هم‌زمان (synchronous) پرتاب کند (مثلاً به‌خاطر
+      نمونهٔ دوربین زنده‌ای که هنوز در حافظه فعال است)، فراخوانی .then روی آن
+      یک TypeError بی‌صدا در کنسول ایجاد می‌کرد که هرگز به شما نشان داده نمی‌شد.
+      ← رفع شد: کل مسیر در try/catch قرار گرفت و هر خطا مستقیماً در نوار
+        تشخیصی سیاه‌رنگ زیر دکمه چاپ می‌شود.
+   همچنین اکنون هر مرحله (انتخاب عکس → بارگذاری → هر تلاش رمزگشایی) بلافاصله
+   در نوار تشخیصی ثبت می‌شود، حتی اگر هیچ بارکدی پیدا نشود.
+   ============================================================================ */
+(function(){
+'use strict';
+
+function diagLog(diagEl, msg){
+    if (!diagEl) return;
+    var t = new Date().toLocaleTimeString('fa-IR');
+    diagEl.textContent = '[' + t + '] ' + msg + '\n' + diagEl.textContent;
+}
+
+function insertPhotoUI(){
+    var d = document.getElementById('inlineScanDock');
+    if (!d || document.getElementById('inlineScanPhotoBtn')) return;
+    var badge = document.getElementById('inlineScanBadge');
+
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.id = 'inlineScanPhotoBtn';
+    btn.textContent = '📸 عکس بگیر و بارکد را بخوان (پیشنهادی)';
+
+    var st = document.createElement('div');
+    st.id = 'inlineScanPhotoStatus';
+
+    var diag = document.createElement('div');
+    diag.id = 'inlineScanDiag';
+    diag.textContent = 'آماده — منتظر گرفتن عکس';
+
+    if (badge && badge.parentNode){
+        badge.parentNode.insertBefore(btn, badge);
+        badge.parentNode.insertBefore(st, badge.nextSibling);
+        badge.parentNode.appendChild(diag);
+    } else {
+        d.appendChild(btn); d.appendChild(st); d.appendChild(diag);
+    }
+
+    var fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/*';
+    fileInput.setAttribute('capture', 'environment');
+    fileInput.style.cssText = 'position:fixed;left:-99999px;top:-99999px;';
+    document.body.appendChild(fileInput);
+
+    btn.addEventListener('click', function(e){
+        e.stopPropagation();
+        st.textContent = '';
+        diagLog(diag, 'دکمه عکس زده شد — در حال باز کردن دوربین گوشی…');
+        fileInput.value = '';
+        try { fileInput.click(); }
+        catch(err){ diagLog(diag, 'خطا در باز کردن انتخاب‌گر فایل: ' + err.message); }
+    });
+
+    fileInput.addEventListener('change', function(){
+        diagLog(diag, 'change رویداد فایل اجرا شد — تعداد فایل: ' + (fileInput.files ? fileInput.files.length : 0));
+        var file = fileInput.files && fileInput.files[0];
+        if (!file){ diagLog(diag, '⛔ هیچ فایلی انتخاب نشد (احتمالاً انصراف زده‌اید).'); return; }
+        diagLog(diag, 'فایل: ' + file.name + ' | نوع: ' + file.type + ' | حجم: ' + Math.round(file.size/1024) + 'kb');
+        try {
+            decodePhoto(file, st, diag);
+        } catch(err){
+            diagLog(diag, '⛔ خطای همزمان در decodePhoto: ' + err.message);
+            st.textContent = '⛔ خطای داخلی: ' + err.message;
+        }
+    });
+
+    /* اگر خود مرورگر HEIC (فرمت عکس آیفون) را در <img> نتواند باز کند،
+       نه onload و نه onerror ممکن است فوراً اجرا شوند؛ این تایمر آن را گزارش می‌دهد */
+    window.__inlineScanDiagEl = diag;
+    window.__inlineScanStatusEl = st;
+}
+
+function decodePhoto(file, statusEl, diagEl){
+    statusEl.textContent = '⏳ در حال خواندن بارکد از عکس…';
+    var img = new Image();
+    var url = URL.createObjectURL(file);
+    var settled = false;
+
+    var stallTimer = setTimeout(function(){
+        if (settled) return;
+        diagLog(diagEl, '⚠️ عکس بعد از ۴ ثانیه هنوز بارگذاری نشده — ممکن است فرمت HEIC/غیرقابل‌نمایش باشد.');
+        statusEl.textContent = '⚠️ این فرمت عکس در مرورگر قابل نمایش نیست. از تنظیمات دوربین گوشی، فرمت عکس را روی JPEG بگذارید (در آیفون: تنظیمات ← دوربین ← فرمت‌ها ← سازگارترین/Most Compatible).';
+    }, 4000);
+
+    img.onload = function(){
+        settled = true; clearTimeout(stallTimer);
+        URL.revokeObjectURL(url);
+        diagLog(diagEl, 'عکس بارگذاری شد: ' + img.naturalWidth + '×' + img.naturalHeight);
+        try {
+            tryVariants(img, statusEl, diagEl);
+        } catch(err){
+            diagLog(diagEl, '⛔ خطا در پردازش تصویر: ' + err.message);
+            statusEl.textContent = '⛔ خطای داخلی در پردازش عکس.';
+        }
+    };
+    img.onerror = function(){
+        settled = true; clearTimeout(stallTimer);
+        diagLog(diagEl, '⛔ مرورگر نتوانست این عکس را باز کند (فرمت پشتیبانی‌نشده).');
+        statusEl.textContent = '⛔ خطا در بارگذاری عکس — فرمت آن را به JPEG تغییر دهید.';
+    };
+    img.src = url;
+}
+
+function tryVariants(img, statusEl, diagEl){
+    var W = img.naturalWidth, H = img.naturalHeight;
+    if (!W || !H){ statusEl.textContent = '⛔ عکس نامعتبر است (اندازه صفر).'; return; }
+
+    var variants = [
+        { label:'کل تصویر',              sx:0, sy:0,               sw:W, sh:H,               rot:0  },
+        { label:'نوار میانی افقی',        sx:0, sy:Math.floor(H*0.25), sw:W, sh:Math.floor(H*0.5), rot:0  },
+        { label:'کل تصویر (چرخش ۹۰°)',   sx:0, sy:0,               sw:W, sh:H,               rot:90 },
+        { label:'نوار میانی عمودی',       sx:Math.floor(W*0.25), sy:0, sw:Math.floor(W*0.5), sh:H,  rot:90 }
+    ];
+
+    var canvas = document.createElement('canvas');
+    var ctx = canvas.getContext('2d', { willReadFrequently:true });
+    var i = 0;
+
+    function next(){
+        if (i >= variants.length){
+            diagLog(diagEl, '⛔ هیچ‌کدام از ۴ حالت جواب نداد.');
+            statusEl.innerHTML = '⛔ بارکد در عکس پیدا نشد. نزدیک‌تر، با نور بهتر و بدون تار بودن دوباره عکس بگیرید.';
+            return;
+        }
+        var v = variants[i++];
+        diagLog(diagEl, 'در حال تلاش: ' + v.label + ' …');
+
+        var scale = Math.min(1, 1600 / Math.max(v.sw, v.sh));
+        var cropW = Math.max(1, Math.round(v.sw * scale)), cropH = Math.max(1, Math.round(v.sh * scale));
+        var crop = document.createElement('canvas');
+        crop.width = cropW; crop.height = cropH;
+        crop.getContext('2d').drawImage(img, v.sx, v.sy, v.sw, v.sh, 0, 0, cropW, cropH);
+
+        if (v.rot === 90){
+            canvas.width = cropH; canvas.height = cropW;
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+            ctx.save();
+            ctx.translate(canvas.width, 0);
+            ctx.rotate(Math.PI/2);
+            ctx.drawImage(crop, 0, 0);
+            ctx.restore();
+        } else {
+            canvas.width = cropW; canvas.height = cropH;
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+            ctx.drawImage(crop, 0, 0);
+        }
+
+        canvas.toBlob(function(blob){
+            if (!blob){ diagLog(diagEl, v.label + ': toBlob شکست خورد'); next(); return; }
+            var f = new File([blob], 'scan.jpg', { type:'image/jpeg' });
+            decodeWithBestEngine(f, diagEl).then(function(text){
+                if (text){
+                    diagLog(diagEl, '✅ موفق روی «' + v.label + '»: ' + text);
+                    statusEl.textContent = '✅ خوانده شد: ' + text;
+                    if (window.__inlineScanOnCode){ try { window.__inlineScanOnCode(text); } catch(e){ diagLog(diagEl, 'خطا در ثبت کد: ' + e.message); } }
+                } else {
+                    diagLog(diagEl, v.label + ': چیزی پیدا نشد');
+                    next();
+                }
+            }).catch(function(err){
+                diagLog(diagEl, v.label + ': خطا — ' + ((err && err.message) || err));
+                next();
+            });
+        }, 'image/jpeg', 0.95);
+    }
+    next();
+}
+
+function decodeWithBestEngine(file, diagEl){
+    return decodeWithZxingFile(file, diagEl).catch(function(err1){
+        diagLog(diagEl, 'ZXing ناموفق (' + ((err1 && err1.message) || err1) + ') — تلاش با موتور سخت‌افزاری…');
+        return decodeWithNativeFile(file, diagEl);
+    });
+}
+
+function decodeWithZxingFile(file, diagEl){
+    return new Promise(function(resolve, reject){
+        if (typeof Html5Qrcode === 'undefined'){ reject(new Error('کتابخانه html5-qrcode لود نشده')); return; }
+        var hostId = 'inlineScanFileHost_' + Date.now() + '_' + Math.floor(Math.random()*9999);
+        var host = document.createElement('div');
+        host.id = hostId;
+        /* عمداً خارج از دید ولی با اندازه واقعی — display:none باعث اندازه صفر و شکست بی‌صدا می‌شود */
+        host.style.cssText = 'position:fixed; left:-99999px; top:-99999px; width:400px; height:400px;';
+        document.body.appendChild(host);
+
+        var inst;
+        try {
+            inst = new Html5Qrcode(hostId, { verbose:false });
+        } catch(err){
+            if (host.parentNode) host.parentNode.removeChild(host);
+            reject(err);
+            return;
+        }
+
+        var cleanup = function(){
+            try { inst.clear(); } catch(e){}
+            if (host.parentNode) host.parentNode.removeChild(host);
+        };
+
+        try {
+            var p = inst.scanFile(file, false);
+            if (!p || typeof p.then !== 'function'){
+                cleanup();
+                reject(new Error('scanFile مقدار غیرمنتظره برگرداند'));
+                return;
+            }
+            p.then(function(text){ cleanup(); resolve(text); })
+             .catch(function(err){ cleanup(); reject(err); });
+        } catch(err){
+            cleanup();
+            reject(err);
+        }
+    });
+}
+
+function decodeWithNativeFile(file){
+    return new Promise(function(resolve, reject){
+        if (!('BarcodeDetector' in window)){ reject(new Error('BarcodeDetector در این مرورگر نیست')); return; }
+        createImageBitmap(file).then(function(bmp){
+            var det = new window.BarcodeDetector({ formats:['code_128','code_39','code_93','ean_13','ean_8','itf','codabar','upc_a','upc_e','qr_code'] });
+            return det.detect(bmp);
+        }).then(function(codes){
+            if (codes && codes.length) resolve(codes[0].rawValue);
+            else reject(new Error('کدی پیدا نشد'));
+        }).catch(reject);
+    });
+}
+
+/* گزارش هر خطای سراسری جاوااسکریپت مستقیماً در نوار تشخیصی، تا هیچ خطایی
+   دیگر «بی‌صدا» نماند */
+window.addEventListener('error', function(e){
+    var diag = window.__inlineScanDiagEl;
+    if (diag && document.getElementById('inlineScanDock') && document.getElementById('inlineScanDock').style.display !== 'none'){
+        diagLog(diag, '🔴 خطای سراسری: ' + e.message + ' (' + (e.filename||'') + ':' + (e.lineno||'') + ')');
+    }
+});
+window.addEventListener('unhandledrejection', function(e){
+    var diag = window.__inlineScanDiagEl;
+    if (diag && document.getElementById('inlineScanDock') && document.getElementById('inlineScanDock').style.display !== 'none'){
+        diagLog(diag, '🔴 Promise رد شد: ' + ((e.reason && e.reason.message) || e.reason));
+    }
+});
+
+var checkTimer = setInterval(function(){
+    if (document.getElementById('inlineScanDock')) insertPhotoUI();
+}, 400);
+
+(function(){
+    var origDispatch = window.startDispatchCamera;
+    var origScanner   = window.startScanner;
+
+    window.startDispatchCamera = function(){
+        window.__inlineScanOnCode = function(value){
+            if (typeof dispatchErrorLocked !== 'undefined' && dispatchErrorLocked) return;
+            if (document.getElementById('scan-error-modal')) return;
+            var input = document.getElementById('dispatchBarcode');
+            if (input) input.value = value;
+            var ok;
+            try { ok = processDispatchScan(value); } catch(err){ alert('خطای پردازش: ' + err.message); return; }
+            if (ok === false) return;
+            try { playBeep('success'); } catch(e){}
+            try { if (navigator.vibrate) navigator.vibrate(60); } catch(e){}
+        };
+        return origDispatch.apply(this, arguments);
+    };
+
+    window.startScanner = function(inputId){
+        window.__inlineScanOnCode = function(txt){
+            var el = document.getElementById(inputId);
+            if (el) el.value = txt;
+            try { if (typeof stopInlineScanner === 'function') stopInlineScanner(); } catch(e){}
+            try { playBeep('success'); } catch(e){}
+            try { if (navigator.vibrate) navigator.vibrate(60); } catch(e){}
+            try { parseLiveBarcode(inputId === 'inBarcode' ? 'in' : 'out'); } catch(e){}
+        };
+        return origScanner.apply(this, arguments);
+    };
+})();
+
+})();
+</script>
+
+<!-- ===================== پچ برش دستی + بهبود تصویر (v6) ===================== -->
+<style id="inline-scan-crop-css">
+#inlineScanCropOverlay{display:none; position:fixed; inset:0; background:rgba(0,0,0,.92); z-index:30000; direction:rtl; flex-direction:column;}
+#inlineScanCropOverlay.show{display:flex;}
+#inlineScanCropHead{padding:10px 14px; background:#1e293b; color:#fff; font-size:13px; font-weight:900; text-align:center;}
+#inlineScanCropStage{position:relative; flex:1; overflow:auto; display:flex; align-items:center; justify-content:center; touch-action:none;}
+#inlineScanCropImg{max-width:100%; display:block; user-select:none; -webkit-user-drag:none;}
+#inlineScanCropBox{position:absolute; border:3px solid #22c55e; background:rgba(34,197,94,.12); box-shadow:0 0 0 2000px rgba(0,0,0,.55); touch-action:none;}
+#inlineScanCropBox::after{content:'بارکد را داخل این کادر بگیرید'; position:absolute; top:-22px; right:0; color:#22c55e; font-size:10px; font-weight:900; white-space:nowrap;}
+.inlineScanHandle{position:absolute; width:22px; height:22px; background:#22c55e; border-radius:50%; border:2px solid #fff;}
+.inlineScanHandle.nw{top:-11px; left:-11px; cursor:nwse-resize;}
+.inlineScanHandle.se{bottom:-11px; right:-11px; cursor:nwse-resize;}
+#inlineScanCropFoot{padding:10px; background:#1e293b; display:flex; gap:8px;}
+#inlineScanCropFoot button{flex:1; padding:13px; border:0; border-radius:10px; font-size:14px; font-weight:900; color:#fff; cursor:pointer;}
+#inlineScanCropGo{background:#22c55e;}
+#inlineScanCropCancel{background:#ef4444;}
+#inlineScanCropStatus{padding:0 12px 10px; background:#1e293b; color:#fbbf24; font-size:11px; font-weight:800; text-align:center; min-height:16px;}
+</style>
+<script>
+/* ============================================================================
+   چون تشخیص خودکار روی هیچ‌کدام از ۴ حالت جواب نداد، دیگر حدس نمی‌زنیم.
+   بعد از گرفتن عکس، خود عکس کامل با کیفیت اصلی نمایش داده می‌شود و شما با
+   کشیدن گوشه‌های کادر سبز، دقیقاً دور بارکد را مشخص می‌کنید. سپس فقط همان
+   ناحیه — در رزولوشن کامل عکس (بدون هیچ کوچک‌شدنی) — رمزگشایی می‌شود.
+   علاوه بر آن یک مرحله «افزایش کنتراست» هم روی برش اعمال می‌شود که برای
+   بارکدهای کم‌کنتراست یا چاپ‌کم‌رنگ کمک زیادی می‌کند.
+   ============================================================================ */
+(function(){
+'use strict';
+
+function diagLog(msg){
+    var diag = window.__inlineScanDiagEl;
+    if (!diag) return;
+    var t = new Date().toLocaleTimeString('fa-IR');
+    diag.textContent = '[' + t + '] ' + msg + '\n' + diag.textContent;
+}
+
+var overlay, img, stage, box, cropStatus;
+var srcImg = null, srcFile = null;
+
+function buildOverlay(){
+    if (overlay) return overlay;
+    overlay = document.createElement('div');
+    overlay.id = 'inlineScanCropOverlay';
+    overlay.innerHTML =
+        '<div id="inlineScanCropHead">🎯 دور بارکد را با کشیدن گوشه‌های کادر مشخص کنید</div>' +
+        '<div id="inlineScanCropStage">' +
+            '<img id="inlineScanCropImg">' +
+            '<div id="inlineScanCropBox"><div class="inlineScanHandle nw"></div><div class="inlineScanHandle se"></div></div>' +
+        '</div>' +
+        '<div id="inlineScanCropStatus"></div>' +
+        '<div id="inlineScanCropFoot">' +
+            '<button type="button" id="inlineScanCropCancel">انصراف</button>' +
+            '<button type="button" id="inlineScanCropGo">✅ برش و خواندن بارکد</button>' +
+        '</div>';
+    document.body.appendChild(overlay);
+
+    img = overlay.querySelector('#inlineScanCropImg');
+    stage = overlay.querySelector('#inlineScanCropStage');
+    box = overlay.querySelector('#inlineScanCropBox');
+    cropStatus = overlay.querySelector('#inlineScanCropStatus');
+
+    overlay.querySelector('#inlineScanCropCancel').onclick = function(){ closeCrop(); };
+    overlay.querySelector('#inlineScanCropGo').onclick = function(){ runCropDecode(); };
+
+    bindBoxDrag();
+    return overlay;
+}
+
+function openCrop(file, imageEl){
+    buildOverlay();
+    srcFile = file; srcImg = imageEl;
+    img.src = imageEl.src;
+    cropStatus.textContent = '';
+    overlay.classList.add('show');
+    /* بعد از رندر شدن عکس، کادر اولیه را وسط تصویر با ابعاد مناسب بارکد خطی قرار بده */
+    requestAnimationFrame(function(){
+        var r = img.getBoundingClientRect();
+        var w = r.width * 0.86, h = r.height * 0.24;
+        var left = (r.width - w) / 2, top = (r.height - h) / 2;
+        box.style.left = left + 'px'; box.style.top = top + 'px';
+        box.style.width = w + 'px'; box.style.height = h + 'px';
+    });
+}
+
+function closeCrop(){
+    if (overlay) overlay.classList.remove('show');
+}
+
+/* کشیدن کل کادر + تغییر اندازه از دو گوشه */
+function bindBoxDrag(){
+    var mode = null, sx=0, sy=0, ol=0, ot=0, ow=0, oh=0;
+
+    function stageRect(){ return img.getBoundingClientRect(); }
+
+    function start(e, m){
+        mode = m;
+        var pt = e.touches ? e.touches[0] : e;
+        sx = pt.clientX; sy = pt.clientY;
+        ol = parseFloat(box.style.left)||0; ot = parseFloat(box.style.top)||0;
+        ow = parseFloat(box.style.width)||0; oh = parseFloat(box.style.height)||0;
+        e.preventDefault(); e.stopPropagation();
+    }
+    box.addEventListener('mousedown', function(e){ if (e.target.classList.contains('inlineScanHandle')) return; start(e,'move'); });
+    box.addEventListener('touchstart', function(e){ if (e.target.classList.contains('inlineScanHandle')) return; start(e,'move'); }, {passive:false});
+    box.querySelector('.se').addEventListener('mousedown', function(e){ start(e,'se'); });
+    box.querySelector('.se').addEventListener('touchstart', function(e){ start(e,'se'); }, {passive:false});
+    box.querySelector('.nw').addEventListener('mousedown', function(e){ start(e,'nw'); });
+    box.querySelector('.nw').addEventListener('touchstart', function(e){ start(e,'nw'); }, {passive:false});
+
+    function move(e){
+        if (!mode) return;
+        var pt = e.touches ? e.touches[0] : e;
+        var dx = pt.clientX - sx, dy = pt.clientY - sy;
+        var sr = stageRect();
+        if (mode === 'move'){
+            var nl = Math.max(0, Math.min(sr.width - ow, ol + dx));
+            var nt = Math.max(0, Math.min(sr.height - oh, ot + dy));
+            box.style.left = nl + 'px'; box.style.top = nt + 'px';
+        } else if (mode === 'se'){
+            var nw = Math.max(30, Math.min(sr.width - ol, ow + dx));
+            var nh = Math.max(20, Math.min(sr.height - ot, oh + dy));
+            box.style.width = nw + 'px'; box.style.height = nh + 'px';
+        } else if (mode === 'nw'){
+            var ddx = Math.max(-ol, Math.min(ow - 30, dx));
+            var ddy = Math.max(-ot, Math.min(oh - 20, dy));
+            box.style.left = (ol + ddx) + 'px'; box.style.top = (ot + ddy) + 'px';
+            box.style.width = (ow - ddx) + 'px'; box.style.height = (oh - ddy) + 'px';
+        }
+        e.preventDefault();
+    }
+    document.addEventListener('mousemove', move);
+    document.addEventListener('touchmove', move, {passive:false});
+    document.addEventListener('mouseup', function(){ mode = null; });
+    document.addEventListener('touchend', function(){ mode = null; });
+}
+
+/* افزایش کنتراست + سیاه‌وسفید کردن برش — کمک بزرگ برای بارکد چاپ‌کم‌رنگ */
+function enhance(canvas){
+    var ctx = canvas.getContext('2d');
+    var id = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    var d = id.data, i, gray, min=255, max=0;
+    var g = new Uint8ClampedArray(d.length/4);
+    for (i = 0; i < d.length; i += 4){
+        gray = 0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2];
+        g[i/4] = gray;
+        if (gray < min) min = gray;
+        if (gray > max) max = gray;
+    }
+    var range = Math.max(1, max - min);
+    for (i = 0; i < d.length; i += 4){
+        var v = ((g[i/4] - min) / range) * 255;
+        d[i] = d[i+1] = d[i+2] = v;
+    }
+    ctx.putImageData(id, 0, 0);
+    return canvas;
+}
+
+function runCropDecode(){
+    cropStatus.textContent = '⏳ در حال برش و خواندن با کیفیت کامل…';
+    diagLog('برش دستی: شروع رمزگشایی روی ناحیه انتخابی');
+
+    var stageR = stage.getBoundingClientRect();
+    var imgR = img.getBoundingClientRect();
+    var boxL = parseFloat(box.style.left) || 0;
+    var boxT = parseFloat(box.style.top) || 0;
+    var boxW = parseFloat(box.style.width) || 0;
+    var boxH = parseFloat(box.style.height) || 0;
+
+    /* تبدیل مختصات نمایشی به مختصات واقعی عکس (رزولوشن کامل) */
+    var scaleX = srcImg.naturalWidth / imgR.width;
+    var scaleY = srcImg.naturalHeight / imgR.height;
+    var sx = Math.max(0, boxL * scaleX);
+    var sy = Math.max(0, boxT * scaleY);
+    var sw = Math.min(srcImg.naturalWidth - sx, boxW * scaleX);
+    var sh = Math.min(srcImg.naturalHeight - sy, boxH * scaleY);
+
+    diagLog('ناحیه برش (رزولوشن کامل): ' + Math.round(sw) + '×' + Math.round(sh) + ' @ (' + Math.round(sx) + ',' + Math.round(sy) + ')');
+
+    /* کمی حاشیه اضافه برای اطمینان از گرفتن کل بارکد */
+    var pad = Math.round(Math.max(sw, sh) * 0.08);
+    sx = Math.max(0, sx - pad); sy = Math.max(0, sy - pad);
+    sw = Math.min(srcImg.naturalWidth - sx, sw + pad*2);
+    sh = Math.min(srcImg.naturalHeight - sy, sh + pad*2);
+
+    var raw = document.createElement('canvas');
+    raw.width = Math.round(sw); raw.height = Math.round(sh);
+    raw.getContext('2d').drawImage(srcImg, sx, sy, sw, sh, 0, 0, raw.width, raw.height);
+
+    var attempts = [
+        { label:'برش خام (رنگی)', canvas: raw },
+        { label:'برش با کنتراست بالا', canvas: (function(){
+            var c = document.createElement('canvas'); c.width = raw.width; c.height = raw.height;
+            c.getContext('2d').drawImage(raw, 0, 0);
+            return enhance(c);
+        })() },
+        { label:'برش با بزرگ‌نمایی ۲×', canvas: (function(){
+            var c = document.createElement('canvas');
+            c.width = raw.width * 2; c.height = raw.height * 2;
+            var cx = c.getContext('2d');
+            cx.imageSmoothingEnabled = true;
+            cx.drawImage(raw, 0, 0, c.width, c.height);
+            return c;
+        })() }
+    ];
+
+    var i = 0;
+    function next(){
+        if (i >= attempts.length){
+            cropStatus.textContent = '⛔ هنوز خوانده نشد. کادر را دقیق‌تر روی خطوط بارکد بکشید (بدون فضای خالی اضافه) یا نور را بیشتر کنید.';
+            diagLog('⛔ همه حالت‌های برش دستی هم شکست خورد.');
+            return;
+        }
+        var a = attempts[i++];
+        diagLog('تلاش برش: ' + a.label);
+        a.canvas.toBlob(function(blob){
+            if (!blob){ next(); return; }
+            var f = new File([blob], 'crop.jpg', { type:'image/jpeg' });
+            (window.__inlineScanDecodeFile ? window.__inlineScanDecodeFile(f) : Promise.reject(new Error('no decoder')))
+                .then(function(text){
+                    if (text){
+                        diagLog('✅ موفق روی «' + a.label + '»: ' + text);
+                        cropStatus.textContent = '✅ خوانده شد: ' + text;
+                        if (window.__inlineScanOnCode){ try { window.__inlineScanOnCode(text); } catch(e){} }
+                        setTimeout(closeCrop, 900);
+                    } else next();
+                }).catch(function(err){
+                    diagLog(a.label + ': خطا — ' + ((err && err.message) || err));
+                    next();
+                });
+        }, 'image/jpeg', 0.97);
+    }
+    next();
+}
+
+/* اتصال به دکمه عکس موجود: بعد از بارگذاری عکس، به‌جای فقط تلاش خودکار،
+   دکمه «برش دستی» هم نمایش داده می‌شود */
+var attachTimer = setInterval(function(){
+    var st = document.getElementById('inlineScanPhotoStatus');
+    if (st && !document.getElementById('inlineScanManualCropBtn')){
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.id = 'inlineScanManualCropBtn';
+        b.textContent = '✂️ اگر پیدا نشد: خودم دور بارکد را بکشم';
+        b.style.cssText = 'display:block; width:calc(100% - 16px); margin:0 8px 8px; padding:9px; background:#0ea5e9; color:#fff; border:0; border-radius:8px; font-size:12px; font-weight:900; cursor:pointer;';
+        st.parentNode.insertBefore(b, st.nextSibling);
+        b.addEventListener('click', function(e){
+            e.stopPropagation();
+            if (window.__inlineScanLastPhoto){
+                openCrop(window.__inlineScanLastPhoto.file, window.__inlineScanLastPhoto.img);
+            } else {
+                alert('اول یک‌بار دکمه «عکس بگیر» را بزنید.');
+            }
+        });
+    }
+}, 500);
+
+/* ذخیره آخرین عکس گرفته‌شده + یک تابع decode عمومی برای استفاده مشترک */
+window.__inlineScanDecodeFile = function(file){
+    return new Promise(function(resolve, reject){
+        if (typeof Html5Qrcode === 'undefined'){ reject(new Error('lib not loaded')); return; }
+        var hostId = 'inlineScanCropHost_' + Date.now() + '_' + Math.floor(Math.random()*9999);
+        var host = document.createElement('div');
+        host.id = hostId;
+        host.style.cssText = 'position:fixed; left:-99999px; top:-99999px; width:500px; height:500px;';
+        document.body.appendChild(host);
+        var inst;
+        try { inst = new Html5Qrcode(hostId, { verbose:false }); }
+        catch(err){ if (host.parentNode) host.parentNode.removeChild(host); reject(err); return; }
+        var cleanup = function(){ try{inst.clear();}catch(e){} if (host.parentNode) host.parentNode.removeChild(host); };
+        try {
+            inst.scanFile(file, false).then(function(t){ cleanup(); resolve(t); }).catch(function(e){ cleanup(); reject(e); });
+        } catch(err){ cleanup(); reject(err); }
+    });
+};
+
+/* گرفتن رفرنس فایل انتخابی از input عکس (همان input ساخته‌شده در پچ قبلی)،
+   تا عکس آخر همیشه برای دکمه «برش دستی» در دسترس باشد */
+document.addEventListener('change', function(e){
+    if (e.target && e.target.type === 'file' && e.target.accept === 'image/*' && e.target.files && e.target.files[0]){
+        window.__inlineScanLastFile = e.target.files[0];
+        /* عکس را هم خودمان با کیفیت کامل بارگذاری و نگه می‌داریم */
+        var f = e.target.files[0];
+        var im = new Image();
+        im.onload = function(){ window.__inlineScanLastPhoto = { file:f, img:im }; };
+        im.src = URL.createObjectURL(f);
+    }
+}, true);
+
+})();
+</script>
+
+<!-- ===================== پچ v8 — رفع خواندن اشتباه (کد ساختگی) ===================== -->
+<style id="inline-scan-candidates-css">
+#inlineScanCandidates{display:none; margin-top:8px; padding:8px; background:#fff; border:2px solid #f59e0b; border-radius:10px;}
+#inlineScanCandidates.show{display:block;}
+#inlineScanCandidates .hdr{font-size:11px; font-weight:900; color:#92400e; margin-bottom:6px; text-align:center;}
+#inlineScanCandidates button{display:block; width:100%; margin:4px 0; padding:9px; background:#f1f5f9; border:2px solid #cbd5e1; border-radius:8px; font-size:13px; font-weight:900; font-family:monospace; color:#111827; cursor:pointer;}
+#inlineScanCandidates button:active{background:#e2e8f0;}
+#inlineScanManualRow{display:flex; gap:6px; margin-top:6px;}
+#inlineScanManualRow input{flex:1; padding:9px; border:2px solid #cbd5e1; border-radius:8px; font-size:13px; font-family:monospace;}
+#inlineScanManualRow button{width:auto; padding:9px 12px; background:#059669; color:#fff; border:0; border-radius:8px; font-size:12px; font-weight:900;}
+</style>
+<script>
+/* ============================================================================
+   چرا عددهایی می‌آمد که اصلاً در بارکد نبود؟
+   در پچ قبلی همه فرمت‌های بارکد خطی با هم فعال بودند: Code128, EAN, EAN8,
+   Code39, Codabar, I2of5, UPC. مشکل اینجاست که Code39 و Codabar (و در برخی
+   حالات I2of5) رقم کنترلی (checksum) اجباری ندارند. یعنی اگر الگوریتم
+   مکان‌یاب Quagga یک الگوی خط‌خطی تصادفی در تصویر (سایه، لبه کارتن، نویز)
+   را به‌اشتباه به‌عنوان بارکد تشخیص دهد، هیچ رقم کنترلی‌ای نیست که این
+   تشخیص غلط را رد کند — و یک عدد کاملاً ساختگی به شما تحویل داده می‌شود.
+
+   رفع اساسی (دو لایه):
+   ۱) فرمت‌های بدون‌رقم‌کنترلی از حالت پیش‌فرض حذف شدند؛ فقط فرمت‌هایی که
+      رقم کنترلی اجباری و ریاضی دارند فعال‌اند: Code128, EAN-13, EAN-8,
+      UPC-A, UPC-E. این‌ها اگر رقم کنترلی‌شان درست از آب دربیاید، تقریباً
+      غیرممکن است که ساختگی باشند.
+   ۲) هر برش، ۳ بار با اندازه‌های مختلف پردازش می‌شود؛ عدد فقط وقتی به شما
+      تحویل داده می‌شود که حداقل در ۲ از ۳ تلاش، **دقیقاً همان عدد** تکرار
+      شده باشد (رأی‌گیری). یک تشخیص تک و تنها دیگر به‌تنهایی کافی نیست.
+   اگر با این حال چیزی جور درنیامد، به‌جای دوباره حدس زدن، یک کادر ورودی
+   دستی زیر عکس می‌آید تا خودتان عدد را از روی چاپ بارکد تایپ کنید — برای
+   یک بار هم که شده سریع‌تر و مطمئن‌تر از هر الگوریتمی است.
+   ============================================================================ */
+(function(){
+'use strict';
+
+function diagLog(msg){
+    var diag = window.__inlineScanDiagEl;
+    if (!diag) return;
+    var t = new Date().toLocaleTimeString('fa-IR');
+    diag.textContent = '[' + t + '] ' + msg + '\n' + diag.textContent;
+}
+
+var quaggaLoadPromise = null;
+function ensureQuagga(){
+    if (quaggaLoadPromise) return quaggaLoadPromise;
+    quaggaLoadPromise = new Promise(function(resolve, reject){
+        if (typeof window.Quagga !== 'undefined'){ resolve(); return; }
+        var s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js';
+        s.onload = function(){ resolve(); };
+        s.onerror = function(){ reject(new Error('بارگذاری Quagga از CDN ناموفق بود')); };
+        document.head.appendChild(s);
+    });
+    return quaggaLoadPromise;
+}
+
+function fileToDataUrl(file){
+    return new Promise(function(resolve, reject){
+        var r = new FileReader();
+        r.onload = function(){ resolve(r.result); };
+        r.onerror = function(){ reject(new Error('خطا در خواندن فایل')); };
+        r.readAsDataURL(file);
+    });
+}
+
+/* فقط فرمت‌هایی که رقم کنترلی اجباری/قوی دارند — بدون Code39/Codabar/I2of5 */
+var SAFE_READERS = ['code_128_reader', 'ean_reader', 'ean_8_reader', 'upc_reader', 'upc_e_reader'];
+/* فرمت‌های بدون رقم کنترلی قوی — فقط اگر SAFE هیچ‌چیز پیدا نکرد، آخرین راه */
+var LOOSE_READERS = ['i2of5_reader', 'code_39_reader', 'codabar_reader'];
+
+function quaggaOnce(dataUrl, size, readers){
+    return new Promise(function(resolve, reject){
+        window.Quagga.decodeSingle({
+            src: dataUrl,
+            numOfWorkers: 0,
+            locate: true,
+            inputStream: { size: size },
+            locator: { patchSize: 'medium', halfSample: true },
+            decoder: { readers: readers }
+        }, function(result){
+            if (!result || !result.codeResult || !result.codeResult.code){
+                reject(new Error('چیزی پیدا نشد (اندازه ' + size + ')'));
+                return;
+            }
+            /* میانگین خطای رمزگشایی هر بار (decodedCodes[].error) — هرچه کمتر
+               بهتر. بالای ۰.۱۵ معمولاً یعنی تشخیص قابل‌اعتماد نیست */
+            var codes = result.codeResult.decodedCodes || [];
+            var errs = codes.map(function(c){ return typeof c.error === 'number' ? c.error : 0; }).filter(function(e){ return e > 0; });
+            var avgErr = errs.length ? (errs.reduce(function(a,b){return a+b;},0) / errs.length) : 0;
+            resolve({ code: result.codeResult.code, format: result.codeResult.format, size: size, avgErr: avgErr });
+        });
+    });
+}
+
+/* هر ۳ اندازه را (حتی اگر اولی جواب داد) امتحان می‌کند و فقط وقتی حداقل
+   ۲ تای آن‌ها روی یک عدد دقیقاً توافق داشته باشند، نتیجه را قطعی می‌داند */
+function decodeWithVoting(file, readers, label){
+    return fileToDataUrl(file).then(function(dataUrl){
+        var sizes = [800, 1200, 400];
+        return Promise.all(sizes.map(function(sz){
+            return quaggaOnce(dataUrl, sz, readers)
+                .then(function(r){ diagLog(label + ' اندازه ' + sz + ': ' + r.code + ' (فرمت ' + r.format + '، خطا ' + r.avgErr.toFixed(3) + ')'); return r; })
+                .catch(function(e){ diagLog(label + ' اندازه ' + sz + ': چیزی پیدا نشد'); return null; });
+        })).then(function(results){
+            var ok = results.filter(Boolean);
+            if (!ok.length) return { code:null, candidates:[] };
+
+            var counts = {};
+            ok.forEach(function(r){ counts[r.code] = (counts[r.code]||0) + 1; });
+
+            var winner = null, winnerCount = 0;
+            Object.keys(counts).forEach(function(code){
+                if (counts[code] > winnerCount){ winner = code; winnerCount = counts[code]; }
+            });
+
+            if (winnerCount >= 2){
+                diagLog('✅ توافق ' + winnerCount + ' تلاش روی عدد ' + winner + ' — قطعی شد.');
+                return { code: winner, candidates: ok };
+            }
+            /* هیچ توافقی نبود — همه را به‌عنوان کاندید برمی‌گردانیم، خودکار چیزی قبول نمی‌کنیم */
+            diagLog('⚠️ هیچ توافقی بین تلاش‌ها نبود؛ نتایج به‌عنوان گزینه نمایش داده می‌شوند.');
+            return { code:null, candidates: ok };
+        });
+    });
+}
+
+/* موتور نهایی: اول فرمت‌های امن با رأی‌گیری، اگر هیچ‌چیز پیدا نشد فرمت‌های
+   ضعیف را هم امتحان کن ولی فقط به‌عنوان «گزینه»، هرگز خودکار قبول نکن.
+   اگر توافق قطعی حاصل نشد، به‌جای شکست، از خود شما می‌پرسد کدام عدد درست
+   است (یا اجازه می‌دهد دستی تایپ کنید) و همان جواب را برمی‌گرداند. */
+window.__inlineScanDecodeFile = function(file){
+    return ensureQuagga().then(function(){
+        return decodeWithVoting(file, SAFE_READERS, 'Quagga-امن');
+    }).then(function(res){
+        if (res.code) return res.code;
+        return decodeWithVoting(file, LOOSE_READERS, 'Quagga-ضعیف').then(function(res2){
+            var allCandidates = (res.candidates||[]).concat(res2.candidates||[]);
+            if (res2.code) return res2.code;
+            return askUserToPick(allCandidates);
+        });
+    });
+};
+
+function askUserToPick(candidates){
+    return new Promise(function(resolve){
+        var statusEl = document.getElementById('inlineScanCropStatus') || document.getElementById('inlineScanPhotoStatus');
+        if (!statusEl){ resolve(null); return; }
+        showCandidatesUI(candidates, statusEl, function(chosen){ resolve(chosen); });
+    });
+}
+
+/* --- نمایش گزینه‌ها + ورودی دستی، وقتی توافق قطعی حاصل نشد --- */
+function showCandidatesUI(candidates, statusEl, onPick){
+    var wrap = document.getElementById('inlineScanCandidates');
+    if (!wrap){
+        wrap = document.createElement('div');
+        wrap.id = 'inlineScanCandidates';
+        statusEl.parentNode.insertBefore(wrap, statusEl.nextSibling);
+    }
+    wrap.innerHTML = '';
+    var hdr = document.createElement('div');
+    hdr.className = 'hdr';
+    hdr.textContent = candidates.length ? 'کدام عدد درست است؟ (یا زیر بنویسید)' : 'بارکد پیدا نشد — عدد را تایپ کنید:';
+    wrap.appendChild(hdr);
+
+    var seen = {};
+    candidates.forEach(function(c){
+        if (seen[c.code]) return; seen[c.code] = true;
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.textContent = c.code + '  (' + c.format + ')';
+        b.onclick = function(){ wrap.classList.remove('show'); onPick(c.code); };
+        wrap.appendChild(b);
+    });
+
+    var row = document.createElement('div');
+    row.id = 'inlineScanManualRow';
+    var inp = document.createElement('input');
+    inp.type = 'text';
+    inp.inputMode = 'numeric';
+    inp.placeholder = 'عدد بارکد را اینجا تایپ کنید';
+    var go = document.createElement('button');
+    go.type = 'button';
+    go.textContent = 'ثبت';
+    go.onclick = function(){
+        var v = inp.value.trim();
+        if (!v) return;
+        wrap.classList.remove('show');
+        onPick(v);
+    };
+    row.appendChild(inp); row.appendChild(go);
+    wrap.appendChild(row);
+
+    wrap.classList.add('show');
+}
+
+/* اتصال به ابزار برش (patch6) — نسخه بازنویسی‌شده runCropDecode برای
+   نمایش گزینه‌ها به‌جای شکست بی‌نتیجه */
+window.__inlineScanShowCandidates = showCandidatesUI;
+
+})();
+</script>
+
+<!-- ===================== پچ v9 — اسکن زنده با موتور تخصصی Quagga (سریع، برای اسکن انبوه) ===================== -->
+<style id="quagga-live-dock-css">
+#quaggaDock{position:fixed; z-index:20000; right:10px; bottom:10px; width:320px; background:#0f172a; border:2px solid #8b5cf6; border-radius:14px; box-shadow:0 10px 30px rgba(0,0,0,.45); overflow:hidden; display:none; direction:rtl; font-family:inherit; touch-action:none;}
+#quaggaDock.big{width:min(480px,95vw);}
+#quaggaDockHead{display:flex; align-items:center; justify-content:space-between; gap:6px; padding:6px 8px; background:#1e293b; cursor:move; user-select:none;}
+#quaggaDockHead .ttl{color:#e2e8f0; font-size:11px; font-weight:900; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+#quaggaDockHead button{width:auto!important; margin:0!important; padding:3px 7px!important; font-size:11px!important; font-weight:900!important; border:0!important; border-radius:6px!important; color:#fff!important; line-height:1.4!important; min-height:0!important; cursor:pointer;}
+#quaggaStage{position:relative; width:100%; min-height:170px; max-height:60vh; background:#000; overflow:hidden;}
+#quaggaStage video, #quaggaStage canvas{position:absolute; top:0; left:0; width:100%!important; height:100%!important; object-fit:cover;}
+#quaggaScanArea{position:absolute; left:5%; right:5%; top:25%; bottom:25%; border:2px solid rgba(34,197,94,.95); border-radius:6px; pointer-events:none; z-index:5;}
+#quaggaFlash{position:absolute; inset:0; background:#22c55e; opacity:0; pointer-events:none; z-index:6;}
+#quaggaFlash.hit{opacity:.55; transition:opacity .08s ease-out;}
+#quaggaBadge{padding:7px 8px; background:#fff; color:#111827; font-size:12px; font-weight:900; text-align:center; line-height:1.7;}
+#quaggaBadge b{color:#6d28d9;}
+#quaggaStatus{padding:4px 8px 6px; background:#f1f5f9; color:#334155; font-size:9px; font-weight:800; text-align:center;}
+#quaggaLastCode{padding:6px 8px; background:#ecfdf5; color:#065f46; font-size:12px; font-weight:900; text-align:center; font-family:monospace; border-top:1px dashed #a7f3d0; min-height:18px;}
+</style>
+<script>
+/* ============================================================================
+   چرا اسکن زنده قبلی هم کند/ناموفق بود؟
+   موتور قبلی (ZXing از طریق html5-qrcode) الگوریتم مکان‌یابی اختصاصی برای
+   بارکد خطی ندارد؛ فقط سعی می‌کند کل فریم را یک‌جا رمزگشایی کند. Quagga برعکس
+   است: یک locator اختصاصی دارد که مدام دنبال «الگوی نواری بارکد» در فریم
+   می‌گردد (مستقل از زاویه و چرخش)، و روی جریان زنده دوربین با چند فریم در
+   ثانیه کار می‌کند — همان معماری که برای اسکنرهای انبار ساخته شده.
+
+   برای اسکن انبوه و سریع (۱۰۰۰ کارتن):
+   • فقط فرمت‌های دارای رقم کنترلی قوی فعال‌اند (Code128 / EAN / UPC) —
+     یعنی محدودکردن ناحیه جست‌وجو به نوار سبز وسط تصویر + رقم کنترلی، هم سرعت
+     و هم دقت را همزمان بالا می‌برد؛ بدون این محدودیت، Quagga کل فریم را
+     می‌گردد که کندتر و مستعد خطا است.
+   • پردازش با numOfWorkers (چند هسته CPU همزمان) انجام می‌شود.
+   • به محض قبول یک بارکد (رقم کنترلی درست) بلافاصله ثبت می‌شود — نیازی به
+     صبر یا رأی‌گیری نیست، چون این فرمت‌ها خودشان ریاضی تایید می‌شوند.
+   • یک فلاش سبز + صدا + لرزش برای هر اسکن موفق، تا بدون نگاه‌کردن به تعداد،
+     بفهمید ثبت شد.
+   ============================================================================ */
+(function(){
+'use strict';
+
+function diagLog(msg){
+    var diag = window.__inlineScanDiagEl;
+    if (diag){ var t = new Date().toLocaleTimeString('fa-IR'); diag.textContent = '[' + t + '] ' + msg + '\n' + diag.textContent; }
+    var st = document.getElementById('quaggaStatus');
+    if (st) st.textContent = msg;
+}
+
+var quaggaLoadPromise = null;
+function ensureQuagga(){
+    if (quaggaLoadPromise) return quaggaLoadPromise;
+    quaggaLoadPromise = new Promise(function(resolve, reject){
+        if (typeof window.Quagga !== 'undefined'){ resolve(); return; }
+        var s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js';
+        s.onload = function(){ resolve(); };
+        s.onerror = function(){ reject(new Error('بارگذاری Quagga از CDN ناموفق بود — اتصال اینترنت را بررسی کنید')); };
+        document.head.appendChild(s);
+    });
+    return quaggaLoadPromise;
+}
+
+var SAFE_READERS = ['code_128_reader', 'ean_reader', 'ean_8_reader', 'upc_reader', 'upc_e_reader'];
+
+/* ---------------- دوک شناور ---------------- */
+var dock, stage, badgeEl, lastCodeEl, torchBtn, titleEl;
+
+function buildDock(){
+    if (dock) return dock;
+    dock = document.createElement('div');
+    dock.id = 'quaggaDock';
+    dock.innerHTML =
+        '<div id="quaggaDockHead">' +
+            '<span class="ttl">📷 اسکنر زنده بارکد</span>' +
+            '<span style="display:flex;gap:5px;">' +
+                '<button type="button" id="quaggaTorch" title="چراغ" style="background:#f59e0b;">🔦</button>' +
+                '<button type="button" id="quaggaSize" title="بزرگ/کوچک" style="background:#3b82f6;">⤢</button>' +
+                '<button type="button" id="quaggaClose" title="بستن" style="background:#ef4444;">✕</button>' +
+            '</span>' +
+        '</div>' +
+        '<div id="quaggaStage"><div id="quaggaScanArea"></div><div id="quaggaFlash"></div></div>' +
+        '<div id="quaggaLastCode">—</div>' +
+        '<div id="quaggaBadge">در حال آماده‌سازی…</div>' +
+        '<div id="quaggaStatus">—</div>';
+    document.body.appendChild(dock);
+
+    stage = dock.querySelector('#quaggaStage');
+    badgeEl = dock.querySelector('#quaggaBadge');
+    lastCodeEl = dock.querySelector('#quaggaLastCode');
+    torchBtn = dock.querySelector('#quaggaTorch');
+    titleEl = dock.querySelector('.ttl');
+
+    dock.querySelector('#quaggaClose').onclick = function(){ stopLive(); };
+    dock.querySelector('#quaggaSize').onclick  = function(){ dock.classList.toggle('big'); };
+    torchBtn.onclick = toggleTorch;
+
+    makeDraggable(dock, dock.querySelector('#quaggaDockHead'));
+    return dock;
+}
+
+function makeDraggable(el, handle){
+    var sx=0, sy=0, ox=0, oy=0, dragging=false;
+    handle.addEventListener('pointerdown', function(e){
+        if (e.target.tagName === 'BUTTON') return;
+        dragging = true;
+        var r = el.getBoundingClientRect();
+        ox=r.left; oy=r.top; sx=e.clientX; sy=e.clientY;
+        el.style.right='auto'; el.style.bottom='auto'; el.style.left=ox+'px'; el.style.top=oy+'px';
+        try { handle.setPointerCapture(e.pointerId); } catch(err){}
+    });
+    handle.addEventListener('pointermove', function(e){
+        if (!dragging) return;
+        el.style.left = Math.max(2, Math.min(window.innerWidth  - el.offsetWidth  - 2, ox + e.clientX - sx)) + 'px';
+        el.style.top  = Math.max(2, Math.min(window.innerHeight - el.offsetHeight - 2, oy + e.clientY - sy)) + 'px';
+    });
+    handle.addEventListener('pointerup',     function(){ dragging=false; });
+    handle.addEventListener('pointercancel', function(){ dragging=false; });
+}
+
+function toggleTorch(e){
+    if (e) e.stopPropagation();
+    try {
+        var track = window.Quagga && window.Quagga.CameraAccess ? window.Quagga.CameraAccess.getActiveTrack() : null;
+        if (!track) return;
+        var on = torchBtn.dataset.on !== '1';
+        track.applyConstraints({ advanced:[{ torch: on }] }).then(function(){
+            torchBtn.dataset.on = on ? '1' : '0';
+            torchBtn.style.background = on ? '#16a34a' : '#f59e0b';
+        }).catch(function(){});
+    } catch(err){}
+}
+
+/* ---------------- وضعیت اسکن ---------------- */
+var live = { running:false, onCode:null, badgeTimer:null, hits:0,
+             lastCode:'', lastTime:0, retryCount:0, paused:false };
+var recentHits = [];   /* برای تایید چندباره قبل از قبول قطعی */
+
+function isPaused(){
+    /* تا وقتی مودال خطا باز است یا قفل خطای حواله فعال است، هیچ بارکدی
+       شناسایی/ثبت نمی‌شود — دقیقاً تا لحظه‌ای که کاربر «اوکی» را بزند */
+    try { if (typeof dispatchErrorLocked !== 'undefined' && dispatchErrorLocked) return true; } catch(e){}
+    if (document.getElementById('scan-error-modal')) return true;
+    if (live.paused) return true;
+    return false;
+}
+
+function flashHit(){
+    var f = document.getElementById('quaggaFlash');
+    if (!f) return;
+    f.classList.add('hit');
+    setTimeout(function(){ f.classList.remove('hit'); }, 140);
+}
+
+function onDetected(result){
+    if (!live.running) return;
+    if (isPaused()) return;                       /* حین باز بودن خطا، کاملاً نادیده گرفته می‌شود */
+
+    var code = result && result.codeResult && result.codeResult.code;
+    if (!code) return;
+    var now = Date.now();
+
+    /* تایید چندباره: چون رقم کنترلی به‌تنهایی گاهی روی الگوهای تصادفی پس‌زمینه
+       (دست، لبه میز، بافت پارچه) هم به‌طور اتفاقی درست درمی‌آید، یک بارکد فقط
+       وقتی قطعی قبول می‌شود که حداقل ۲ بار در ۷۰۰ میلی‌ثانیه اخیر عیناً تکرار
+       شده باشد. بارکد واقعی جلوی دوربین در همین بازه چند بار پشت‌سرهم خوانده
+       می‌شود، ولی یک تشخیص غلط تصادفی تقریباً هرگز دقیقاً تکرار نمی‌شود. */
+    recentHits = recentHits.filter(function(h){ return now - h.t < 700; });
+    recentHits.push({ code: code, t: now });
+    var confirmCount = recentHits.filter(function(h){ return h.code === code; }).length;
+    if (confirmCount < 2) return;                  /* هنوز تایید نشده، صبر کن */
+    recentHits = [];
+
+    if (code === live.lastCode && now - live.lastTime < 2000) return;
+    live.lastCode = code; live.lastTime = now; live.hits++;
+
+    flashHit();
+    try { if (navigator.vibrate) navigator.vibrate(50); } catch(e){}
+    if (lastCodeEl) lastCodeEl.textContent = '✅ ' + code + '  (' + result.codeResult.format + ')';
+    diagLog('خوانده شد: ' + code);
+
+    if (live.onCode) { try { live.onCode(code); } catch(e){ diagLog('خطا در پردازش: ' + e.message); } }
+}
+
+function startLive(opts){
+    buildDock();
+    live.onCode = opts.onCode;
+    live.hits = 0; live.lastCode=''; live.lastTime=0; live.retryCount = 0; live.paused = false;
+    recentHits = [];
+    titleEl.textContent = opts.title || '📷 اسکنر زنده';
+    badgeEl.textContent = 'در حال بارگذاری موتور اسکن…';
+    if (lastCodeEl) lastCodeEl.textContent = '—';
+    dock.style.display = 'block';
+
+    ensureQuagga().then(function(){
+        return initQuagga();
+    }).then(function(){
+        if (opts.badge){ opts.badge(); live.badgeTimer = setInterval(function(){
+            opts.badge();
+        }, 400); }
+        diagLog('آماده — بارکد را داخل کادر سبز و نزدیک به دوربین بگیرید');
+    }).catch(function(err){
+        var msg = (err && err.message) ? err.message : String(err);
+        diagLog('⛔ ' + msg);
+        dock.style.display = 'none';
+        if (typeof showScanError === 'function') showScanError('خطا در راه‌اندازی اسکنر: ' + msg);
+        else alert('خطا در راه‌اندازی اسکنر: ' + msg);
+    });
+}
+
+function initQuagga(){
+    return new Promise(function(resolve, reject){
+        /* اگر نشست قبلی هنوز فعال بود، اول کاملاً خاموشش کن */
+        try { window.Quagga.stop(); } catch(e){}
+        stage.innerHTML = '<div id="quaggaScanArea"></div><div id="quaggaFlash"></div>';
+
+        window.Quagga.init({
+            inputStream: {
+                type: 'LiveStream',
+                target: stage,
+                constraints: {
+                    facingMode: { ideal: 'environment' },
+                    width: { ideal: 1280 }, height: { ideal: 720 }
+                },
+                /* محدودکردن جست‌وجو به نوار میانی = هم سریع‌تر هم دقیق‌تر برای بارکد خطی */
+                area: { top: '25%', right: '5%', left: '5%', bottom: '25%' }
+            },
+            locator: { patchSize: 'medium', halfSample: true },
+            numOfWorkers: (navigator.hardwareConcurrency ? Math.min(4, navigator.hardwareConcurrency) : 2),
+            frequency: 10,
+            decoder: { readers: SAFE_READERS },
+            locate: true
+        }, function(err){
+            if (err){
+                /* اگر دوربین قبلی هنوز آزاد نشده، یک بار دیگر با تاخیر امتحان کن */
+                if (live.retryCount < 2){
+                    live.retryCount++;
+                    diagLog('تلاش مجدد راه‌اندازی دوربین (' + live.retryCount + ')…');
+                    setTimeout(function(){ initQuagga().then(resolve).catch(reject); }, 700);
+                    return;
+                }
+                reject(err);
+                return;
+            }
+            window.Quagga.onDetected(onDetected);
+            window.Quagga.start();
+            live.running = true;
+            resolve();
+        });
+    });
+}
+
+function stopLive(){
+    live.running = false;
+    if (live.badgeTimer){ clearInterval(live.badgeTimer); live.badgeTimer = null; }
+    try { window.Quagga && window.Quagga.offDetected(onDetected); } catch(e){}
+    try { window.Quagga && window.Quagga.stop(); } catch(e){}
+    if (dock) dock.style.display = 'none';
+}
+window.__quaggaStopLive = stopLive;
+
+/* ---------------- اتصال به بارگیری حواله ---------------- */
+function dispatchBadge(){
+    var s = document.getElementById('dispatchScannedCount');
+    var r = document.getElementById('dispatchRequiredCount');
+    var m = document.getElementById('dispatchRemainingCount');
+    if (!badgeEl) return;
+    badgeEl.innerHTML =
+        '📦 اسکن‌شده: <b>' + (s ? s.innerText : '0') + '</b> &nbsp;|&nbsp; 🎯 موردنیاز: <b>' + (r ? r.innerText : '0') + '</b><br>' +
+        '📊 باقی‌مانده: <b>' + (m ? m.innerText : '0') + '</b>';
+}
+
+window.startDispatchCamera = function(){
+    if (typeof dispatchErrorLocked !== 'undefined' && dispatchErrorLocked) return;
+    if (document.getElementById('scan-error-modal')) return;
+    var ov = document.getElementById('fullscreen-scanner-overlay'); if (ov) ov.style.display = 'none';
+    var oc = document.getElementById('dispatchCameraContainer');    if (oc) oc.style.display = 'none';
+    try { if (typeof stopInlineScanner === 'function') stopInlineScanner(); } catch(e){}
+    try { isDispatchScanning = false; } catch(e){}
+
+    startLive({
+        title: '📷 اسکن بارگیری (زنده)',
+        badge: dispatchBadge,
+        onCode: function(value){
+            if (typeof dispatchErrorLocked !== 'undefined' && dispatchErrorLocked) return;
+            if (document.getElementById('scan-error-modal')) return;
+            var input = document.getElementById('dispatchBarcode');
+            if (input) input.value = value;
+            var ok;
+            try { ok = processDispatchScan(value); }
+            catch(err){ diagLog('خطای پردازش: ' + err.message); return; }
+            if (ok === false){ return; } /* روی خطا اسکنر باز می‌ماند تا کارتن بعدی را بگیرید */
+            try { playBeep('success'); } catch(e){}
+            setTimeout(dispatchBadge, 0);
+            try {
+                var allDone = Object.values(dispatchReqs || {}).every(function(r){
+                    return Number(r.scanned || 0) >= Number(r.req || 0);
+                });
+                if (allDone){
+                    stopLive();
+                    updateLiveInfoDispatch(false, '🎉 تمامی اقلام حواله اسکن شد.');
+                }
+            } catch(e){}
+        }
+    });
+};
+
+window.stopDispatchCamera = function(){
+    stopLive();
+    var ov = document.getElementById('fullscreen-scanner-overlay'); if (ov) ov.style.display = 'none';
+    var oc = document.getElementById('dispatchCameraContainer');    if (oc) oc.style.display = 'none';
+    try { isDispatchScanning = false; } catch(e){}
+    try { dispatchErrorLocked = false; } catch(e){}
+    try { if (html5QrCode_dispatch){ html5QrCode_dispatch.stop().catch(function(){}).then(function(){ try{ html5QrCode_dispatch.clear(); }catch(e){} html5QrCode_dispatch = null; }); } } catch(e){}
+};
+
+/* ---------------- اتصال به تب ورود/خروج ---------------- */
+window.startScanner = function(inputId){
+    var sm = document.getElementById('scanner-modal'); if (sm) sm.style.display = 'none';
+    startLive({
+        title: '📷 اسکن کالا (زنده)',
+        onCode: function(txt){
+            var el = document.getElementById(inputId);
+            if (el) el.value = txt;
+            stopLive();
+            try { playBeep('success'); } catch(e){}
+            try { parseLiveBarcode(inputId === 'inBarcode' ? 'in' : 'out'); } catch(e){}
+            var autoAddBtn = document.getElementById(inputId.replace('Barcode','') + 'AutoAdd');
+            if (autoAddBtn && autoAddBtn.checked){
+                try { inputId === 'inBarcode' ? addToEntryDraft(true) : addToExitDraft(true); } catch(e){}
+            }
+        }
+    });
+};
+
+window.stopScanner = function(){
+    stopLive();
+    var sm = document.getElementById('scanner-modal'); if (sm) sm.style.display = 'none';
+    try { if (html5QrCode_cam && isScannerRunning){ html5QrCode_cam.stop().catch(function(){}).then(function(){ try{ html5QrCode_cam.clear(); }catch(e){} isScannerRunning = false; }); } } catch(e){}
+};
+
+(function(){
+    var orig = window.closeDispatchScanner;
+    window.closeDispatchScanner = function(){
+        stopLive();
+        if (typeof orig === 'function'){ try { return orig.apply(this, arguments); } catch(e){} }
+    };
+})();
+
+document.addEventListener('visibilitychange', function(){
+    if (document.hidden && live.running) stopLive();
+});
+
+/* از همین حالا Quagga را در پس‌زمینه بارگذاری کن تا اولین بار که دکمه دوربین
+   را می‌زنید، بدون تاخیر آماده باشد */
+ensureQuagga().catch(function(){});
+
+})();
+</script>
+
 </body>
 </html>
