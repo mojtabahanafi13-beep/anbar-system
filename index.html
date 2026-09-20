@@ -1784,6 +1784,13 @@ td{border-bottom-color:#d0d8e2 !important;}
            <!-- تب تنظیمات -->
             <div id="tab-settings" class="tab-content">
                 <h2 style="font-size:18px;">⚙️ تنظیمات و مدیریت سیستم</h2>
+                <div class="card" style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 18px; flex-wrap:wrap;">
+                    <span id="settingsThemeLabel" style="font-size:14px; font-weight:900;">☀️ حالت روز فعال است</span>
+                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer; margin:0;">
+                        <span style="font-size:12px; font-weight:800; color:var(--text-muted);">تغییر به حالت شب</span>
+                        <input type="checkbox" id="settingsThemeSwitch" onchange="window.toggleAppTheme()" style="width:44px; height:24px; cursor:pointer; accent-color:var(--primary);">
+                    </label>
+                </div>
                 <div class="card" style="text-align: center; background:#0f172a; padding:25px;">
                     <button class="btn-blue" style="max-width:300px; margin:0 auto 10px; padding:15px; font-size:15px;" onclick="uploadLocalToCloud()">🚀 ذخیره و بروزرسانی با سرور ابری</button>
                     <button style="max-width:300px; margin:0 auto; padding:12px; font-size:13px; background:#334155; color:#fff; border:1px solid #64748b;" onclick="runSystemHealthCheck()">🧪 تست سلامت سیستم قبل از شروع کار</button>
@@ -8829,28 +8836,981 @@ ensureQuagga().catch(function(){});
 #appDialogYes{background:var(--primary,#2563eb);}
 #appDialogNo{background:#e2e8f0!important; color:var(--text-main,#1e293b)!important;}
 
-/* ---------------- حالت شب — نسخه واقعی و کامل ---------------- */
-/* به‌جای رنگ‌آمیزی دستیِ تک‌تک کلاس‌ها (که چون رنگ سفید/مشکی در صدها جای
-   کد این فایل مستقیم نوشته شده بود، جاهای زیادی جا می‌افتاد)، از تکنیک
-   وارونه‌سازی رنگ در سطح رندر مرورگر استفاده شده: کل صفحه معکوس + چرخش
-   رنگ ۱۸۰ درجه می‌شود. نتیجه: هر پس‌زمینه سفیدی که در کد هست خودکار تیره
-   می‌شود و هر متن مشکی خودکار روشن — بدون اینکه لازم باشد جای‌جای کد گشته
-   شود. عکس‌ها (مثل عکس رسید) با یک وارونگی دوم دوباره به حالت طبیعی
-   برمی‌گردند تا رنگ‌های واقعی‌شان خراب نشود. */
-#appThemeToggle{position:fixed; left:10px; bottom:10px; z-index:19000; width:40px; height:40px; border-radius:50%; border:1px solid rgba(0,0,0,.12); background:#1e293b; color:#fff; font-size:16px; display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:0 3px 10px rgba(0,0,0,.25);}
+
+
+/* ========================================================================
+   DARK MICA v5 — Windows 11 / premium glass inspired
+   هدف: خوانایی کامل، رنگ‌های زنده و کنترل‌شده، منوی براق، شیشه‌ای واقعی
+   بدون MutationObserver یا دستکاری مداوم DOM
+   ======================================================================== */
+
 html[data-theme="dark"]{
-    filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.92);
-    background:#fff;
+    --bg-color:#080d14 !important;
+    --surface:#131e2d !important;
+    --surface-2:#17263a !important;
+    --surface-3:#1c2f49 !important;
+    --primary:#244a75 !important;
+    --success:#13a968 !important;
+    --danger:#e24a52 !important;
+    --warning:#e29a32 !important;
+    --dark:#f4f7fb !important;
+    --text-main:#eef3f8 !important;
+    --text-muted:#aab7c6 !important;
+    --border:#2b4059 !important;
+    --radius:12px !important;
+    color-scheme:dark;
 }
-html[data-theme="dark"] img,
-html[data-theme="dark"] video,
-html[data-theme="dark"] canvas,
-html[data-theme="dark"] iframe,
-html[data-theme="dark"] embed {
-    filter: invert(1) hue-rotate(180deg);
+
+html[data-theme="dark"],
+html[data-theme="dark"] body{
+    background:
+      radial-gradient(760px 500px at 96% -5%, rgba(38,76,117,.22), transparent 66%),
+      radial-gradient(650px 450px at 2% 15%, rgba(22,53,84,.16), transparent 68%),
+      #080d14 !important;
+    color:var(--text-main) !important;
 }
-/* خود دکمه سوییچ داخل چرخه معکوس‌سازی نمی‌افتد تا همیشه ظاهرش ثابت بماند */
-html[data-theme="dark"] #appThemeToggle{ filter: invert(1) hue-rotate(180deg); }
+
+html[data-theme="dark"] body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    z-index:0;
+    background:
+      linear-gradient(135deg, rgba(255,255,255,.025), transparent 24%, transparent 72%, rgba(83,128,173,.035)),
+      radial-gradient(500px 300px at 50% 0%, rgba(255,255,255,.018), transparent 72%);
+}
+
+html[data-theme="dark"] #app-wrapper{
+    position:relative !important;
+    z-index:1 !important;
+    max-width:1380px !important;
+    background:rgba(10,17,27,.90) !important;
+    -webkit-backdrop-filter:blur(26px) saturate(135%);
+    backdrop-filter:blur(26px) saturate(135%);
+    border-left:1px solid rgba(174,202,230,.10) !important;
+    border-right:1px solid rgba(174,202,230,.10) !important;
+    box-shadow:
+      0 26px 70px rgba(0,0,0,.48),
+      inset 0 1px 0 rgba(255,255,255,.055) !important;
+}
+
+/* نوارها / منوی اصلی */
+html[data-theme="dark"] #top-bar,
+html[data-theme="dark"] .tabs{
+    background:rgba(9,16,26,.78) !important;
+    -webkit-backdrop-filter:blur(24px) saturate(150%);
+    backdrop-filter:blur(24px) saturate(150%);
+    border-color:rgba(92,124,156,.24) !important;
+    box-shadow:
+      0 9px 28px rgba(0,0,0,.20),
+      inset 0 -1px 0 rgba(255,255,255,.035),
+      inset 0 1px 0 rgba(255,255,255,.035) !important;
+}
+html[data-theme="dark"] .tabs{padding:6px 8px !important;gap:6px !important;}
+html[data-theme="dark"] .tab-btn{
+    max-width:none !important;
+    position:relative !important;
+    overflow:hidden !important;
+    background:linear-gradient(180deg, rgba(29,45,65,.94), rgba(18,30,45,.94)) !important;
+    color:#cbd7e3 !important;
+    border:1px solid rgba(102,133,164,.26) !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.07),
+      inset 0 -1px 0 rgba(0,0,0,.22),
+      0 3px 10px rgba(0,0,0,.10) !important;
+    border-radius:10px !important;
+    text-shadow:0 1px 1px rgba(0,0,0,.20) !important;
+}
+html[data-theme="dark"] .tab-btn::before{
+    content:"";
+    position:absolute;
+    inset:1px 1px auto;
+    height:42%;
+    border-radius:9px 9px 5px 5px;
+    background:linear-gradient(180deg,rgba(255,255,255,.055),transparent);
+    pointer-events:none;
+}
+html[data-theme="dark"] .tab-btn:hover{
+    background:linear-gradient(180deg,#233c5b,#1a304a) !important;
+    color:#f5f8fc !important;
+    border-color:rgba(121,159,193,.44) !important;
+    transform:translateY(-1px);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.10),
+      0 7px 17px rgba(0,0,0,.20),
+      0 0 0 1px rgba(55,100,145,.08) !important;
+}
+html[data-theme="dark"] .tab-btn.active{
+    background:linear-gradient(180deg,#2a547f 0%,#1d3f65 56%,#193858 100%) !important;
+    border-color:#4e7ca9 !important;
+    color:#ffffff !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.16),
+      inset 0 -1px 0 rgba(0,0,0,.18),
+      0 8px 20px rgba(12,42,72,.34),
+      0 0 18px rgba(49,99,145,.12) !important;
+}
+html[data-theme="dark"] .tab-logout{
+    background:linear-gradient(180deg,#b83b45,#8f2932) !important;
+    border-color:#d35a62 !important;
+    color:#fff !important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.13),0 6px 15px rgba(100,20,27,.20) !important;
+}
+
+/* تیترها و متن — هیچ متن اصلی نباید خاکستری محو باشد */
+html[data-theme="dark"] h1,
+html[data-theme="dark"] h2,
+html[data-theme="dark"] h3,
+html[data-theme="dark"] h4,
+html[data-theme="dark"] h5,
+html[data-theme="dark"] h6,
+html[data-theme="dark"] label,
+html[data-theme="dark"] legend,
+html[data-theme="dark"] strong,
+html[data-theme="dark"] b,
+html[data-theme="dark"] .text-main,
+html[data-theme="dark"] .qty-primary,
+html[data-theme="dark"] .office-doc-main,
+html[data-theme="dark"] .recent-invoice-main{
+    color:#f1f5f9 !important;
+}
+html[data-theme="dark"] p,
+html[data-theme="dark"] li,
+html[data-theme="dark"] td,
+html[data-theme="dark"] span,
+html[data-theme="dark"] div{
+    color:inherit;
+}
+html[data-theme="dark"] p,
+html[data-theme="dark"] li{color:#dce5ee !important;}
+html[data-theme="dark"] small,
+html[data-theme="dark"] .text-muted,
+html[data-theme="dark"] .recent-doc-sub,
+html[data-theme="dark"] .office-doc-user,
+html[data-theme="dark"] .doc-id-mini,
+html[data-theme="dark"] .receipt-date,
+html[data-theme="dark"] .m-doc-date,
+html[data-theme="dark"] .m-doc-user,
+html[data-theme="dark"] .m-route small,
+html[data-theme="dark"] .m-doc-summary small,
+html[data-theme="dark"] .m-item-qty,
+html[data-theme="dark"] .qty-secondary,
+html[data-theme="dark"] .qty-weight{
+    color:#a9b8c8 !important;
+}
+html[data-theme="dark"] a{color:#8fb6df !important;}
+
+/* هدرها */
+html[data-theme="dark"] h2{border-bottom-color:#2c425b !important;}
+html[data-theme="dark"] .dash-header{
+    background:
+      radial-gradient(420px 120px at 8% 0%, rgba(78,121,162,.19), transparent 70%),
+      linear-gradient(135deg,rgba(28,48,71,.96),rgba(13,24,38,.96)) !important;
+    border:1px solid #38536f !important;
+    color:#f5f8fb !important;
+    box-shadow:0 12px 28px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.08) !important;
+}
+html[data-theme="dark"] .dash-header h2{color:#fff !important;}
+html[data-theme="dark"] .dash-card h3{color:#a9b7c7 !important;}
+html[data-theme="dark"] .dash-card .val{color:#f6f8fb !important;}
+
+/* شیشه‌ی کارت‌ها و پنل‌ها */
+html[data-theme="dark"] .card,
+html[data-theme="dark"] .settings-card,
+html[data-theme="dark"] .form-panel,
+html[data-theme="dark"] .cart-panel,
+html[data-theme="dark"] .dash-card,
+html[data-theme="dark"] .modal-box,
+html[data-theme="dark"] #cardexModeSelectorCard,
+html[data-theme="dark"] #cardexFilterCard,
+html[data-theme="dark"] .req-box,
+html[data-theme="dark"] .req-item,
+html[data-theme="dark"] .scrollable-list,
+html[data-theme="dark"] .m-doc-card,
+html[data-theme="dark"] .m-route,
+html[data-theme="dark"] .m-doc-summary>div,
+html[data-theme="dark"] .m-item{
+    background:
+      linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94)) !important;
+    border-color:rgba(78,108,139,.42) !important;
+    box-shadow:
+      0 10px 26px rgba(0,0,0,.16),
+      inset 0 1px 0 rgba(255,255,255,.055),
+      inset 0 0 0 1px rgba(255,255,255,.012) !important;
+    -webkit-backdrop-filter:blur(18px) saturate(130%);
+    backdrop-filter:blur(18px) saturate(130%);
+    color:#eaf0f6 !important;
+}
+html[data-theme="dark"] .settings-card{border-top-color:#3c78ad !important;}
+html[data-theme="dark"] .req-box{background:rgba(16,29,44,.92) !important;}
+html[data-theme="dark"] .req-item{background:linear-gradient(180deg,#182b41,#142437) !important;}
+
+/* همه‌ی سطوح روشن قدیمی، از جمله inline-style */
+html[data-theme="dark"] [style*="background:#fff"],
+html[data-theme="dark"] [style*="background: #fff"],
+html[data-theme="dark"] [style*="background:#ffffff"],
+html[data-theme="dark"] [style*="background: #ffffff"],
+html[data-theme="dark"] [style*="background-color:#fff"],
+html[data-theme="dark"] [style*="background-color: #fff"],
+html[data-theme="dark"] [style*="background-color:#ffffff"],
+html[data-theme="dark"] [style*="background-color: #ffffff"],
+html[data-theme="dark"] [style*="background:white"],
+html[data-theme="dark"] [style*="background: white"],
+html[data-theme="dark"] [style*="background-color:white"],
+html[data-theme="dark"] [style*="background-color: white"],
+html[data-theme="dark"] [style*="rgb(255, 255, 255)"],
+html[data-theme="dark"] [style*="rgb(255,255,255)"],
+html[data-theme="dark"] [style*="background:#f8fafc"],
+html[data-theme="dark"] [style*="background: #f8fafc"],
+html[data-theme="dark"] [style*="background:#f1f5f9"],
+html[data-theme="dark"] [style*="background: #f1f5f9"],
+html[data-theme="dark"] [style*="background:#f3f6fa"],
+html[data-theme="dark"] [style*="background: #f3f6fa"],
+html[data-theme="dark"] [style*="background:#eef2f7"],
+html[data-theme="dark"] [style*="background: #eef2f7"],
+html[data-theme="dark"] [style*="background:#f5f7fa"],
+html[data-theme="dark"] [style*="background: #f5f7fa"]{
+    background:linear-gradient(180deg,#17263a,#142235) !important;
+    color:#e9eff5 !important;
+    border-color:#30475f !important;
+}
+
+/* inline text رنگ قدیمی که در دارک نامرئی می‌شود */
+html[data-theme="dark"] [style*="color:#0f172a"],
+html[data-theme="dark"] [style*="color: #0f172a"],
+html[data-theme="dark"] [style*="color:#111827"],
+html[data-theme="dark"] [style*="color: #111827"],
+html[data-theme="dark"] [style*="color:#1e293b"],
+html[data-theme="dark"] [style*="color: #1e293b"],
+html[data-theme="dark"] [style*="color:#172033"],
+html[data-theme="dark"] [style*="color: #172033"],
+html[data-theme="dark"] [style*="color:#25324a"],
+html[data-theme="dark"] [style*="color: #25324a"],
+html[data-theme="dark"] [style*="color:#334155"],
+html[data-theme="dark"] [style*="color: #334155"],
+html[data-theme="dark"] [style*="color:#475569"],
+html[data-theme="dark"] [style*="color: #475569"],
+html[data-theme="dark"] [style*="color:#64748b"],
+html[data-theme="dark"] [style*="color: #64748b"],
+html[data-theme="dark"] [style*="color:#7a879a"],
+html[data-theme="dark"] [style*="color: #7a879a"],
+html[data-theme="dark"] [style*="color:#8a97aa"],
+html[data-theme="dark"] [style*="color: #8a97aa"]{
+    color:#d6e0e9 !important;
+}
+html[data-theme="dark"] [style*="color:#ffffff"],
+html[data-theme="dark"] [style*="color: #ffffff"],
+html[data-theme="dark"] [style*="color:#fff"],
+html[data-theme="dark"] [style*="color: #fff"]{
+    color:#f7f9fb !important;
+}
+
+/* ورودی‌ها */
+html[data-theme="dark"] input,
+html[data-theme="dark"] select,
+html[data-theme="dark"] textarea,
+html[data-theme="dark"] .custom-select-display{
+    background:linear-gradient(180deg,#111d2c,#0f1a28) !important;
+    color:#f1f5f9 !important;
+    border:1px solid #39516b !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.05),
+      0 2px 6px rgba(0,0,0,.10) !important;
+}
+html[data-theme="dark"] input::placeholder,
+html[data-theme="dark"] textarea::placeholder{color:#93a4b5 !important;opacity:1 !important;}
+html[data-theme="dark"] input:focus,
+html[data-theme="dark"] select:focus,
+html[data-theme="dark"] textarea:focus,
+html[data-theme="dark"] .custom-select-display:focus{
+    background:linear-gradient(180deg,#14253a,#112035) !important;
+    border-color:#557fa9 !important;
+    box-shadow:0 0 0 3px rgba(61,108,151,.20),inset 0 1px 0 rgba(255,255,255,.07) !important;
+}
+html[data-theme="dark"] .hardware-input{
+    background:linear-gradient(180deg,#132942,#102238) !important;
+    border-color:#5b86b0 !important;
+    color:#fff !important;
+    box-shadow:0 0 0 2px rgba(54,107,155,.10),inset 0 1px 0 rgba(255,255,255,.08) !important;
+}
+html[data-theme="dark"] option{background:#101b2a !important;color:#eef3f8 !important;}
+html[data-theme="dark"] input[type="checkbox"]{accent-color:#3d75aa;}
+
+/* dropdown / autocomplete — شیشه‌ای و واضح */
+html[data-theme="dark"] .custom-select-options,
+html[data-theme="dark"] .autocomplete-list{
+    background:rgba(15,25,39,.97) !important;
+    border-color:#41617f !important;
+    box-shadow:0 22px 48px rgba(0,0,0,.48),inset 0 1px 0 rgba(255,255,255,.06) !important;
+    -webkit-backdrop-filter:blur(22px) saturate(140%);
+    backdrop-filter:blur(22px) saturate(140%);
+}
+html[data-theme="dark"] .custom-option,
+html[data-theme="dark"] .autocomplete-item{
+    background:transparent !important;
+    color:#e7eef5 !important;
+    border-color:#273b52 !important;
+}
+html[data-theme="dark"] .custom-option:hover,
+html[data-theme="dark"] .autocomplete-item:hover{
+    background:linear-gradient(90deg,rgba(43,82,122,.38),rgba(37,64,92,.20)) !important;
+    color:#fff !important;
+}
+
+/* رادیو */
+html[data-theme="dark"] .radio-label{
+    background:linear-gradient(180deg,#17273b,#132337) !important;
+    color:#dce6ef !important;
+    border-color:#39516b !important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.045) !important;
+}
+html[data-theme="dark"] .radio-label:has(input:checked){
+    background:linear-gradient(180deg,#254b73,#1b3b5f) !important;
+    border-color:#5b84ad !important;
+    color:#fff !important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.09),0 5px 14px rgba(15,55,89,.18) !important;
+}
+
+/* دکمه‌های عملیاتی — زنده، اما سرمه‌ای/لوکس */
+html[data-theme="dark"] button{color:#fff;}
+html[data-theme="dark"] .btn-blue{
+    background:linear-gradient(180deg,#2c5b89,#20476f) !important;
+    border:1px solid #507fab !important;
+    color:#fff !important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 7px 17px rgba(13,53,88,.28) !important;
+}
+html[data-theme="dark"] .btn-blue:hover{background:linear-gradient(180deg,#356a9a,#275579) !important;border-color:#6a95bb !important;}
+html[data-theme="dark"] .btn-green{
+    background:linear-gradient(180deg,#18b972,#0e9357) !important;
+    border:1px solid #42cf91 !important;
+    color:#fff !important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.13),0 7px 17px rgba(9,101,59,.26) !important;
+}
+html[data-theme="dark"] .btn-red,
+html[data-theme="dark"] .del-btn{
+    background:linear-gradient(180deg,#ea565e,#c93b45) !important;
+    border:1px solid #f2787f !important;
+    color:#fff !important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 7px 17px rgba(110,20,28,.25) !important;
+}
+html[data-theme="dark"] .btn-add{
+    background:linear-gradient(180deg,#e7a33e,#c97919) !important;
+    border:1px solid #f0bc67 !important;
+    color:#fff !important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 7px 17px rgba(118,69,13,.25) !important;
+}
+html[data-theme="dark"] .btn-scan{
+    background:linear-gradient(180deg,#203a57,#172c44) !important;
+    border:1px solid #486887 !important;
+    color:#f3f7fb !important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 6px 15px rgba(0,0,0,.16) !important;
+}
+html[data-theme="dark"] .dispatch-control-btn{color:#fff !important;}
+
+/* وضعیت‌ها: رنگ زنده با کنتراست بالا */
+html[data-theme="dark"] .badge.in{background:linear-gradient(180deg,#19b974,#0d9556) !important;color:#fff !important;box-shadow:0 5px 12px rgba(12,120,70,.22),inset 0 1px 0 rgba(255,255,255,.12) !important;}
+html[data-theme="dark"] .badge.out{background:linear-gradient(180deg,#eb555c,#c93b45) !important;color:#fff !important;box-shadow:0 5px 12px rgba(120,24,31,.22),inset 0 1px 0 rgba(255,255,255,.12) !important;}
+html[data-theme="dark"] .receipt-inline{background:#143d2e !important;color:#79e4ae !important;border-color:#328a63 !important;}
+html[data-theme="dark"] .receipt-inline.pending{background:#3a2a15 !important;color:#ffc56c !important;border-color:#825c28 !important;}
+html[data-theme="dark"] .draft-list{background:#302414 !important;border-color:#966d2e !important;color:#f4c776 !important;}
+html[data-theme="dark"] .draft-total{background:#3a2915 !important;color:#ffd083 !important;border-color:#ad7b35 !important;}
+html[data-theme="dark"] .req-item.done{background:#16382a !important;border-color:#2c9765 !important;}
+
+/* جدول‌ها — مهم‌ترین بخش خوانایی */
+html[data-theme="dark"] .table-responsive,
+html[data-theme="dark"] .cardex-main-table,
+html[data-theme="dark"] .cardex-item-table{
+    background:#0c1521 !important;
+    border-color:#2f465f !important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.035),0 8px 18px rgba(0,0,0,.10) !important;
+}
+html[data-theme="dark"] table{
+    background:#0c1521 !important;
+    color:#eaf0f5 !important;
+}
+html[data-theme="dark"] thead,
+html[data-theme="dark"] th{
+    background:linear-gradient(180deg,#243a55,#1b2e45) !important;
+    color:#f7f9fb !important;
+    border-color:#3b526b !important;
+    text-shadow:0 1px 1px rgba(0,0,0,.18) !important;
+}
+html[data-theme="dark"] tbody tr:nth-child(odd) td{background:#0e1926 !important;}
+html[data-theme="dark"] tbody tr:nth-child(even) td{background:#111d2c !important;}
+html[data-theme="dark"] td{color:#e2e9f0 !important;border-color:#26394e !important;}
+html[data-theme="dark"] tbody tr:hover td,
+html[data-theme="dark"] .group-row:hover td{background:#19304a !important;}
+html[data-theme="dark"] .detail-row td{background:#132338 !important;}
+html[data-theme="dark"] .cardex-main-table th,
+html[data-theme="dark"] .cardex-item-table th{background:linear-gradient(180deg,#29425f,#20354d) !important;color:#f8fafc !important;}
+html[data-theme="dark"] #lowStockTable td:first-child{color:#f0f4f8 !important;}
+html[data-theme="dark"] #lowStockTable td:nth-child(2){color:#d8e2eb !important;}
+html[data-theme="dark"] #lowStockTable td span{text-shadow:none !important;}
+
+/* اسناد و موبایل */
+html[data-theme="dark"] #cardexModeSelectorCard .radio-label,
+html[data-theme="dark"] #cardexFilterCard .filter-advanced summary{
+    background:linear-gradient(180deg,#17283c,#132337) !important;
+    color:#e1eaf2 !important;
+    border-color:#39516b !important;
+}
+html[data-theme="dark"] #cardexFilterCard .filter-advanced[open] summary{background:linear-gradient(180deg,#1e3550,#172b42) !important;}
+html[data-theme="dark"] #tab-cardex .cardex-stat{background:linear-gradient(180deg,#17273a,#132235) !important;border-color:#30475e !important;}
+html[data-theme="dark"] #tab-cardex .cardex-stat b{color:#f3f7fa !important;}
+html[data-theme="dark"] .doc-action-primary{background:linear-gradient(180deg,#203952,#182e46) !important;color:#eef4f8 !important;border-color:#48627d !important;}
+html[data-theme="dark"] .doc-action-primary:hover{background:linear-gradient(180deg,#294966,#1e3a58) !important;}
+html[data-theme="dark"] .doc-action-popup{background:rgba(13,23,36,.97) !important;border-color:#48627d !important;box-shadow:0 22px 50px rgba(0,0,0,.50),inset 0 1px 0 rgba(255,255,255,.055) !important;-webkit-backdrop-filter:blur(22px) saturate(145%);backdrop-filter:blur(22px) saturate(145%);}
+html[data-theme="dark"] .m-doc-head{background:linear-gradient(135deg,#244462,#182f49) !important;border-color:#446784 !important;}
+html[data-theme="dark"] .m-doc-invoice{color:#b8d5ef !important;}
+html[data-theme="dark"] .m-route strong,
+html[data-theme="dark"] .m-item-top strong,
+html[data-theme="dark"] .m-doc-summary b{color:#f1f5f8 !important;}
+html[data-theme="dark"] .m-details-toggle{background:linear-gradient(180deg,#1f3853,#182c43) !important;border-color:#486681 !important;color:#e5edf4 !important;}
+html[data-theme="dark"] .m-act.blue{background:linear-gradient(180deg,#2d5d8e,#224b73) !important;color:#fff !important;}
+html[data-theme="dark"] .m-act.green{background:linear-gradient(180deg,#18b974,#0d9556) !important;color:#fff !important;}
+html[data-theme="dark"] .m-act.purple{background:linear-gradient(180deg,#725fba,#584696) !important;color:#fff !important;}
+html[data-theme="dark"] .m-act.orange{background:linear-gradient(180deg,#e6a143,#c67a1e) !important;color:#fff !important;}
+html[data-theme="dark"] .m-act.red{background:linear-gradient(180deg,#ea565e,#c93b45) !important;color:#fff !important;}
+html[data-theme="dark"] .m-item-empty,
+html[data-theme="dark"] .m-doc-empty{background:#101c2b !important;border-color:#40546b !important;color:#b8c5d2 !important;}
+html[data-theme="dark"] .m-barcode-chip{background:#15583d !important;color:#91efbd !important;}
+html[data-theme="dark"] .m-barcode-more{background:#1b2e45 !important;color:#d4dee8 !important;}
+html[data-theme="dark"] .m-batch{background:#392716 !important;color:#ffd083 !important;border-color:#825c28 !important;}
+
+/* مودال / اسکن / ورود */
+html[data-theme="dark"] .modal-header{background:linear-gradient(180deg,#20364f,#192b41) !important;border-color:#3a536e !important;color:#f2f6f9 !important;box-shadow:inset 0 1px 0 rgba(255,255,255,.07) !important;}
+html[data-theme="dark"] .modal-body{background:#0d1725 !important;color:#dfe8ef !important;}
+html[data-theme="dark"] #scanner-modal,
+html[data-theme="dark"] .modal-overlay{background:rgba(3,7,12,.78) !important;backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);}
+html[data-theme="dark"] #reader{background:#070b10 !important;border-color:#527494 !important;box-shadow:0 18px 42px rgba(0,0,0,.45) !important;}
+html[data-theme="dark"] #dispatchCameraContainer{background:#070b10 !important;border-color:#527494 !important;box-shadow:0 14px 30px rgba(0,0,0,.34) !important;}
+html[data-theme="dark"] .camera-btn-container{background:rgba(10,18,29,.86) !important;backdrop-filter:blur(22px) saturate(130%);-webkit-backdrop-filter:blur(22px) saturate(130%);border-top:1px solid rgba(110,145,177,.18);}
+html[data-theme="dark"] #document-guide{box-shadow:0 0 0 4000px rgba(1,5,10,.76) !important;}
+html[data-theme="dark"] .guide-text{background:#15905a !important;color:#fff !important;box-shadow:0 5px 14px rgba(8,109,66,.25) !important;}
+html[data-theme="dark"] #upload-progress-overlay{background:rgba(3,7,12,.80) !important;backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);}
+html[data-theme="dark"] .upload-progress-box{background:linear-gradient(180deg,#1a2b40,#132235) !important;border-color:#466a8d !important;color:#f1f5f9 !important;box-shadow:0 24px 55px rgba(0,0,0,.48),inset 0 1px 0 rgba(255,255,255,.07) !important;}
+html[data-theme="dark"] .progress-bar-bg{background:#23384e !important;}
+html[data-theme="dark"] .progress-bar-fill{background:linear-gradient(90deg,#2f6da3,#18a969) !important;box-shadow:0 0 12px rgba(44,113,164,.18);}
+html[data-theme="dark"] #login-overlay{background:rgba(4,9,15,.90) !important;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
+html[data-theme="dark"] .login-box{background:linear-gradient(180deg,#1b2e44,#132236) !important;color:#f0f5f9 !important;border:1px solid #3f5e7b !important;box-shadow:0 26px 60px rgba(0,0,0,.48),inset 0 1px 0 rgba(255,255,255,.07) !important;}
+
+/* toast / dialog */
+html[data-theme="dark"] .appToast,
+html[data-theme="dark"] #appDialogCard{
+    background:rgba(19,32,48,.94) !important;
+    color:#f1f5f9 !important;
+    border:1px solid #47647f !important;
+    box-shadow:0 24px 55px rgba(0,0,0,.50),inset 0 1px 0 rgba(255,255,255,.065) !important;
+    -webkit-backdrop-filter:blur(24px) saturate(145%);
+    backdrop-filter:blur(24px) saturate(145%);
+}
+html[data-theme="dark"] .appToast .msg,
+html[data-theme="dark"] #appDialogCard .hd{color:#f1f5f9 !important;}
+html[data-theme="dark"] .appToast .x{color:#afbdca !important;}
+html[data-theme="dark"] #appDialogOverlay{background:rgba(2,6,11,.70) !important;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
+html[data-theme="dark"] #appDialogNo{background:#2a3b50 !important;color:#eef3f8 !important;}
+html[data-theme="dark"] #appDialogYes{background:linear-gradient(180deg,#2b5885,#20476f) !important;color:#fff !important;}
+
+/* inline backgrounds معنایی — بعد از override عمومی دوباره معنی‌دار شوند */
+html[data-theme="dark"] [style*="background:#fff1f2"],
+html[data-theme="dark"] [style*="background: #fff1f2"],
+html[data-theme="dark"] [style*="background:#fee2e2"],
+html[data-theme="dark"] [style*="background: #fee2e2"]{background:#381d22 !important;color:#ffc2c5 !important;}
+html[data-theme="dark"] [style*="background:#ecfdf5"],
+html[data-theme="dark"] [style*="background: #ecfdf5"],
+html[data-theme="dark"] [style*="background:#f0fdf4"],
+html[data-theme="dark"] [style*="background: #f0fdf4"]{background:#15392a !important;color:#91edbc !important;}
+html[data-theme="dark"] [style*="background:#fffbeb"],
+html[data-theme="dark"] [style*="background: #fffbeb"],
+html[data-theme="dark"] [style*="background:#fff7ed"],
+html[data-theme="dark"] [style*="background: #fff7ed"]{background:#392914 !important;color:#ffd384 !important;}
+html[data-theme="dark"] [style*="background:#eff6ff"],
+html[data-theme="dark"] [style*="background: #eff6ff"],
+html[data-theme="dark"] [style*="background:#edf4ff"],
+html[data-theme="dark"] [style*="background: #edf4ff"]{background:#19344f !important;color:#b8d8f5 !important;}
+html[data-theme="dark"] [style*="background:#ede9fe"],
+html[data-theme="dark"] [style*="background: #ede9fe"],
+html[data-theme="dark"] [style*="background:#f5f3ff"],
+html[data-theme="dark"] [style*="background: #f5f3ff"]{background:#2b2442 !important;color:#d3c5ff !important;}
+
+/* پالت رنگ inline دکمه‌ها */
+html[data-theme="dark"] [style*="background:#f59e0b"],
+html[data-theme="dark"] [style*="background: #f59e0b"],
+html[data-theme="dark"] [style*="background:#f97316"],
+html[data-theme="dark"] [style*="background: #f97316"]{background:linear-gradient(180deg,#e7a33e,#c97919) !important;color:#fff !important;}
+html[data-theme="dark"] [style*="background:#ef4444"],
+html[data-theme="dark"] [style*="background: #ef4444"],
+html[data-theme="dark"] [style*="background:#dc2626"],
+html[data-theme="dark"] [style*="background: #dc2626"]{background:linear-gradient(180deg,#ea565e,#c93b45) !important;color:#fff !important;}
+html[data-theme="dark"] [style*="background:#10b981"],
+html[data-theme="dark"] [style*="background: #10b981"],
+html[data-theme="dark"] [style*="background:#059669"],
+html[data-theme="dark"] [style*="background: #059669"]{background:linear-gradient(180deg,#18b974,#0d9556) !important;color:#fff !important;}
+html[data-theme="dark"] [style*="background:#8b5cf6"],
+html[data-theme="dark"] [style*="background: #8b5cf6"],
+html[data-theme="dark"] [style*="background:#6d28d9"],
+html[data-theme="dark"] [style*="background: #6d28d9"]{background:linear-gradient(180deg,#7865be,#5d4c9e) !important;color:#fff !important;}
+html[data-theme="dark"] [style*="background:#3b82f6"],
+html[data-theme="dark"] [style*="background: #3b82f6"],
+html[data-theme="dark"] [style*="background:#2563eb"],
+html[data-theme="dark"] [style*="background: #2563eb"]{background:linear-gradient(180deg,#2c5b89,#20476f) !important;color:#fff !important;}
+
+/* کارت‌های آماری/اخیر */
+html[data-theme="dark"] .recent-item{border-bottom-color:#2a3d53 !important;}
+html[data-theme="dark"] .inline-filter-bar button{color:#fff !important;}
+
+/* اسکرول‌بار ظریف */
+html[data-theme="dark"] *{scrollbar-color:#405873 #0b1320;}
+html[data-theme="dark"] ::-webkit-scrollbar{width:8px;height:8px;}
+html[data-theme="dark"] ::-webkit-scrollbar-track{background:#0b1320;}
+html[data-theme="dark"] ::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#4b6682,#334b64);border-radius:10px;border:2px solid #0b1320;}
+html[data-theme="dark"] ::-webkit-scrollbar-thumb:hover{background:#5c7794;}
+
+/* دکمه تغییر تم */
+/* پایه: این دکمه باید همیشه — چه در حالت روشن چه تاریک — گوشه پایین‌چپ باشد.
+   قبلاً این استایل پایه اصلاً تعریف نشده بود و فقط نسخه تاریکش وجود داشت،
+   برای همین در حالت روشن (پیش‌فرض بارگذاری صفحه) دکمه اصلاً دیده نمی‌شد. */
+#appThemeToggle{
+    position:fixed !important; left:10px !important; bottom:10px !important; z-index:19000 !important;
+    width:44px !important; height:44px !important; border-radius:50% !important;
+    display:flex !important; align-items:center !important; justify-content:center !important;
+    font-size:18px !important; cursor:pointer !important;
+    border:1px solid #d7e0eb !important;
+    background:#ffffff !important; color:#1e293b !important;
+    box-shadow:0 8px 20px rgba(30,50,80,.18) !important;
+}
+html[data-theme="dark"] #appThemeToggle{
+    width:44px !important;height:44px !important;
+    border:1px solid rgba(127,160,193,.42) !important;
+    background:linear-gradient(180deg,rgba(30,48,70,.94),rgba(17,29,44,.94)) !important;
+    color:#fff !important;
+    box-shadow:0 14px 28px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.10),0 0 0 1px rgba(46,85,122,.10) !important;
+    -webkit-backdrop-filter:blur(22px) saturate(150%);
+    backdrop-filter:blur(22px) saturate(150%);
+}
+html[data-theme="dark"] #appThemeToggle:hover{background:linear-gradient(180deg,#294867,#1b334f) !important;border-color:#6b8dac !important;}
+
+/* موبایل */
+@media(max-width:700px){
+  html[data-theme="dark"] .tab-btn{border-radius:10px !important;}
+  html[data-theme="dark"] .card,
+  html[data-theme="dark"] .settings-card,
+  html[data-theme="dark"] .form-panel,
+  html[data-theme="dark"] .cart-panel{border-radius:12px !important;}
+  html[data-theme="dark"] #appThemeToggle{left:10px;bottom:10px;}
+}
+
+/* ---------------- پوشش کامل‌کننده — رفع نقاط جامانده از تم Mica ---------------- */
+/* موارد زیر با اسکن کامل تمام ۱۴ بلاک <style> این فایل (نه فقط بلاک اول) پیدا شدند:
+   هر کلاسی که پس‌زمینه/متن روشن داشت ولی قبلاً در تم شب override نشده بود —
+   شامل کارت «بارگیری ناقص»، «آخرین فعالیت‌ها»، ردیف‌های بارکد بارگیری،
+   جدول انبارگردانی، تب کاردکس، و غیره. */
+html[data-theme="dark"] .detail-row{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;border-color:rgba(78,108,139,.42)!important;}
+html[data-theme="dark"] .m-doc-internal{color:#7fb2ef!important;}
+html[data-theme="dark"] .m-route-arrow{color:#7fb2ef!important;}
+html[data-theme="dark"] #tab-cardex{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;border-color:rgba(78,108,139,.42)!important;}
+html[data-theme="dark"] .m-receipt-alert{color:#f0b862!important;}
+html[data-theme="dark"] .dispatch-scanned-barcode-row{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;border-color:rgba(78,108,139,.42)!important;}
+html[data-theme="dark"] .dispatch-scanned-barcode-value{color:#eef3f8!important;}
+html[data-theme="dark"] .dispatch-scanned-barcode-delete{background:#c8434a!important;}
+html[data-theme="dark"] .dashboard-action-center{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;border-color:rgba(78,108,139,.42)!important;}
+html[data-theme="dark"] .dashboard-action-title{color:#eef3f8!important;}
+html[data-theme="dark"] .dashboard-action-count{background:#c8434a!important;}
+html[data-theme="dark"] .dashboard-alert-card{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;border-color:rgba(78,108,139,.42)!important;}
+html[data-theme="dark"] .dashboard-alert-label{color:#7fb2ef!important;}
+html[data-theme="dark"] .dashboard-alert-total{color:#eef3f8!important;}
+html[data-theme="dark"] .dashboard-alert-row{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;border-color:rgba(78,108,139,.42)!important;}
+html[data-theme="dark"] .dashboard-alert-invoice{color:#7fb2ef!important;}
+html[data-theme="dark"] .dashboard-alert-meta{color:#7fb2ef!important;}
+html[data-theme="dark"] .dashboard-alert-empty{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;border-color:rgba(78,108,139,.42)!important;color:#4bd499!important;}
+html[data-theme="dark"] .inventory-count-stat{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;border-color:rgba(78,108,139,.42)!important;}
+html[data-theme="dark"] .inventory-count-table{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;border-color:rgba(78,108,139,.42)!important;}
+html[data-theme="dark"] .inventory-count-note{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;border-color:rgba(78,108,139,.42)!important;color:#7fb2ef!important;}
+html[data-theme="dark"] #inlineScanLaser{background:#c8434a!important;}
+html[data-theme="dark"] #inlineScanBadge{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;border-color:rgba(78,108,139,.42)!important;color:#eef3f8!important;}
+html[data-theme="dark"] #inlineScanStatus{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;border-color:rgba(78,108,139,.42)!important;color:#7fb2ef!important;}
+html[data-theme="dark"] #inlineScanCtrl{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;border-color:rgba(78,108,139,.42)!important;}
+html[data-theme="dark"] #inlineScanPhotoBtn{background:#13a968!important;color:#aab7c6!important;}
+html[data-theme="dark"] #inlineScanPhotoStatus{color:#f0b862!important;}
+html[data-theme="dark"] #inlineScanDiag{color:#7fb2ef!important;}
+html[data-theme="dark"] #inlineScanCropHead{color:#aab7c6!important;}
+html[data-theme="dark"] .inlineScanHandle{background:#13a968!important;}
+html[data-theme="dark"] #inlineScanCropGo{background:#13a968!important;}
+html[data-theme="dark"] #inlineScanCropCancel{background:#c8434a!important;}
+html[data-theme="dark"] #inlineScanCropStatus{color:#f0b862!important;}
+html[data-theme="dark"] #inlineScanCandidates{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;border-color:rgba(78,108,139,.42)!important;}
+html[data-theme="dark"] #quaggaFlash{background:#13a968!important;}
+html[data-theme="dark"] #quaggaBadge{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;border-color:rgba(78,108,139,.42)!important;color:#eef3f8!important;}
+html[data-theme="dark"] #quaggaStatus{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;border-color:rgba(78,108,139,.42)!important;color:#7fb2ef!important;}
+html[data-theme="dark"] #quaggaLastCode{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;border-color:rgba(78,108,139,.42)!important;color:#eef3f8!important;}
+/* تاکید مستقیم روی مواردی که در اسکرین‌شات دیده شد */
+html[data-theme="dark"] .dashboard-alert-card{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;border:1px solid rgba(78,108,139,.42)!important;}
+html[data-theme="dark"] .dashboard-alert-empty{background:rgba(19,169,104,.16)!important;color:#4bd499!important;}
+html[data-theme="dark"] .dashboard-alert-label{color:#aab7c6!important;}
+html[data-theme="dark"] .dashboard-alert-total{color:#eef3f8!important;}
+html[data-theme="dark"] .dashboard-recent-card,html[data-theme="dark"] .dashboard-action-center{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;border:1px solid rgba(78,108,139,.42)!important;}
+
+/* ---------------- پوشش inline — رنگ‌های ساخته‌شده در جاوااسکریپت (ردیف جدول‌ها/بج‌ها) ---------------- */
+html[data-theme="dark"] [style*="background-color: #e2e8f0"]{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;}
+html[data-theme="dark"] [style*="background-color: #eff6ff"]{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;}
+html[data-theme="dark"] [style*="background-color: #f1f5f9"]{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;}
+html[data-theme="dark"] [style*="background-color: #f8fafc"]{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;}
+html[data-theme="dark"] [style*="background-color: #fefeff"]{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;}
+html[data-theme="dark"] [style*="background-color:#ecfdf5"]{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;}
+html[data-theme="dark"] [style*="background: #e2e8f0"]{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;}
+html[data-theme="dark"] [style*="background: #fef3c7"]{background:rgba(226,154,50,.16)!important;}
+html[data-theme="dark"] [style*="background: #fff5f5"]{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;}
+html[data-theme="dark"] [style*="background:#b8c5d5"]{background:rgba(58,110,163,.18)!important;}
+html[data-theme="dark"] [style*="background:#dfe5ed"]{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;}
+html[data-theme="dark"] [style*="background:#dfe6ee"]{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;}
+html[data-theme="dark"] [style*="background:#dfe6ef"]{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;}
+html[data-theme="dark"] [style*="background:#dfe7f1"]{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;}
+html[data-theme="dark"] [style*="background:#e2e8f0"]{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;}
+html[data-theme="dark"] [style*="background:#e5ebf3"]{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;}
+html[data-theme="dark"] [style*="background:#e6eefb"]{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;}
+html[data-theme="dark"] [style*="background:#e7f0ff"]{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;}
+html[data-theme="dark"] [style*="background:#e8edf3"]{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;}
+html[data-theme="dark"] [style*="background:#e8edf4"]{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;}
+html[data-theme="dark"] [style*="background:#e8eef5"]{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;}
+html[data-theme="dark"] [style*="background:#e8eef6"]{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;}
+html[data-theme="dark"] [style*="background:#e8f8f1"]{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;}
+html[data-theme="dark"] [style*="background:#e9eef5"]{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;}
+html[data-theme="dark"] [style*="background:#e9f8f1"]{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;}
+html[data-theme="dark"] [style*="background:#eaf1fa"]{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;}
+html[data-theme="dark"] [style*="background:#eaf1fb"]{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;}
+html[data-theme="dark"] [style*="background:#edf1f5"]{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;}
+html[data-theme="dark"] [style*="background:#edf1f6"]{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;}
+html[data-theme="dark"] [style*="background:#edf2f8"]{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;}
+html[data-theme="dark"] [style*="background:#eef2f6"]{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;}
+html[data-theme="dark"] [style*="background:#eef3f8"]{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;}
+html[data-theme="dark"] [style*="background:#f0f5fb"]{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;}
+html[data-theme="dark"] [style*="background:#f1f4f7"]{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;}
+html[data-theme="dark"] [style*="background:#f2f5f8"]{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;}
+html[data-theme="dark"] [style*="background:#f3f7fd"]{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;}
+html[data-theme="dark"] [style*="background:#f4f7fb"]{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;}
+html[data-theme="dark"] [style*="background:#f6f8fb"]{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;}
+html[data-theme="dark"] [style*="background:#f7f9fc"]{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;}
+html[data-theme="dark"] [style*="background:#f7faff"]{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;}
+html[data-theme="dark"] [style*="background:#f9fafc"]{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;}
+html[data-theme="dark"] [style*="background:#faf5ff"]{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;}
+html[data-theme="dark"] [style*="background:#fef2f2"]{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;}
+html[data-theme="dark"] [style*="background:#fef3c7"]{background:rgba(226,154,50,.16)!important;}
+html[data-theme="dark"] [style*="background:#fff0e6"]{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;}
+html[data-theme="dark"] [style*="background:#fff2df"]{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;}
+html[data-theme="dark"] [style*="background:#fff3e5"]{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;}
+html[data-theme="dark"] [style*="background:#fff5df"]{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;}
+html[data-theme="dark"] [style*="background:#fff7e8"]{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;}
+html[data-theme="dark"] [style*="background:#fffaf0"]{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(18px)!important;backdrop-filter:blur(18px)!important;}
+html[data-theme="dark"] [style*="color: #b45309"]{color:#f0b862!important;}
+html[data-theme="dark"] [style*="color:#000"]{color:#eef3f8!important;}
+html[data-theme="dark"] [style*="color:#047857"]{color:#4bd499!important;}
+html[data-theme="dark"] [style*="color:#059669"]{color:#4bd499!important;}
+html[data-theme="dark"] [style*="color:#065f46"]{color:#eef3f8!important;}
+html[data-theme="dark"] [style*="color:#080d14"]{color:#eef3f8!important;}
+html[data-theme="dark"] [style*="color:#087a54"]{color:#4bd499!important;}
+html[data-theme="dark"] [style*="color:#0a9f70"]{color:#4bd499!important;}
+html[data-theme="dark"] [style*="color:#0b1220"]{color:#eef3f8!important;}
+html[data-theme="dark"] [style*="color:#1557b0"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#1e3a8a"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#1f2937"]{color:#eef3f8!important;}
+html[data-theme="dark"] [style*="color:#1f2d42"]{color:#eef3f8!important;}
+html[data-theme="dark"] [style*="color:#214f9f"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#223149"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#233149"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#243650"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#263449"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#26354b"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#26364d"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#26394e"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#273852"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#273b52"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#2a3a52"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#2a3d53"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#2c425b"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#2c9765"]{color:#4bd499!important;}
+html[data-theme="dark"] [style*="color:#2d3c52"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#2f465f"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#30475e"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#30475f"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#31435f"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#328a63"]{color:#4bd499!important;}
+html[data-theme="dark"] [style*="color:#334766"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#344258"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#39516b"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#3a4b64"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#3a536e"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#3b526b"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#3e4c62"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#40546b"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#405873"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#41526a"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#41617f"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#42506a"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#44536a"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#446784"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#45536a"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#48627d"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#486681"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#694414"]{color:#f0b862!important;}
+html[data-theme="dark"] [style*="color:#7f1d1d"]{color:#f28b90!important;}
+html[data-theme="dark"] [style*="color:#825c28"]{color:#f0b862!important;}
+html[data-theme="dark"] [style*="color:#8a5a24"]{color:#f0b862!important;}
+html[data-theme="dark"] [style*="color:#92400e"]{color:#f0b862!important;}
+html[data-theme="dark"] [style*="color:#966d2e"]{color:#f0b862!important;}
+html[data-theme="dark"] [style*="color:#991b1b"]{color:#f28b90!important;}
+html[data-theme="dark"] [style*="color:#9a3412"]{color:#f28b90!important;}
+html[data-theme="dark"] [style*="color:#a65a00"]{color:#f0b862!important;}
+html[data-theme="dark"] [style*="color:#b45309"]{color:#f0b862!important;}
+html[data-theme="dark"] [style*="color:#b56200"]{color:#f0b862!important;}
+html[data-theme="dark"] [style*="color:#b86a00"]{color:#f0b862!important;}
+
+/* ---------------- پوشش تکمیلی دوم — آستانه بازتر برای متن‌های نیمه‌تیره ---------------- */
+html[data-theme="dark"] [style*="color: #0f172a"]{color:#eef3f8!important;}
+html[data-theme="dark"] [style*="color: #111827"]{color:#eef3f8!important;}
+html[data-theme="dark"] [style*="color: #172033"]{color:#eef3f8!important;}
+html[data-theme="dark"] [style*="color: #1e293b"]{color:#eef3f8!important;}
+html[data-theme="dark"] [style*="color: #1e40af"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color: #25324a"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color: #334155"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color: #475569"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color: #64748b"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color: #7a879a"]{color:#aab7c6!important;}
+html[data-theme="dark"] [style*="color: #b45309"]{color:#f0b862!important;}
+html[data-theme="dark"] [style*="color:#000"]{color:#eef3f8!important;}
+html[data-theme="dark"] [style*="color:#047857"]{color:#4bd499!important;}
+html[data-theme="dark"] [style*="color:#059669"]{color:#4bd499!important;}
+html[data-theme="dark"] [style*="color:#065f46"]{color:#eef3f8!important;}
+html[data-theme="dark"] [style*="color:#080d14"]{color:#eef3f8!important;}
+html[data-theme="dark"] [style*="color:#087a54"]{color:#4bd499!important;}
+html[data-theme="dark"] [style*="color:#0a9f70"]{color:#4bd499!important;}
+html[data-theme="dark"] [style*="color:#0b1220"]{color:#eef3f8!important;}
+html[data-theme="dark"] [style*="color:#0f172a"]{color:#eef3f8!important;}
+html[data-theme="dark"] [style*="color:#111827"]{color:#eef3f8!important;}
+html[data-theme="dark"] [style*="color:#14b8a6"]{color:#4bd499!important;}
+html[data-theme="dark"] [style*="color:#1557b0"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#172033"]{color:#eef3f8!important;}
+html[data-theme="dark"] [style*="color:#1d4ed8"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#1e293b"]{color:#eef3f8!important;}
+html[data-theme="dark"] [style*="color:#1e3a8a"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#1e40af"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#1e5ab6"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#1f2937"]{color:#eef3f8!important;}
+html[data-theme="dark"] [style*="color:#1f2d42"]{color:#eef3f8!important;}
+html[data-theme="dark"] [style*="color:#214f9f"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#223149"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#22c55e"]{color:#4bd499!important;}
+html[data-theme="dark"] [style*="color:#233149"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#243650"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#245cc2"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#25324a"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#2563eb"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#263449"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#26354b"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#26364d"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#26394e"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#273852"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#273b52"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#2a3a52"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#2a3d53"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#2c425b"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#2c9765"]{color:#4bd499!important;}
+html[data-theme="dark"] [style*="color:#2d3c52"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#2f465f"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#30475e"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#30475f"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#31435f"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#328a63"]{color:#4bd499!important;}
+html[data-theme="dark"] [style*="color:#334155"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#334766"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#344258"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#39516b"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#3975d6"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#3a4b64"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#3a536e"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#3b526b"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#3c78ad"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#3d75aa"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#3e4c62"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#40546b"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#405873"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#41526a"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#41617f"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#42506a"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#44536a"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#446784"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#45536a"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#466a8d"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#475569"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#48627d"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#486681"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#4e7ca9"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#51637b"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#52647a"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#527494"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#557fa9"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#5b21b6"]{color:#c9a6f5!important;}
+html[data-theme="dark"] [style*="color:#5b84ad"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#5b86b0"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#64748b"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#694414"]{color:#f0b862!important;}
+html[data-theme="dark"] [style*="color:#6b7280"]{color:#aab7c6!important;}
+html[data-theme="dark"] [style*="color:#6b8dac"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#6d28d9"]{color:#c9a6f5!important;}
+html[data-theme="dark"] [style*="color:#6f7f94"]{color:#aab7c6!important;}
+html[data-theme="dark"] [style*="color:#71839d"]{color:#7fb2ef!important;}
+html[data-theme="dark"] [style*="color:#748198"]{color:#aab7c6!important;}
+html[data-theme="dark"] [style*="color:#7a879a"]{color:#aab7c6!important;}
+html[data-theme="dark"] [style*="color:#7b8799"]{color:#aab7c6!important;}
+html[data-theme="dark"] [style*="color:#7f1d1d"]{color:#ff9195!important;}
+html[data-theme="dark"] [style*="color:#825c28"]{color:#f0b862!important;}
+html[data-theme="dark"] [style*="color:#8a5a24"]{color:#f0b862!important;}
+html[data-theme="dark"] [style*="color:#92400e"]{color:#f0b862!important;}
+html[data-theme="dark"] [style*="color:#966d2e"]{color:#f0b862!important;}
+html[data-theme="dark"] [style*="color:#991b1b"]{color:#ff9195!important;}
+html[data-theme="dark"] [style*="color:#9a3412"]{color:#ff9195!important;}
+html[data-theme="dark"] [style*="color:#a52a2a"]{color:#ff9195!important;}
+html[data-theme="dark"] [style*="color:#a65a00"]{color:#f0b862!important;}
+html[data-theme="dark"] [style*="color:#ad7b35"]{color:#f0b862!important;}
+html[data-theme="dark"] [style*="color:#b45309"]{color:#f0b862!important;}
+html[data-theme="dark"] [style*="color:#b56200"]{color:#f0b862!important;}
+html[data-theme="dark"] [style*="color:#b86a00"]{color:#f0b862!important;}
+html[data-theme="dark"] [style*="color:#b91c1c"]{color:#ff9195!important;}
+html[data-theme="dark"] [style*="color:#c2410c"]{color:#ff9195!important;}
+html[data-theme="dark"] [style*="color:#c93434"]{color:#ff9195!important;}
+html[data-theme="dark"] [style*="color:#d17a12"]{color:#f0b862!important;}
+html[data-theme="dark"] [style*="color:#d97706"]{color:#f0b862!important;}
+html[data-theme="dark"] [style*="color:#dc2626"]{color:#ff9195!important;}
+html[data-theme="dark"] [style*="color:#f59e0b"]{color:#f0b862!important;}
+html[data-theme="dark"] [style*="color:#f97316"]{color:#f0b862!important;}
+/* ---------------- رفع موارد مشخص گزارش‌شده توسط کاربر ---------------- */
+/* ردیف‌های لیست تنظیمات (کاربران/مشتریان/انبارها/تامین‌کننده‌ها) که سفید مانده بودند */
+html[data-theme="dark"] .settings-list li{
+    background:rgba(255,255,255,.05)!important;
+    border-color:rgba(78,108,139,.42)!important;
+    color:#eef3f8!important;
+}
+html[data-theme="dark"] .settings-list li b{color:#eef3f8!important;}
+
+/* اطمینان مضاعف روی دو تیتر گزارش‌شده در داشبورد */
+html[data-theme="dark"] .dashboard-recent-card h3,
+html[data-theme="dark"] .dashboard-recent-card span{color:#eef3f8!important;}
+html[data-theme="dark"] [style*="color:#b91c1c"]{color:#ff9195!important;}
+html[data-theme="dark"] [style*="color:#7f1d1d"]{color:#f2b3b6!important;}
+
+/* هشدار «رسید ثبت‌نشده» — حالا واقعاً قرمز و برجسته (هم روشن هم تاریک) */
+.m-doc-card:has(.m-receipt-alert){
+    border:2px solid #dc2626!important;
+    box-shadow:0 0 0 1px rgba(220,38,38,.20), 0 8px 20px rgba(220,38,38,.14)!important;
+}
+.m-receipt-alert{
+    background:linear-gradient(90deg,#fee2e2,#fef2f2)!important;
+    border-bottom:1px solid #fca5a5!important;
+}
+.m-receipt-alert strong{color:#dc2626!important; font-size:11px!important;}
+.m-receipt-alert span{color:#b91c1c!important; font-weight:900!important;}
+
+html[data-theme="dark"] .m-doc-card:has(.m-receipt-alert){
+    border:2px solid #e24a52!important;
+    box-shadow:0 0 0 1px rgba(226,74,82,.35), 0 10px 26px rgba(226,74,82,.20)!important;
+}
+html[data-theme="dark"] .m-receipt-alert{
+    background:linear-gradient(90deg,rgba(226,74,82,.22),rgba(226,74,82,.10))!important;
+    border-bottom:1px solid rgba(226,74,82,.45)!important;
+}
+html[data-theme="dark"] .m-receipt-alert strong{color:#ff8a90!important; font-size:11px!important;}
+html[data-theme="dark"] .m-receipt-alert span{color:#ffb3b6!important; font-weight:900!important;}
+
+
+
+/* ---------------- یکدست‌کردن «آخرین فعالیت‌ها» با ظاهر «خروج بدون رسید» ---------------- */
+html[data-theme="dark"] .recent-item{
+    background:linear-gradient(180deg,rgba(25,40,59,.55),rgba(15,25,39,.55))!important;
+    border:1px solid rgba(78,108,139,.30)!important;
+    border-radius:8px!important;
+    padding:8px 10px!important;
+    margin-bottom:6px!important;
+}
+html[data-theme="dark"] .recent-activity-row .recent-doc-sub,
+html[data-theme="dark"] .recent-activity-row .qty-secondary,
+html[data-theme="dark"] .recent-activity-row .qty-weight{
+    color:#bcd6f5!important;
+}
+html[data-theme="dark"] .recent-activity-row div[style*="var(--text-muted)"]{color:#bcd6f5!important;}
+
+
+
+/* ---------------- رفع ریشه‌ای: قانون‌های ویژه‌ی «#tab-dashboard>.card» ---------------- */
+/* پیدا شد: چند قانون قدیمی در فایل با سلکتور #tab-dashboard>.card (همراه با
+   !important) پس‌زمینه را صریحاً سفید می‌کردند. چون این سلکتور یک ID دارد،
+   از نظر اولویت CSS از تمام قانون‌های عمومی «.card» در تم شب (که ID ندارند)
+   قوی‌تر است و همیشه برنده می‌شد — even با !important بودن هر دو طرف.
+   این دقیقاً همان چیزی بود که باعث می‌شد کارت «کالاهای نیازمند شارژ»،
+   «آخرین فعالیت‌ها» و نمودار (هر سه به‌طور مستقیم داخل #tab-dashboard هستند)
+   همچنان سفید بمانند. راه‌حل: یک قانون هم‌سطح ولی با یک ID اضافه (خود
+   html[data-theme="dark"]) که از نظر اولویت از نسخه سفید قوی‌تر است. */
+html[data-theme="dark"] #tab-dashboard>.card{
+    background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94)) !important;
+    border-color:rgba(78,108,139,.42) !important;
+    color:#eef3f8 !important;
+}
+html[data-theme="dark"] #tab-dashboard .table-responsive{
+    background:rgba(255,255,255,.04) !important;
+}
+
+
+/* ---------------- پوشش نهایی — تمام سلکتورهای مبتنی بر ID که قبلاً از قلم افتاده بودند ---------------- */
+html[data-theme="dark"] .group-row:hover{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(14px)!important;backdrop-filter:blur(14px)!important;border-color:rgba(78,108,139,.42)!important;}
+html[data-theme="dark"] #tab-cardex #cardexTitleLabel{color:#eef3f8!important;}
+html[data-theme="dark"] #cardexFilterCard .quick-filter-select{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(14px)!important;backdrop-filter:blur(14px)!important;border-color:rgba(78,108,139,.42)!important;color:#7fb2ef!important;}
+html[data-theme="dark"] #tab-cardex .cardex-main-table{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(14px)!important;backdrop-filter:blur(14px)!important;border-color:rgba(78,108,139,.42)!important;}
+html[data-theme="dark"] #tab-cardex .cardex-main-table th{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(14px)!important;backdrop-filter:blur(14px)!important;border-color:rgba(78,108,139,.42)!important;color:#7fb2ef!important;}
+html[data-theme="dark"] #tab-cardex .group-row:hover{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(14px)!important;backdrop-filter:blur(14px)!important;border-color:rgba(78,108,139,.42)!important;}
+html[data-theme="dark"] #tab-cardex .doc-id-mini{color:#7fb2ef!important;}
+html[data-theme="dark"] #tab-cardex .office-doc-main{color:#7fb2ef!important;}
+html[data-theme="dark"] #tab-cardex .office-doc-user{color:#eef3f8!important;}
+html[data-theme="dark"] #tab-cardex .receipt-inline{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(14px)!important;backdrop-filter:blur(14px)!important;border-color:rgba(78,108,139,.42)!important;color:#4bd499!important;}
+html[data-theme="dark"] #tab-cardex .receipt-inline.pending{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(14px)!important;backdrop-filter:blur(14px)!important;border-color:rgba(78,108,139,.42)!important;color:#ff9195!important;}
+html[data-theme="dark"] #tab-cardex .cardex-item-table th{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(14px)!important;backdrop-filter:blur(14px)!important;border-color:rgba(78,108,139,.42)!important;}
+html[data-theme="dark"] #tab-dashboard>.card{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(14px)!important;backdrop-filter:blur(14px)!important;border-color:rgba(78,108,139,.42)!important;}
+html[data-theme="dark"] #tab-dashboard .table-responsive{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(14px)!important;backdrop-filter:blur(14px)!important;border-color:rgba(78,108,139,.42)!important;}
+html[data-theme="dark"] #cardexFilterCard .doc-status-select{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(14px)!important;backdrop-filter:blur(14px)!important;border-color:rgba(78,108,139,.42)!important;color:#7fb2ef!important;}
+html[data-theme="dark"] #tab-cardex .doc-action-primary{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(14px)!important;backdrop-filter:blur(14px)!important;border-color:rgba(78,108,139,.42)!important;color:#7fb2ef!important;}
+html[data-theme="dark"] #cardexFilterCard .radio-label{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(14px)!important;backdrop-filter:blur(14px)!important;border-color:rgba(78,108,139,.42)!important;}
+html[data-theme="dark"] #tab-cardex .cardex-main-table td{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(14px)!important;backdrop-filter:blur(14px)!important;border-color:rgba(78,108,139,.42)!important;}
+html[data-theme="dark"] #tab-cardex .doc-action-primary:hover{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(14px)!important;backdrop-filter:blur(14px)!important;border-color:rgba(78,108,139,.42)!important;}
+html[data-theme="dark"] #tab-cardex .barcode-detail-label{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(14px)!important;backdrop-filter:blur(14px)!important;border-color:rgba(78,108,139,.42)!important;color:#7fb2ef!important;}
+html[data-theme="dark"] #tab-cardex .barcode-count{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(14px)!important;backdrop-filter:blur(14px)!important;border-color:rgba(78,108,139,.42)!important;color:#4bd499!important;}
+html[data-theme="dark"] #tab-cardex .cardex-main-table tr.group-row td{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(14px)!important;backdrop-filter:blur(14px)!important;border-color:rgba(78,108,139,.42)!important;}
+html[data-theme="dark"] #tab-cardex .cardex-main-table tr.group-row:hover td{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(14px)!important;backdrop-filter:blur(14px)!important;border-color:rgba(78,108,139,.42)!important;}
+html[data-theme="dark"] .m-doc-type.done{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(14px)!important;backdrop-filter:blur(14px)!important;border-color:rgba(78,108,139,.42)!important;color:#4bd499!important;}
+html[data-theme="dark"] .m-doc-type.pending{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(14px)!important;backdrop-filter:blur(14px)!important;border-color:rgba(78,108,139,.42)!important;color:#f0b862!important;}
+html[data-theme="dark"] .m-doc-type.in{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(14px)!important;backdrop-filter:blur(14px)!important;border-color:rgba(78,108,139,.42)!important;color:#7fb2ef!important;}
+html[data-theme="dark"] .m-receipt.ok{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(14px)!important;backdrop-filter:blur(14px)!important;border-color:rgba(78,108,139,.42)!important;color:#4bd499!important;}
+html[data-theme="dark"] .m-receipt.wait{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(14px)!important;backdrop-filter:blur(14px)!important;border-color:rgba(78,108,139,.42)!important;color:#f0b862!important;}
+html[data-theme="dark"] .m-doc-card.receipt-missing .m-receipt.wait{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(14px)!important;backdrop-filter:blur(14px)!important;border-color:rgba(78,108,139,.42)!important;color:#ff9195!important;}
+html[data-theme="dark"] #tab-cardex .detail-row.exact-search-row{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(14px)!important;backdrop-filter:blur(14px)!important;border-color:rgba(78,108,139,.42)!important;}
+html[data-theme="dark"] .m-item.exact-search-item{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(14px)!important;backdrop-filter:blur(14px)!important;border-color:rgba(78,108,139,.42)!important;}
+html[data-theme="dark"] .m-barcode-chip.exact-search-hit{color:#eef3f8!important;}
+html[data-theme="dark"] .inventory-count-table th{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(14px)!important;backdrop-filter:blur(14px)!important;border-color:rgba(78,108,139,.42)!important;}
+html[data-theme="dark"] .inventory-count-row.diff{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(14px)!important;backdrop-filter:blur(14px)!important;border-color:rgba(78,108,139,.42)!important;}
+html[data-theme="dark"] .inventory-count-row.match{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(14px)!important;backdrop-filter:blur(14px)!important;border-color:rgba(78,108,139,.42)!important;}
+html[data-theme="dark"] #inlineScanCtrl span{color:#7fb2ef!important;}
+html[data-theme="dark"] #inlineScanCropBox::after{color:#4bd499!important;}
+html[data-theme="dark"] #inlineScanCandidates .hdr{color:#f0b862!important;}
+html[data-theme="dark"] #inlineScanCandidates button{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(14px)!important;backdrop-filter:blur(14px)!important;border-color:rgba(78,108,139,.42)!important;color:#eef3f8!important;}
+html[data-theme="dark"] #inlineScanCandidates button:active{background:linear-gradient(180deg,rgba(25,40,59,.90),rgba(15,25,39,.94))!important;-webkit-backdrop-filter:blur(14px)!important;backdrop-filter:blur(14px)!important;border-color:rgba(78,108,139,.42)!important;}
+html[data-theme="dark"] #quaggaBadge b{color:#c9a6f5!important;}
+
+/* چاپ مستقل از تم */
+@media print{
+  html[data-theme="dark"] #printArea,
+  html[data-theme="dark"] #printArea *{color:#000 !important;text-shadow:none !important;}
+  html[data-theme="dark"] #printArea{background:#fff !important;}
+  html[data-theme="dark"] #printArea table{background:#fff !important;color:#000 !important;}
+  html[data-theme="dark"] #printArea th{background:#f1f5f9 !important;color:#111827 !important;}
+  html[data-theme="dark"] #printArea td{background:#fff !important;color:#111827 !important;}
+}
 </style>
 <script>
 /* ============================================================================
@@ -8995,7 +9955,19 @@ function applyTheme(t){
     else document.documentElement.removeAttribute('data-theme');
     var btn = document.getElementById('appThemeToggle');
     if (btn) btn.textContent = t === 'dark' ? '☀️' : '🌙';
+    var sw = document.getElementById('settingsThemeSwitch');
+    if (sw) sw.checked = (t === 'dark');
+    var lbl = document.getElementById('settingsThemeLabel');
+    if (lbl) lbl.textContent = t === 'dark' ? '🌙 حالت شب فعال است' : '☀️ حالت روز فعال است';
 }
+window.setAppTheme = function(t){
+    applyTheme(t);
+    try { localStorage.setItem('anbar_theme', t); } catch(e){}
+};
+window.toggleAppTheme = function(){
+    var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    window.setAppTheme(isDark ? 'light' : 'dark');
+};
 var saved = null;
 try { saved = localStorage.getItem('anbar_theme'); } catch(e){}
 applyTheme(saved === 'dark' ? 'dark' : 'light');
@@ -9007,18 +9979,15 @@ function buildToggle(){
     b.type = 'button';
     b.title = 'تغییر حالت روز/شب';
     b.textContent = (document.documentElement.getAttribute('data-theme') === 'dark') ? '☀️' : '🌙';
-    b.onclick = function(){
-        var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-        var next = isDark ? 'light' : 'dark';
-        applyTheme(next);
-        try { localStorage.setItem('anbar_theme', next); } catch(e){}
-    };
+    b.onclick = function(){ window.toggleAppTheme(); };
     document.body.appendChild(b);
+    applyTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light');
 }
 if (document.readyState !== 'loading') buildToggle();
 else document.addEventListener('DOMContentLoaded', buildToggle);
 })();
 </script>
+
 
 </body>
 </html>
