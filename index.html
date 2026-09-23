@@ -4,6 +4,90 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>سیستم انبارداری هولدینگ</title>
+
+    <!-- ===== PWA: manifest و آیکون‌ها ===== -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <link rel="icon" href="icon-192.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="انبارداری">
+
+    <script>
+    /* ===================================================================
+       PWA Install Manager
+       - رویداد beforeinstallprompt رو زودهنگام (قبل از رندر بقیه اپ) گوش میده و ذخیره می‌کنه
+       - فقط Chromium/Android این رویداد رو ساپورت می‌کنه؛ iOS/Safari نداره
+       - اگر اپ از قبل نصب شده (standalone) هیچ اقدامی نمی‌کنه
+       =================================================================== */
+    window.PWAInstall = (function () {
+        var deferredPrompt = null;
+        var listeners = [];
+
+        function isStandalone() {
+            var byMedia = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches;
+            var byIOS = ('standalone' in window.navigator) && window.navigator.standalone === true;
+            return !!(byMedia || byIOS);
+        }
+
+        function isIOS() {
+            var ua = window.navigator.userAgent || window.navigator.vendor || window.opera || '';
+            var iOSDevice = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+            // آیپدهای جدید که خودشون رو مک معرفی می‌کنن ولی صفحه لمسی دارن
+            var iPadOS13Up = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+            return iOSDevice || iPadOS13Up;
+        }
+
+        function notify() {
+            listeners.forEach(function (fn) {
+                try { fn(getState()); } catch (e) {}
+            });
+        }
+
+        function getState() {
+            return {
+                standalone: isStandalone(),
+                ios: isIOS(),
+                canPromptInstall: !!deferredPrompt
+            };
+        }
+
+        window.addEventListener('beforeinstallprompt', function (e) {
+            e.preventDefault();
+            deferredPrompt = e;
+            notify();
+        });
+
+        window.addEventListener('appinstalled', function () {
+            deferredPrompt = null;
+            notify();
+        });
+
+        // ثبت سرویس‌ورکر (برای معیار قابل‌نصب بودن در کروم لازم است)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register('sw.js').catch(function () {});
+            });
+        }
+
+        return {
+            getState: getState,
+            isStandalone: isStandalone,
+            isIOS: isIOS,
+            onChange: function (fn) { listeners.push(fn); },
+            promptInstall: function () {
+                if (!deferredPrompt) return Promise.resolve({ outcome: 'unavailable' });
+                deferredPrompt.prompt();
+                return deferredPrompt.userChoice.then(function (choice) {
+                    deferredPrompt = null;
+                    notify();
+                    return choice;
+                });
+            }
+        };
+    })();
+    </script>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -1068,7 +1152,63 @@ td{border-bottom-color:#d0d8e2 !important;}
                     <button class="btn-green" style="padding:14px; font-size:15px;" onclick="selectCompany('rojin', 'شرکت آرایشی بهداشتی روژین')">🏢 انبار روژین</button>
                     <button class="btn-blue" style="padding:14px; font-size:15px;" onclick="selectCompany('zhik', 'شرکت طلوع سلامت ژیک')">🏥 انبار ژیک</button>
                 </div>
+
+                <!-- ===== نصب اپلیکیشن (PWA) ===== -->
+                <div id="pwaInstallArea" style="margin-top:18px; display:none;">
+                    <button id="pwaInstallBtn" type="button"
+                        style="background:#0f172a; padding:12px; font-size:14px; display:none;"
+                        onclick="handlePwaInstallClick()">
+                        ⬇️ نصب اپلیکیشن روی گوشی
+                    </button>
+                    <div id="pwaIosHint" style="display:none; font-size:11px; font-weight:bold; color:var(--text-muted); background:#f1f5f9; border:1px dashed var(--border); border-radius:8px; padding:10px; margin-top:6px; line-height:1.9;">
+                        📱 برای نصب روی آیفون: از دکمه‌ی <b>اشتراک‌گذاری (Share)</b> پایین صفحه‌ی سافاری، گزینه‌ی
+                        <b>«افزودن به صفحه‌ی اصلی» (Add to Home Screen)</b> را بزنید.
+                    </div>
+                </div>
             </div>
+
+            <script>
+            (function () {
+                var area = document.getElementById('pwaInstallArea');
+                var btn = document.getElementById('pwaInstallBtn');
+                var iosHint = document.getElementById('pwaIosHint');
+
+                function render(state) {
+                    // اگر از قبل نصب شده یا در حالت standalone در حال اجراست: چیزی نشون نده
+                    if (state.standalone) {
+                        area.style.display = 'none';
+                        btn.style.display = 'none';
+                        iosHint.style.display = 'none';
+                        return;
+                    }
+                    if (state.ios) {
+                        area.style.display = 'block';
+                        btn.style.display = 'none';
+                        iosHint.style.display = 'block';
+                        return;
+                    }
+                    if (state.canPromptInstall) {
+                        area.style.display = 'block';
+                        btn.style.display = 'inline-flex';
+                        iosHint.style.display = 'none';
+                    } else {
+                        // مرورگر Chromium هست ولی هنوز رویداد beforeinstallprompt نرسیده
+                        area.style.display = 'none';
+                    }
+                }
+
+                window.handlePwaInstallClick = function () {
+                    window.PWAInstall.promptInstall().then(function (choice) {
+                        if (choice && choice.outcome === 'accepted') {
+                            area.style.display = 'none';
+                        }
+                    });
+                };
+
+                window.PWAInstall.onChange(render);
+                render(window.PWAInstall.getState());
+            })();
+            </script>
 
             <div id="view-login-main" style="display:none;">
                 <p id="subTitleCompany" style="font-weight:900; color:var(--primary); margin-bottom:15px; font-size:15px;"></p>
