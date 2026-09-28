@@ -3407,71 +3407,137 @@ async function deleteReceipt(docId, event) {
 
     function editTransaction(docId, event) {
     if(event) event.stopPropagation();
-    if(!confirm("✏️ برای ویرایش، این سند ابتدا باطل شده و اقلام آن به فرم ثبت منتقل می‌شود تا پس از تغییر، دوباره ذخیره کنید. موافقید؟")) return;
-    
-    let docs = historyLog.filter(t => String(t.docId) === String(docId));
+
+    const docs = Array.isArray(historyLog)
+        ? historyLog.filter(t => String(t.docId) === String(docId))
+        : [];
     if(!docs.length) {
         showScanError('اطلاعات این حواله پیدا نشد. لطفاً صفحه را تازه‌سازی کنید و دوباره تلاش کنید.');
         return;
     }
-    
-    let master = docs[0];
-    let type = master.type;
-    
-    // ۱. پاکسازی کامل لیست‌های موقت برای جلوگیری از تکثیر اقلام
+
+    const master = docs[0];
+    const type = master.type;
+
+    const confirmText = type === 'خروج'
+        ? '✏️ اقلام این حواله به بخش «سفارش‌برداری» منتقل می‌شوند. آنجا می‌توانید مقدار هر قلم را تغییر دهید یا قلم را حذف کنید.\n\nپس از ثبت مجدد، حواله برای بارگیری دوباره در صف قرار می‌گیرد. ادامه می‌دهید؟'
+        : '✏️ برای ویرایش، اقلام این سند به فرم ثبت منتقل می‌شوند تا مقدار یا اقلام را تغییر دهید. ادامه می‌دهید؟';
+    if(!confirm(confirmText)) return;
+
+    // پاکسازی لیست‌های موقت و جلوگیری از باقی‌ماندن اطلاعات ویرایش قبلی
     draftEntryItems = [];
     draftExitItems = [];
     outRequirements = [];
 
-    // ۲. فیلتر کردن اقلام در صورتی که قبلاً دوبل شده باشند
+    // برای خروجی، هر قلم موجود سند را به یک ردیف سفارش‌برداری تبدیل می‌کنیم.
+    // کلید شامل منبع/قیمت هم هست تا دو قلم واقعی با یک کد کالا با هم ادغام نشوند.
     let uniqueDocs = [];
     let seenKeys = new Set();
     docs.forEach(item => {
-        let key = `${item.pCode}|${item.batch}|${item.qtyCarton}|${item.qtyLoose}|${item.totalPieces}|${item.warehouse}`;
+        let alloc = item?.consumedFrom;
+        if(typeof alloc === 'string') {
+            try { alloc = JSON.parse(alloc); } catch(e) { alloc = []; }
+        }
+        const firstAlloc = Array.isArray(alloc) && alloc.length ? alloc[0] : null;
+        const lotId = String(firstAlloc?.lotDocId ?? firstAlloc?.docId ?? firstAlloc?.lotId ?? item?.sourceLotId ?? '').trim();
+        const itemPrice = Number(firstAlloc?.price ?? item?.price ?? 0) || 0;
+        const key = [
+            item.pCode, item.batch, item.qtyCarton, item.qtyLoose, item.totalPieces,
+            item.warehouse, item.rawBarcode, itemPrice, lotId
+        ].map(v => String(v ?? '')).join('|');
         if(!seenKeys.has(key)) {
             seenKeys.add(key);
             uniqueDocs.push(item);
         }
     });
-    
+
     if(type === 'ورود' || type === 'اول دوره') {
         editingEntryDocId = docId;
-        document.querySelector(`input[name="entryDocType"][value="${type}"]`).checked = true;
+        const typeRadio = document.querySelector(`input[name="entryDocType"][value="${type}"]`);
+        if(typeRadio) typeRadio.checked = true;
         toggleEntryType();
         document.getElementById('inOfficeDoc').value = master.officeDoc === 'بدون شماره' ? '' : master.officeDoc;
-        document.getElementById('inSender').value = master.ref;
-        
+        document.getElementById('inSender').value = master.ref || '';
         selectCS('inWarehouseSelect', master.warehouse, master.warehouse);
-        
+
         uniqueDocs.forEach(item => {
-            draftEntryItems.push({ raw: item.rawBarcode || "", pCode: item.pCode, batch: item.batch, qtyCarton: item.qtyCarton, qtyLoose: item.qtyLoose, totalPieces: item.totalPieces, name: item.productNameSnapshot || productsMap[item.pCode], weight: item.weight, units: item.units, wh: item.warehouse, price: item.price || 0, prodDate: item.prodDate || '', expDate: item.expDate || '' }); 
+            draftEntryItems.push({
+                raw: item.rawBarcode || '',
+                pCode: item.pCode,
+                batch: item.batch,
+                qtyCarton: Number(item.qtyCarton) || 0,
+                qtyLoose: Number(item.qtyLoose) || 0,
+                totalPieces: Number(item.totalPieces) || 0,
+                name: item.productNameSnapshot || productsMap[item.pCode],
+                weight: item.weight,
+                units: item.units,
+                wh: item.warehouse,
+                price: Number(item.price) || 0,
+                prodDate: item.prodDate || '',
+                expDate: item.expDate || ''
+            });
         });
         renderDrafts();
         openTab('tab-entry', document.getElementById('tabBtnEntry'));
-    } else {
+    } else if(type === 'خروج') {
         editingExitDocId = docId;
         document.getElementById('outOfficeDoc').value = master.officeDoc === 'بدون شماره' ? '' : master.officeDoc;
-        
-        let cust = master.ref.includes(' -> ') ? master.ref.split(' -> ')[1] : master.ref;
+
+        const masterRef = String(master.ref || '');
+        const cust = masterRef.includes(' -> ') ? masterRef.split(' -> ')[1] : masterRef;
         document.getElementById('outCustomer').value = cust;
-        
         selectCS('outWarehouseSelect', master.warehouse, master.warehouse);
-        
+
+        // در حالت ویرایش خروج، اقلام مستقیماً داخل «سفارش‌برداری» قرار می‌گیرند.
         uniqueDocs.forEach(item => {
-            draftExitItems.push({ raw: item.rawBarcode || "", pCode: item.pCode, batch: item.batch, qtyCarton: item.qtyCarton, qtyLoose: item.qtyLoose, totalPieces: item.totalPieces, name: item.productNameSnapshot || productsMap[item.pCode], wh: item.warehouse, units: item.unitsSnapshot || productsUnitsMap[item.pCode] || 1 }); 
+            let alloc = item?.consumedFrom;
+            if(typeof alloc === 'string') {
+                try { alloc = JSON.parse(alloc); } catch(e) { alloc = []; }
+            }
+            const firstAlloc = Array.isArray(alloc) && alloc.length ? alloc[0] : null;
+            const lotDocId = String(firstAlloc?.lotDocId ?? firstAlloc?.docId ?? firstAlloc?.lotId ?? item?.sourceLotId ?? '').trim();
+            const price = Number(firstAlloc?.price ?? item?.price ?? 0) || 0;
+            const wh = item.warehouse || master.warehouse || document.getElementById('outWarehouseSelect').value || '';
+            const lots = (typeof getAvailableLots === 'function') ? getAvailableLots(item.pCode, wh, editingExitDocId) : [];
+            const matchingLot = lotDocId ? lots.find(l => String(l?.lotDocId || '') === lotDocId) : null;
+            const fallbackUnpriced = !lotDocId ? lots.find(l => typeof isUnpricedLotId === 'function' && isUnpricedLotId(l.lotDocId)) : null;
+            const chosenLotId = lotDocId || (fallbackUnpriced?.lotDocId ? String(fallbackUnpriced.lotDocId) : (typeof buildUnpricedLotId === 'function' ? buildUnpricedLotId(item.pCode, wh) : ''));
+            const lotRemaining = Number(matchingLot?.remaining ?? fallbackUnpriced?.remaining ?? Math.max(0, Number(getActualStock(item.pCode, wh, editingExitDocId)) || 0));
+            const sourceType = String(firstAlloc?.sourceType || (price > 0 ? 'priced' : 'unpriced'));
+
+            outRequirements.push({
+                pCode: item.pCode,
+                name: item.productNameSnapshot || productsMap[item.pCode] || item.pCode,
+                uPerCarton: Math.max(1, Number(item.unitsSnapshot ?? item.units ?? productsUnitsMap[item.pCode]) || 1),
+                reqPieces: Math.max(1, Number(item.totalPieces) || 0),
+                scannedPieces: 0,
+                wh,
+                lotDocId: chosenLotId,
+                price,
+                lotRemaining,
+                sourceType,
+                prodDate: firstAlloc?.prodDate || item.prodDate || '',
+                expDate: firstAlloc?.expDate || item.expDate || ''
+            });
         });
-        
-        let scanNowToggle = document.getElementById('outScanNowToggle');
-        if(scanNowToggle) scanNowToggle.checked = true;
+
+        // چون تعداد/اقلام در حال ویرایش است، پیشرفت اسکن قبلی نباید روی مقدار جدید اثر بگذارد.
+        try { if (typeof clearDispatchProgress === 'function') clearDispatchProgress(docId); } catch(e) {}
+        currentDispatchScans = [];
+
+        const scanNowToggle = document.getElementById('outScanNowToggle');
+        if(scanNowToggle) scanNowToggle.checked = false;
         toggleExitScanMode();
 
+        renderRequirements();
         renderDrafts();
+        updateRequirementStockInfo();
         openTab('tab-exit', document.getElementById('tabBtnExit'));
+    } else {
+        showScanError('نوع این سند برای ویرایش از این مسیر پشتیبانی نمی‌شود.');
+        return;
     }
-    
-    // ۳. سند قدیمی را فعلاً حذف نمی‌کنیم.
-    // ویرایش در زمان ثبت نهایی با allowReplace=true به‌صورت اتمیک در D1 انجام می‌شود.
-    // این کار جلوگیری می‌کند که در صورت خطای شبکه، سند قبلی از بین برود.
+
     renderInventory();
     generateCardex();
 }
@@ -4945,21 +5011,88 @@ function printFactor() {
 
 
    
+        function getRequirementAvailableQty(req) {
+            try {
+                const wh = req.wh || document.getElementById('outWarehouseSelect')?.value || '';
+                const lots = typeof getAvailableLots === 'function' ? getAvailableLots(req.pCode, wh, editingExitDocId) : [];
+                if(req.lotDocId) {
+                    const exact = lots.find(l => String(l?.lotDocId || '') === String(req.lotDocId));
+                    if(exact) return Math.max(0, Number(exact.remaining) || 0);
+                }
+                return Math.max(0, Number(getActualStock(req.pCode, wh, editingExitDocId)) || 0);
+            } catch(e) {
+                return Math.max(0, Number(req.lotRemaining) || 0);
+            }
+        }
+
+        function updateExitRequirementQty(idx, value) {
+            const req = outRequirements[idx];
+            if(!req) return;
+            const nextQty = Math.floor(Number(value) || 0);
+            if(nextQty <= 0) {
+                alert('❌ تعداد باید بیشتر از صفر باشد. برای حذف قلم از دکمه «حذف» استفاده کنید.');
+                renderRequirements();
+                return;
+            }
+            const available = getRequirementAvailableQty(req);
+            if(available > 0 && nextQty > available) {
+                alert(`⛔ مقدار درخواستی بیشتر از موجودی قابل استفاده این قلم است.\n\nمقدار قابل سفارش: ${available.toLocaleString('fa-IR')} عدد`);
+                renderRequirements();
+                return;
+            }
+            req.reqPieces = nextQty;
+            req.lotRemaining = available || req.lotRemaining || 0;
+            renderRequirements();
+            updateRequirementStockInfo();
+        }
+
+        function removeExitRequirement(idx) {
+            if(idx < 0 || idx >= outRequirements.length) return;
+            const req = outRequirements[idx];
+            if(!confirm(`قلم «${req?.name || 'کالا'}» از سفارش‌برداری حذف شود؟`)) return;
+            outRequirements.splice(idx,1);
+            renderRequirements();
+            updateRequirementStockInfo();
+        }
+
         function renderRequirements(){
             let container=document.getElementById('reqListContainer'),totalDiv=document.getElementById('reqListTotal');
+            if(!container) return;
             if(!outRequirements.length){container.innerHTML='';if(totalDiv)totalDiv.style.display='none';return;}
             let tC=0,tL=0,tP=0,tW=0;
             container.innerHTML=outRequirements.map((req,idx)=>{
-                let c=Math.floor(req.reqPieces/req.uPerCarton),l=req.reqPieces%req.uPerCarton;tC+=c;tL+=l;tP+=req.reqPieces;tW+=getWeight(req.pCode,req.reqPieces);
-                const rowStock = Math.max(0, Number(getActualStock(req.pCode, req.wh || document.getElementById('outWarehouseSelect').value, editingExitDocId)) || 0);
-                return `<div class="req-item"><div style="flex:1;"><b>${req.name}</b><br><span class="qty-primary">${getPersianQtyStr(c,l)}</span> <span class="qty-secondary">| کل: ${req.reqPieces} عدد</span> <span class="qty-weight">${formatWeight(getWeight(req.pCode,req.reqPieces))}</span>
-                ${req.price ? `<div style="margin-top:3px;font-size:11px;font-weight:900;color:var(--success);">💰 قیمت انتخابی: ${Number(req.price).toLocaleString('fa-IR')} ریال</div>` : ''}
-                <div style="margin-top:6px;"><span style="font-size:10px;font-weight:900;">انبار مبدأ: </span><select class="item-wh-select" onchange="const old=outRequirements[${idx}].wh; this.value=this.value; outRequirements[${idx}].wh=this.value; if(getActualStock(outRequirements[${idx}].pCode,this.value,editingExitDocId)<outRequirements[${idx}].reqPieces){alert('⛔ موجودی این کالا در انبار انتخابی کافی نیست.'); outRequirements[${idx}].wh=old||document.getElementById('outWarehouseSelect').value;} renderRequirements(); updateRequirementStockInfo();">${warehouseOptions(req.wh||document.getElementById('outWarehouseSelect').value)}</select></div>
-                <div style="margin-top:4px;font-size:11px;font-weight:900;color:${rowStock > 0 ? 'var(--success)' : 'var(--danger)'};">📦 موجودی انبار: ${rowStock.toLocaleString('fa-IR')} عدد</div>
-                <span style="font-size:11px;color:var(--text-muted);">اسکن شده: <b style="color:var(--danger);">${req.scannedPieces}</b> عدد</span></div>
-                <button style="width:auto;padding:4px 8px;font-size:11px;background:var(--danger);color:#fff;" onclick="outRequirements.splice(${idx},1);renderRequirements(); updateRequirementStockInfo();">حذف</button></div>`;
+                const units = Math.max(1, Number(req.uPerCarton) || 1);
+                const qty = Math.max(0, Number(req.reqPieces) || 0);
+                let c=Math.floor(qty/units),l=qty%units;
+                tC+=c;tL+=l;tP+=qty;tW+=getWeight(req.pCode,qty);
+                const currentWh = req.wh || document.getElementById('outWarehouseSelect')?.value || '';
+                const rowStock = Math.max(0, Number(getRequirementAvailableQty(req)) || 0);
+                const priceHtml = req.price ? `<div style="margin-top:3px;font-size:11px;font-weight:900;color:var(--success);">💰 قیمت انتخابی: ${Number(req.price).toLocaleString('fa-IR')} ریال</div>` : '';
+                return `<div class="req-item" style="align-items:stretch;gap:10px;">
+                    <div style="flex:1;min-width:0;">
+                        <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap;">
+                            <b>${req.name}</b>
+                            <span style="font-size:10px;color:var(--text-muted);font-weight:900;">کد: ${req.pCode}</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:7px;">
+                            <span style="font-size:11px;font-weight:900;color:var(--dark);">تعداد کل:</span>
+                            <input type="number" min="1" step="1" value="${qty}" style="width:110px;min-width:110px;margin:0;padding:7px 8px;font-weight:900;text-align:center;border:2px solid #93c5fd;background:#eff6ff;" onchange="updateExitRequirementQty(${idx}, this.value)">
+                            <span class="qty-secondary">عدد</span>
+                            <span class="qty-secondary">| ${getPersianQtyStr(c,l)}</span>
+                            <span class="qty-weight">${formatWeight(getWeight(req.pCode,qty))}</span>
+                        </div>
+                        ${priceHtml}
+                        <div style="margin-top:6px;"><span style="font-size:10px;font-weight:900;">انبار مبدأ: </span><select class="item-wh-select" onchange="const old=outRequirements[${idx}].wh; outRequirements[${idx}].wh=this.value; if(getRequirementAvailableQty(outRequirements[${idx}])<outRequirements[${idx}].reqPieces){alert('⛔ موجودی این کالا در انبار انتخابی کافی نیست.'); outRequirements[${idx}].wh=old||document.getElementById('outWarehouseSelect').value;} renderRequirements(); updateRequirementStockInfo();">${warehouseOptions(currentWh)}</select></div>
+                        <div style="margin-top:4px;font-size:11px;font-weight:900;color:${rowStock > 0 ? 'var(--success)' : 'var(--danger)'};">📦 موجودی قابل سفارش: ${rowStock.toLocaleString('fa-IR')} عدد</div>
+                        ${req.scannedPieces ? `<span style="font-size:11px;color:var(--text-muted);">اسکن قبلی: <b style="color:var(--danger);">${req.scannedPieces}</b> عدد</span>` : ''}
+                    </div>
+                    <button type="button" style="width:auto;min-width:64px;align-self:center;padding:7px 9px;font-size:11px;background:var(--danger);color:#fff;" onclick="removeExitRequirement(${idx})">🗑 حذف</button>
+                </div>`;
             }).join('');
-            totalDiv.style.display='block';totalDiv.innerHTML=`<span class="qty-primary">جمع: ${tC} کارتن</span> | <span class="qty-secondary">${tL} عدد خرد</span> | <span class="qty-secondary">کل: ${tP} عدد</span> <span class="qty-weight">| وزن: ${tW.toFixed(2)} kg</span>`;
+            if(totalDiv){
+                totalDiv.style.display='block';
+                totalDiv.innerHTML=`<span class="qty-primary">جمع: ${tC} کارتن</span> | <span class="qty-secondary">${tL} عدد خرد</span> | <span class="qty-secondary">کل: ${tP} عدد</span> <span class="qty-weight">| وزن: ${tW.toFixed(2)} kg</span>`;
+            }
         }
 
         function toggleExitScanMode() {
@@ -5944,13 +6077,7 @@ function generateCardex() {
         });
         
         if (currentUser && currentUser.role === 'loader') {
-            // بارگیر فقط اسناد شرکتِ انتخاب‌شده و همان سشن احراز‌شده را می‌بیند.
-            // وضعیت pending کافی است؛ سند تا زمان تأیید نهایی باقی می‌ماند.
-            filteredDocs = filteredDocs.filter(d =>
-                String(d.company || companyPrefix).trim() === String(companyPrefix).trim() &&
-                d.type === 'خروج' &&
-                d.dispatchStatus === 'pending'
-            );
+            filteredDocs = filteredDocs.filter(d => d.dispatchStatus === 'pending');
         }
 
         const statusFilter = document.getElementById('docStatusFilter')?.value || 'all';
