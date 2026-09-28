@@ -5944,7 +5944,13 @@ function generateCardex() {
         });
         
         if (currentUser && currentUser.role === 'loader') {
-            filteredDocs = filteredDocs.filter(d => d.dispatchStatus === 'pending');
+            // بارگیر فقط اسناد شرکتِ انتخاب‌شده و همان سشن احراز‌شده را می‌بیند.
+            // وضعیت pending کافی است؛ سند تا زمان تأیید نهایی باقی می‌ماند.
+            filteredDocs = filteredDocs.filter(d =>
+                String(d.company || companyPrefix).trim() === String(companyPrefix).trim() &&
+                d.type === 'خروج' &&
+                d.dispatchStatus === 'pending'
+            );
         }
 
         const statusFilter = document.getElementById('docStatusFilter')?.value || 'all';
