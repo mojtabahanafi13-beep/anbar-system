@@ -2170,7 +2170,7 @@ td{border-bottom-color:#d0d8e2 !important;}
     <div id="fullscreen-reader" style="width:100%; max-width:450px; margin:30px auto; background:#000; border-radius:12px; overflow:hidden; border:2px solid #3b82f6;"></div>
 </div>
     <script>
-    const DB_URL = "https://anbar-db.mojtaba-hanafi13.workers.dev";
+    const DB_URL = "https://app.factor-anbar.online";
         let autoSyncInterval = null;
 // تابع مبدل تاریخ شمسی به میلادی برای محاسبات سیستم
 function jalaliToGregorian(j_y, j_m, j_d) {
@@ -11296,5 +11296,100 @@ html[data-theme="dark"] .tab-btn .tab-label{
     }
 }
 </style>
+
+<script id="rojin-server-auth-v22">
+(function(){
+  if (window.__ROJIN_SERVER_AUTH_V22__) return;
+  window.__ROJIN_SERVER_AUTH_V22__ = true;
+  const nativeFetch = window.fetch.bind(window);
+  const DB = DB_URL;
+  const SESSION_KEY = 'v20SessionToken';
+  const AUTH_USER_KEY = 'activeUser';
+
+  function mergeServerUser(u){
+    if(!u || !u.name) return;
+    const list = Array.isArray(sysUsers) ? sysUsers.slice() : [];
+    const i = list.findIndex(x => String(x?.name||'').trim() === String(u.name).trim());
+    if(i >= 0) list[i] = {...list[i], ...u}; else list.push(u);
+    sysUsers = list;
+    try { localStorage.setItem(companyPrefix + '_sysUsersList', JSON.stringify(sysUsers)); } catch(e) {}
+  }
+
+  window.fetch = function(input, init={}){
+    try{
+      const url = typeof input === 'string' ? input : (input?.url || '');
+      if(String(url).startsWith(DB)){
+        const token = sessionStorage.getItem(SESSION_KEY) || '';
+        if(token){
+          init = {...init, headers:{...(init.headers||{}), Authorization:`Bearer ${token}`}};
+        }
+      }
+    }catch(e){}
+    return nativeFetch(input, init);
+  };
+
+  window.performLogin = async function(){
+    if(typeof selectedLoginIndex === 'undefined' || selectedLoginIndex === null) return;
+    const user = (Array.isArray(sysUsers) ? sysUsers[selectedLoginIndex] : null);
+    if(!user) return;
+    const password = document.getElementById('loginPassword')?.value || '';
+    const legacyPassword = (user.pass && user.pass !== '__SERVER__' && !String(user.pass).startsWith('sha256:')) ? String(user.pass) : '';
+    try{
+      const r = await nativeFetch(`${DB}/api/auth/login?company=${encodeURIComponent(companyPrefix)}`, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({userName:user.name,password,legacyPassword}),
+        cache:'no-store'
+      });
+      const j = await r.json();
+      if(!r.ok || !j.success) throw new Error(j.message || 'ورود ناموفق');
+      if(j.token) sessionStorage.setItem(SESSION_KEY, j.token);
+      if(j.user){ currentUser = j.user; mergeServerUser(j.user); }
+      else { currentUser = user; }
+      sessionStorage.setItem(AUTH_USER_KEY, JSON.stringify(currentUser));
+      document.getElementById('login-overlay').style.display='none';
+      initAfterLogin();
+      if(window.fetchDataFromServer) window.fetchDataFromServer();
+    }catch(e){
+      console.error('Server login failed:',e);
+      alert('❌ ورود ناموفق: ' + (e?.message || e));
+    }
+  };
+
+  const oldLogout = window.logoutApp;
+  window.logoutApp = async function(){
+    const token = sessionStorage.getItem(SESSION_KEY) || '';
+    try{
+      if(token) await nativeFetch(`${DB}/api/auth/logout?company=${encodeURIComponent(companyPrefix)}`,{method:'POST',headers:{Authorization:`Bearer ${token}`},cache:'no-store'});
+    }catch(e){}
+    sessionStorage.removeItem(SESSION_KEY);
+    if(oldLogout) return oldLogout();
+    currentUser = null;
+    location.reload();
+  };
+
+  const oldFetchData = window.fetchDataFromServer;
+  if(typeof oldFetchData === 'function'){
+    window.fetchDataFromServer = async function(){
+      try { return await oldFetchData.apply(this, arguments); }
+      finally {
+        // Do not let a masked server password erase a working local password.
+        try{
+          const local = getSafeLocal(companyPrefix + '_sysUsersList', []);
+          const localByName = new Map((Array.isArray(local)?local:Object.values(local||{})).filter(Boolean).map(u=>[String(u.name||'').trim(),u]));
+          if(Array.isArray(sysUsers)){
+            sysUsers = sysUsers.map(u=>{
+              const old = localByName.get(String(u?.name||'').trim());
+              const masked = String(u?.pass||'') === '__SERVER__';
+              return masked && old?.pass && old.pass !== '__SERVER__' ? {...u,pass:old.pass} : u;
+            });
+            try { localStorage.setItem(companyPrefix + '_sysUsersList', JSON.stringify(sysUsers)); } catch(e){}
+          }
+        }catch(e){}
+      }
+    };
+  }
+})();
+</script>
 </body>
 </html>
