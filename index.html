@@ -2592,12 +2592,11 @@ window.addEventListener('DOMContentLoaded', () => {
             if(!sysSettings.customers || !Array.isArray(sysSettings.customers)) sysSettings.customers = ["باربری محبی (شوش)", "دفتر مرکزی"]; 
             if(!sysSettings.senders || !Array.isArray(sysSettings.senders)) sysSettings.senders = ["کارخانه تولیدی", "تامین‌کننده اصلی"]; 
             
-            try {
-                const legacy = getSafeLocal(prefix + '_sysUsersList', []);
-                const arr = Array.isArray(legacy) ? legacy : Object.values(legacy || {});
-                legacyLocalUsers = arr.filter(u => u && String(u.name||'').trim() && String(u.pass||'').trim()).map(u => ({name:String(u.name).trim(), role:String(u.role||'user'), pass:String(u.pass)}));
-                localStorage.removeItem(prefix + '_sysUsersList');
-            } catch(e) { legacyLocalUsers = []; }
+            // کاربران قدیمی LocalStorage دیگر به‌صورت خودکار مهاجرت نمی‌شوند.
+            // مدیریت کاربران فقط از داخل D1 و توسط مدیر انجام می‌شود.
+            // داده قدیمی را حذف می‌کنیم تا نتواند رمز حساب‌های مرکزی را بازنویسی کند.
+            try { localStorage.removeItem(prefix + '_sysUsersList'); } catch(e) {}
+            legacyLocalUsers = [];
             sysUsers = [];
             currentUser = null;
             selectedLoginIndex = null;
@@ -2708,17 +2707,8 @@ window.addEventListener('DOMContentLoaded', () => {
                 currentUser = auth.user;
                 sessionStorage.setItem('activeUser', JSON.stringify(currentUser));
                 sessionStorage.setItem('activeCompany', JSON.stringify({prefix:companyPrefix,name:companyNameStr}));
-                if(currentUser.role === 'admin' && legacyLocalUsers.length && window.__V20.importLegacyUsers){
-                    try {
-                        const migrated = await window.__V20.importLegacyUsers(legacyLocalUsers);
-                        sysUsers = Array.isArray(migrated.users) ? migrated.users : sysUsers;
-                        legacyLocalUsers = [];
-                        alert('✅ کاربران نسخه قدیمی این دستگاه با موفقیت به D1 منتقل شدند. از این به بعد رمزها مرکزی هستند.');
-                    } catch(migErr) {
-                        console.warn('Legacy user migration failed:', migErr);
-                        alert('⚠️ ورود موفق بود، ولی انتقال کاربران قدیمی انجام نشد: ' + (migErr.message || 'خطای نامشخص'));
-                    }
-                }
+                // مهاجرت خودکار کاربران قدیمی عمداً حذف شده است.
+                // کاربران فقط توسط مدیر از تنظیمات و مستقیماً در D1 تعریف می‌شوند.
                 document.getElementById('login-overlay').style.display = 'none';
                 document.getElementById('view-change-pass').style.display = 'none';
                 initAfterLogin();
