@@ -445,6 +445,9 @@
         .dispatch-manual-select{display:block!important;width:100%!important;min-width:0!important;height:42px!important;padding:7px 10px!important;font-size:13px!important;border-radius:8px!important;box-sizing:border-box!important;}
         .dispatch-manual-entry{display:flex;align-items:center;gap:7px;width:100%;min-width:0;box-sizing:border-box;}
         .dispatch-manual-qty{width:72px!important;min-width:72px!important;flex:0 0 72px!important;height:38px!important;padding:6px 4px!important;text-align:center;font-weight:bold;font-size:14px!important;box-sizing:border-box;}
+        .dispatch-manual-qty::placeholder{color:#94a3b8;font-weight:800;}
+        .dispatch-manual-qty:focus{outline:2px solid rgba(139,92,246,.22);box-shadow:0 0 0 3px rgba(139,92,246,.08);border-color:#8b5cf6!important;}
+        #dispatchManualCartonItem:focus,#dispatchManualLooseItem:focus{outline:2px solid rgba(37,99,235,.18);}
         .dispatch-manual-entry .dispatch-control-btn{flex:1 1 auto!important;min-width:0!important;width:auto!important;}
         @media (max-width:600px){
             .dispatch-manual-grid{grid-template-columns:1fr;gap:8px;}
@@ -1142,6 +1145,21 @@ td{border-bottom-color:#d0d8e2 !important;}
 <!-- اضافه کردن کتابخانه تقویم شمسی -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/kamadatepicker@1.5.3/style/kamadatepicker.min.css">
     <script src="https://cdn.jsdelivr.net/npm/kamadatepicker@1.5.3/src/kamadatepicker.min.js"></script>
+
+<style>
+/* فرم ورود: نمایش صحیح در موبایل */
+.entry-meta-row{grid-template-columns:repeat(4,minmax(0,1fr)) !important;}
+.entry-meta-field{min-width:0 !important; width:100% !important;}
+.entry-meta-field input{max-width:100% !important; box-sizing:border-box !important; min-width:0 !important;}
+@media (max-width: 760px){
+  .entry-meta-row{grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:8px !important;}
+  .entry-meta-field label{font-size:11px !important; white-space:normal !important; line-height:1.35 !important;}
+  .entry-meta-field input{font-size:13px !important; padding:9px 5px !important;}
+}
+@media (max-width: 430px){
+  .entry-meta-row{grid-template-columns:1fr !important; gap:7px !important;}
+}
+</style>
 </head>
 <body>
 
@@ -1274,6 +1292,12 @@ td{border-bottom-color:#d0d8e2 !important;}
                     <input type="text" id="dispatchBarcode" class="hardware-input" style="border-color:#8b5cf6!important; padding:8px; min-height:40px; font-size:15px;" placeholder="اسکن بارکد کالا..." oninput="validateDispatchLooseInput(document.getElementById('dispatchQtyLoose')); handleDispatchBarcodeInput()" onkeydown="handleDispatchHardwareScanner(event)">
                     <button type="button" class="btn-scan" style="background:#8b5cf6; padding:0 14px;" onclick="startDispatchCamera()">📷 دوربین</button>
                 </div>
+                <div style="margin-top:7px;display:flex;align-items:center;gap:7px;flex-wrap:wrap;">
+                    <label for="dispatchWarehousePicker" style="font-size:11px;font-weight:900;color:#475569;white-space:nowrap;">🏭 انبار مبدأ اسکن:</label>
+                    <select id="dispatchWarehousePicker" class="dispatch-manual-select" style="flex:1;min-width:180px;height:38px;margin:0;" onchange="renderDispatchTable()">
+                        <option value="__AUTO__">تشخیص خودکار از روی بچ</option>
+                    </select>
+                </div>
                 
             <div id="dispatchCameraContainer" style="display:none; width:100%; max-width:350px; margin:10px auto 6px; border-radius:10px; border:2px solid #8b5cf6; background:#000; transform: translateZ(0); will-change: transform;">
     <div id="dispatch-scanner-box" style="width:100%; margin:0 auto; transform: translateZ(0);"></div>
@@ -1284,22 +1308,22 @@ td{border-bottom-color:#d0d8e2 !important;}
                     <div class="dispatch-control-card" style="background:#f1f5f9; border:1px solid #cbd5e1;">
                         <div style="font-size:11px; font-weight:900; color:#6d28d9; margin-bottom:6px;">🔹 ثبت دستی خرده</div>
                         <div style="font-size:10px; font-weight:800; color:#475569; margin-bottom:5px;">کالای دارای خرده را انتخاب کنید؛ نیازی به بارکد نیست.</div>
-                        <select id="dispatchManualLooseItem" class="dispatch-manual-select" onchange="validateDispatchLooseInput(document.getElementById('dispatchQtyManualLoose'))">
+                        <select id="dispatchManualLooseItem" class="dispatch-manual-select" onchange="activateManualDispatchInput('dispatchManualLooseItem','dispatchQtyManualLoose')">
                             <option value="">انتخاب کالا...</option>
                         </select>
                         <div class="dispatch-manual-entry">
-                            <input type="number" id="dispatchQtyManualLoose" value="0" min="0" inputmode="numeric" class="dispatch-manual-qty" style="border-color:#8b5cf6;" placeholder="خرده" oninput="validateDispatchLooseInput(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();registerManualDispatchLoose();}">
+                            <input type="number" id="dispatchQtyManualLoose" value="" min="0" inputmode="numeric" enterkeyhint="done" class="dispatch-manual-qty" style="border-color:#8b5cf6;" placeholder="تعداد خرده" oninput="validateDispatchLooseInput(this)" onfocus="this.select()" onkeydown="if(event.key==='Enter'){event.preventDefault();registerManualDispatchLoose();}">
                             <button type="button" class="dispatch-control-btn" style="background:#8b5cf6;" onclick="registerManualDispatchLoose()">ثبت خرده</button>
                         </div>
                         <div style="font-size:10px; color:#6d28d9; font-weight:800;">فقط همان مقدار خرده باقی‌مانده قابل ثبت است.</div>
                     </div>
                     <div class="dispatch-control-card dispatch-manual-card" style="background:#fff7ed; border:1px solid #fed7aa;">
                         <div style="font-size:11px; font-weight:900; color:#9a3412;">📦 انتخاب کالا برای کارتن بدون لیبل</div>
-                        <select id="dispatchManualCartonItem" class="dispatch-manual-select" onchange="validateDispatchLooseInput(document.getElementById('dispatchQtyLoose'))">
+                        <select id="dispatchManualCartonItem" class="dispatch-manual-select" onchange="activateManualDispatchInput('dispatchManualCartonItem','dispatchQtyManualCarton')">
                             <option value="">انتخاب کالا...</option>
                         </select>
                         <div class="dispatch-manual-entry">
-                            <input type="number" id="dispatchQtyManualCarton" value="0" min="0" inputmode="numeric" class="dispatch-manual-qty" style="border-color:#f97316;" placeholder="تعداد" onkeydown="if(event.key==='Enter'){event.preventDefault();registerManualDispatchCartons();}">
+                            <input type="number" id="dispatchQtyManualCarton" value="" min="0" inputmode="numeric" enterkeyhint="done" class="dispatch-manual-qty" style="border-color:#f97316;" placeholder="تعداد کارتن" onfocus="this.select()" onkeydown="if(event.key==='Enter'){event.preventDefault();registerManualDispatchCartons();}">
                             <button type="button" class="dispatch-control-btn" style="background:#f97316;" onclick="registerManualDispatchCartons()">ثبت کارتن</button>
                         </div>
                         <div style="font-size:10px; color:#9a3412; font-weight:800;">فقط برای کارتن بدون لیبل؛ هر عدد = ۱ کارتن</div>
@@ -1691,7 +1715,11 @@ td{border-bottom-color:#d0d8e2 !important;}
                                 <input type="number" id="inTotalPiecesOnly" placeholder="مثلاً 1000" min="0" style="font-weight: 900; font-size: 18px; color: var(--primary); text-align: center; border-color:#bfdbfe; padding:12px;" onkeydown="if(event.key==='Enter'){event.preventDefault(); addToEntryDraft(false);}">
                                 <span style="font-size:14px; color:var(--primary); font-weight:900;">عدد</span>
                             </div>
-                            <div class="entry-meta-row" style="display:grid; grid-template-columns:minmax(180px,1.15fr) minmax(125px,.8fr) minmax(125px,.8fr); gap:10px; align-items:end; flex:100%; border-top:1px dashed #fcd34d; padding-top:10px; margin-top:5px;">
+                            <div class="entry-meta-row" style="display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; align-items:end; flex:100%; border-top:1px dashed #fcd34d; padding-top:10px; margin-top:5px;">
+                                <div class="entry-meta-field">
+                                    <label style="font-weight:900; font-size:12px; color:#b45309; display:block; margin-bottom:5px;">🏷️ شماره بچ</label>
+                                    <input type="text" id="inBatch" inputmode="numeric" autocomplete="off" maxlength="3" placeholder="مثلاً 003" oninput="this.value=this.value.replace(/\D/g,'').slice(0,3)" style="width:100%; min-width:0; box-sizing:border-box; font-weight:900; font-size:14px; text-align:center; border-color:#fcd34d; padding:9px 6px;">
+                                </div>
                                 <div class="entry-meta-field">
                                     <label style="font-weight:900; font-size:12px; color:#b45309; display:block; margin-bottom:5px;">💰 قیمت هر عدد (ریال)</label>
                                     <input type="text" id="inPrice" inputmode="numeric" autocomplete="off" placeholder="مثلاً 150,000" oninput="formatEntryPriceInput(this)" onblur="formatEntryPriceInput(this)" style="width:100%; font-weight:900; font-size:14px; text-align:center; border-color:#fcd34d; padding:9px 8px;">
@@ -2170,7 +2198,7 @@ td{border-bottom-color:#d0d8e2 !important;}
     <div id="fullscreen-reader" style="width:100%; max-width:450px; margin:30px auto; background:#000; border-radius:12px; overflow:hidden; border:2px solid #3b82f6;"></div>
 </div>
     <script>
-    const DB_URL = "https://app.factor-anbar.online";
+    const DB_URL = "https://anbar-db.mojtaba-hanafi13.workers.dev";
         let autoSyncInterval = null;
 // تابع مبدل تاریخ شمسی به میلادی برای محاسبات سیستم
 function jalaliToGregorian(j_y, j_m, j_d) {
@@ -2405,9 +2433,13 @@ function jalaliToGregorian(j_y, j_m, j_d) {
  
 
         function ensureDefaultUsers() {
-            sysUsers = sysUsers.filter(u => u && u.name);
-            if(!sysUsers.some(u => u.role === "admin")) sysUsers.push({name:"مجتبی حنفی",role:"admin",pass:"1234"});
-            if(!sysUsers.some(u => u.role === "viewer")) sysUsers.push({name:"مدیریت دفتر مرکزی",role:"viewer",pass:"0000"});
+            sysUsers = (Array.isArray(sysUsers) ? sysUsers : []).filter(u => u && u.name);
+            let admin = sysUsers.find(u => String(u.role) === 'admin');
+            if(!admin){ admin = {name:'مجتبی حنفی',role:'admin',pass:'1234'}; sysUsers.push(admin); }
+            else if(!admin.pass || admin.pass === '__SERVER__' || String(admin.pass).startsWith('sha256:')) admin.pass = '1234';
+            let viewer = sysUsers.find(u => String(u.role) === 'viewer');
+            if(!viewer){ viewer = {name:'مدیریت دفتر مرکزی',role:'viewer',pass:'0000'}; sysUsers.push(viewer); }
+            else if(!viewer.pass || viewer.pass === '__SERVER__' || String(viewer.pass).startsWith('sha256:')) viewer.pass = '0000';
         }
 
         function renderLoginButtons() {
@@ -2855,9 +2887,7 @@ function fetchDataFromServer() {
                         if (Array.isArray(cloudData.inventoryReclassifications)) {
                             inventoryReclassifications = cloudData.inventoryReclassifications.filter(Boolean);
                         }
-                        if (Array.isArray(cloudData.sysUsers) && cloudData.sysUsers.length > 0) {
-                            sysUsers = cloudData.sysUsers.filter(u => u && u.name);
-                        }
+                        // کاربران ورود فقط روی همین دستگاه نگهداری می‌شوند و از D1 خوانده نمی‌شوند.
                         ensureDefaultUsers();
                         rebuildInventory();
                         updateLocalCacheOnly();
@@ -2936,8 +2966,7 @@ function uploadLocalToCloud() {
                 historyLog, 
                 inventoryReclassifications,
                 lastDocNumber, 
-                sysSettings, 
-                sysUsers 
+                sysSettings
             };
 
             fetch(`${DB_URL}/api/save-all?company=${companyPrefix}`, { 
@@ -2947,6 +2976,7 @@ function uploadLocalToCloud() {
             })
             .then(res => {
                 if (!res.ok) throw new Error('HTTP ' + res.status);
+                if (window.__V20) window.__V20.reportCache=null;
                 if (statusDiv) { 
                     statusDiv.innerText = "☁️ آنلاین (D1)"; 
                     statusDiv.style.background = "rgba(16, 185, 129, 0.9)"; 
@@ -2992,8 +3022,7 @@ function uploadLocalToCloud() {
                     productsWeightMap,
                     inventoryReclassifications,
                     lastDocNumber,
-                    sysSettings,
-                    sysUsers
+                    sysSettings
                 };
 
                 fetch(`${DB_URL}/api/save-master?company=${encodeURIComponent(companyPrefix)}`, {
@@ -3004,6 +3033,7 @@ function uploadLocalToCloud() {
                 })
                 .then(r => {
                     if (!r.ok) throw new Error('HTTP ' + r.status);
+                    if (window.__V20) window.__V20.reportCache=null;
                     if (statusDiv) {
                         statusDiv.innerText = '☁️ آنلاین (D1)';
                         statusDiv.style.background = 'rgba(16, 185, 129, 0.9)';
@@ -3407,137 +3437,75 @@ async function deleteReceipt(docId, event) {
 
     function editTransaction(docId, event) {
     if(event) event.stopPropagation();
+    if(!confirm("✏️ اقلام این سند به بخش «سفارش‌برداری» منتقل می‌شوند. می‌توانید جلوی هر قلم تعداد را تغییر دهید یا قلم را حذف کنید. پس از ثبت نهایی، سند دوباره در صف «در انتظار بارگیری» قرار می‌گیرد و اسکن بارکد طبق روال انجام می‌شود. ادامه می‌دهید؟")) return;
 
-    const docs = Array.isArray(historyLog)
-        ? historyLog.filter(t => String(t.docId) === String(docId))
-        : [];
+    const docs = historyLog.filter(t => String(t.docId) === String(docId) && t.type === 'خروج');
     if(!docs.length) {
         showScanError('اطلاعات این حواله پیدا نشد. لطفاً صفحه را تازه‌سازی کنید و دوباره تلاش کنید.');
         return;
     }
 
     const master = docs[0];
-    const type = master.type;
 
-    const confirmText = type === 'خروج'
-        ? '✏️ اقلام این حواله به بخش «سفارش‌برداری» منتقل می‌شوند. آنجا می‌توانید مقدار هر قلم را تغییر دهید یا قلم را حذف کنید.\n\nپس از ثبت مجدد، حواله برای بارگیری دوباره در صف قرار می‌گیرد. ادامه می‌دهید؟'
-        : '✏️ برای ویرایش، اقلام این سند به فرم ثبت منتقل می‌شوند تا مقدار یا اقلام را تغییر دهید. ادامه می‌دهید؟';
-    if(!confirm(confirmText)) return;
-
-    // پاکسازی لیست‌های موقت و جلوگیری از باقی‌ماندن اطلاعات ویرایش قبلی
+    // پاکسازی کامل وضعیت ویرایش قبلی
+    editingExitDocId = String(docId);
+    editingEntryDocId = null;
     draftEntryItems = [];
     draftExitItems = [];
     outRequirements = [];
 
-    // برای خروجی، هر قلم موجود سند را به یک ردیف سفارش‌برداری تبدیل می‌کنیم.
-    // کلید شامل منبع/قیمت هم هست تا دو قلم واقعی با یک کد کالا با هم ادغام نشوند.
-    let uniqueDocs = [];
-    let seenKeys = new Set();
+    document.getElementById('outOfficeDoc').value = master.officeDoc === 'بدون شماره' ? '' : (master.officeDoc || '');
+    const cust = String(master.ref || '').includes(' -> ') ? String(master.ref).split(' -> ')[1] : (master.ref || '');
+    document.getElementById('outCustomer').value = cust;
+    selectCS('outWarehouseSelect', master.warehouse || (sysSettings.warehouses || [])[0] || 'انبار مرکزی', master.warehouse || (sysSettings.warehouses || [])[0] || 'انبار مرکزی');
+
+    // اقلام سند را بر اساس «کالا + انبار» تجمیع می‌کنیم تا در سفارش‌برداری هر قلم یک ردیف قابل ویرایش داشته باشد.
+    const grouped = new Map();
     docs.forEach(item => {
-        let alloc = item?.consumedFrom;
-        if(typeof alloc === 'string') {
-            try { alloc = JSON.parse(alloc); } catch(e) { alloc = []; }
-        }
-        const firstAlloc = Array.isArray(alloc) && alloc.length ? alloc[0] : null;
-        const lotId = String(firstAlloc?.lotDocId ?? firstAlloc?.docId ?? firstAlloc?.lotId ?? item?.sourceLotId ?? '').trim();
-        const itemPrice = Number(firstAlloc?.price ?? item?.price ?? 0) || 0;
-        const key = [
-            item.pCode, item.batch, item.qtyCarton, item.qtyLoose, item.totalPieces,
-            item.warehouse, item.rawBarcode, itemPrice, lotId
-        ].map(v => String(v ?? '')).join('|');
-        if(!seenKeys.has(key)) {
-            seenKeys.add(key);
-            uniqueDocs.push(item);
-        }
+        const pCode = String(item.pCode || '').trim();
+        if(!pCode) return;
+        const wh = String(item.warehouse || master.warehouse || (sysSettings.warehouses || [])[0] || 'انبار مرکزی').trim();
+        const key = `${pCode}||${wh}`;
+        const pieces = Math.max(0, Number(item.totalPieces) || 0);
+        if(!pieces) return;
+        const g = grouped.get(key) || {
+            pCode,
+            name: item.productNameSnapshot || productsMap[pCode] || pCode,
+            uPerCarton: Math.max(1, Number(item.unitsSnapshot || item.units || productsUnitsMap[pCode]) || 1),
+            reqPieces: 0,
+            wh,
+            scannedPieces: 0
+        };
+        g.reqPieces += pieces;
+        grouped.set(key, g);
     });
 
-    if(type === 'ورود' || type === 'اول دوره') {
-        editingEntryDocId = docId;
-        const typeRadio = document.querySelector(`input[name="entryDocType"][value="${type}"]`);
-        if(typeRadio) typeRadio.checked = true;
-        toggleEntryType();
-        document.getElementById('inOfficeDoc').value = master.officeDoc === 'بدون شماره' ? '' : master.officeDoc;
-        document.getElementById('inSender').value = master.ref || '';
-        selectCS('inWarehouseSelect', master.warehouse, master.warehouse);
-
-        uniqueDocs.forEach(item => {
-            draftEntryItems.push({
-                raw: item.rawBarcode || '',
-                pCode: item.pCode,
-                batch: item.batch,
-                qtyCarton: Number(item.qtyCarton) || 0,
-                qtyLoose: Number(item.qtyLoose) || 0,
-                totalPieces: Number(item.totalPieces) || 0,
-                name: item.productNameSnapshot || productsMap[item.pCode],
-                weight: item.weight,
-                units: item.units,
-                wh: item.warehouse,
-                price: Number(item.price) || 0,
-                prodDate: item.prodDate || '',
-                expDate: item.expDate || ''
-            });
+    grouped.forEach(g => {
+        const availableStock = Math.max(0, Number(getActualStock(g.pCode, g.wh, editingExitDocId)) || 0);
+        outRequirements.push({
+            pCode: g.pCode,
+            name: g.name,
+            uPerCarton: g.uPerCarton,
+            reqPieces: g.reqPieces,
+            scannedPieces: 0,
+            wh: g.wh,
+            lotDocId: null,
+            price: 0,
+            lotRemaining: availableStock,
+            sourceType: 'batch',
+            prodDate: '',
+            expDate: ''
         });
-        renderDrafts();
-        openTab('tab-entry', document.getElementById('tabBtnEntry'));
-    } else if(type === 'خروج') {
-        editingExitDocId = docId;
-        document.getElementById('outOfficeDoc').value = master.officeDoc === 'بدون شماره' ? '' : master.officeDoc;
+    });
 
-        const masterRef = String(master.ref || '');
-        const cust = masterRef.includes(' -> ') ? masterRef.split(' -> ')[1] : masterRef;
-        document.getElementById('outCustomer').value = cust;
-        selectCS('outWarehouseSelect', master.warehouse, master.warehouse);
-
-        // در حالت ویرایش خروج، اقلام مستقیماً داخل «سفارش‌برداری» قرار می‌گیرند.
-        uniqueDocs.forEach(item => {
-            let alloc = item?.consumedFrom;
-            if(typeof alloc === 'string') {
-                try { alloc = JSON.parse(alloc); } catch(e) { alloc = []; }
-            }
-            const firstAlloc = Array.isArray(alloc) && alloc.length ? alloc[0] : null;
-            const lotDocId = String(firstAlloc?.lotDocId ?? firstAlloc?.docId ?? firstAlloc?.lotId ?? item?.sourceLotId ?? '').trim();
-            const price = Number(firstAlloc?.price ?? item?.price ?? 0) || 0;
-            const wh = item.warehouse || master.warehouse || document.getElementById('outWarehouseSelect').value || '';
-            const lots = (typeof getAvailableLots === 'function') ? getAvailableLots(item.pCode, wh, editingExitDocId) : [];
-            const matchingLot = lotDocId ? lots.find(l => String(l?.lotDocId || '') === lotDocId) : null;
-            const fallbackUnpriced = !lotDocId ? lots.find(l => typeof isUnpricedLotId === 'function' && isUnpricedLotId(l.lotDocId)) : null;
-            const chosenLotId = lotDocId || (fallbackUnpriced?.lotDocId ? String(fallbackUnpriced.lotDocId) : (typeof buildUnpricedLotId === 'function' ? buildUnpricedLotId(item.pCode, wh) : ''));
-            const lotRemaining = Number(matchingLot?.remaining ?? fallbackUnpriced?.remaining ?? Math.max(0, Number(getActualStock(item.pCode, wh, editingExitDocId)) || 0));
-            const sourceType = String(firstAlloc?.sourceType || (price > 0 ? 'priced' : 'unpriced'));
-
-            outRequirements.push({
-                pCode: item.pCode,
-                name: item.productNameSnapshot || productsMap[item.pCode] || item.pCode,
-                uPerCarton: Math.max(1, Number(item.unitsSnapshot ?? item.units ?? productsUnitsMap[item.pCode]) || 1),
-                reqPieces: Math.max(1, Number(item.totalPieces) || 0),
-                scannedPieces: 0,
-                wh,
-                lotDocId: chosenLotId,
-                price,
-                lotRemaining,
-                sourceType,
-                prodDate: firstAlloc?.prodDate || item.prodDate || '',
-                expDate: firstAlloc?.expDate || item.expDate || ''
-            });
-        });
-
-        // چون تعداد/اقلام در حال ویرایش است، پیشرفت اسکن قبلی نباید روی مقدار جدید اثر بگذارد.
-        try { if (typeof clearDispatchProgress === 'function') clearDispatchProgress(docId); } catch(e) {}
-        currentDispatchScans = [];
-
-        const scanNowToggle = document.getElementById('outScanNowToggle');
-        if(scanNowToggle) scanNowToggle.checked = false;
-        toggleExitScanMode();
-
-        renderRequirements();
-        renderDrafts();
-        updateRequirementStockInfo();
-        openTab('tab-exit', document.getElementById('tabBtnExit'));
-    } else {
-        showScanError('نوع این سند برای ویرایش از این مسیر پشتیبانی نمی‌شود.');
-        return;
-    }
-
+    // هنگام ویرایش، کاربر در سفارش‌برداری تعداد/قلم را اصلاح می‌کند؛ اسکن فوری خاموش است.
+    const scanNowToggle = document.getElementById('outScanNowToggle');
+    if(scanNowToggle) scanNowToggle.checked = false;
+    toggleExitScanMode();
+    renderRequirements();
+    updateRequirementStockInfo();
+    renderDrafts();
+    openTab('tab-exit', document.getElementById('tabBtnExit'));
     renderInventory();
     generateCardex();
 }
@@ -3758,9 +3726,10 @@ async function deleteReceipt(docId, event) {
                 const seenBarcodes = new Set();
                 for (const scan of saved.scans) {
                     const pCode = String(scan?.pCode || '').trim();
+                    const warehouse = String(scan?.warehouse || 'انبار مرکزی').trim();
                     const rawBarcode = String(scan?.rawBarcode || '').trim();
                     const pieces = Number(scan?.pieces || 0);
-                    const r = dispatchReqs[pCode];
+                    const r = dispatchReqs[dispatchReqKey(pCode, warehouse)] || dispatchReqs[pCode];
                     if (!r || pieces <= 0) continue;
                     if (rawBarcode && !rawBarcode.startsWith('MANUAL-')) {
                         if (seenBarcodes.has(rawBarcode)) continue;
@@ -3771,7 +3740,7 @@ async function deleteReceipt(docId, event) {
                     r.scannedCartons += Number(scan.cartons || 0);
                     r.scannedLoose += Number(scan.loose || 0);
                     restored.push({
-                        pCode, batch: scan.batch || r.batch || 'نامشخص',
+                        pCode, warehouse, batch: scan.batch || r.batch || 'نامشخص',
                         rawBarcode: rawBarcode || `RESTORED-${Date.now()}-${restored.length}`,
                         pieces, cartons: Number(scan.cartons || 0), loose: Number(scan.loose || 0)
                     });
@@ -3812,13 +3781,16 @@ async function deleteReceipt(docId, event) {
                 dispatchReqs = {};
 
                 docs.forEach(item => {
-                    const key = String(item.pCode ?? '').trim();
-                    if(!key) return;
+                    const pCode = String(item.pCode ?? '').trim();
+                    const warehouse = String(item.warehouse || item.wh || docs[0]?.warehouse || 'انبار مرکزی').trim();
+                    if(!pCode) return;
+                    const key = `${pCode}||${warehouse}`;
                     if(!dispatchReqs[key]) {
                         dispatchReqs[key] = {
-                            pCode: key,
+                            key, pCode,
                             batch: item.batch || 'نامشخص',
-                            name: productsMap[key] || key,
+                            warehouse,
+                            name: productsMap[pCode] || pCode,
                             req: 0,
                             scanned: 0,
                             scannedCartons: 0,
@@ -3827,6 +3799,8 @@ async function deleteReceipt(docId, event) {
                     }
                     dispatchReqs[key].req += Number(item.totalPieces) || 0;
                 });
+                populateDispatchWarehousePicker();
+                const _picker = document.getElementById('dispatchWarehousePicker'); if (_picker) _picker.value = '__AUTO__';
 
                 restoreDispatchProgress(targetDocId);
 
@@ -3913,6 +3887,135 @@ function closeDispatchScanner() {
     dispatchErrorLocked = false;
 }
 
+        // اعتبارسنجی سریع بارکد: ابتدا از کاردکس/کش محلی پاسخ فوری می‌دهیم و تأیید D1 را در پس‌زمینه انجام می‌کنیم.
+        const dispatchPendingValidations = new Map();
+        let dispatchValidationSeq = 0;
+
+        function getLocalDispatchBatchInfo(pCode, batch, warehouse) {
+            const pc = String(pCode || '').trim();
+            const bt = String(batch || '').trim();
+            const wh = String(warehouse || 'انبار مرکزی').trim();
+            if (!pc || !bt || bt === 'نامشخص' || bt === 'در انتظار') return {found:false,balance:0,price:0,prodDate:'',expDate:''};
+
+            let balance = 0;
+            let found = false;
+            let price = 0, prodDate = '', expDate = '';
+            const rows = Array.isArray(historyLog) ? historyLog : [];
+
+            for (const row of rows) {
+                if (String(row?.pCode || '').trim() !== pc) continue;
+                if (String(row?.warehouse || 'انبار مرکزی').trim() !== wh) continue;
+                if (String(row?.batch || '').trim() !== bt) continue;
+                const qty = Math.max(0, Number(row?.totalPieces) || 0);
+                if (!qty) continue;
+
+                const inbound = row.type === 'ورود' || row.type === 'اول دوره' || (row.type === 'انتقال بین انبار' && String(row.movementType || '') === 'ورود');
+                const outbound = row.type === 'خروج' || (row.type === 'انتقال بین انبار' && String(row.movementType || '') === 'خروج');
+
+                if (inbound) {
+                    balance += qty;
+                    found = true;
+                    if (!price && Number(row.price) > 0) price = Number(row.price) || 0;
+                    if (!prodDate && row.prodDate) prodDate = String(row.prodDate);
+                    if (!expDate && row.expDate) expDate = String(row.expDate);
+                } else if (outbound) {
+                    const allocs = (typeof parseConsumedFrom === 'function') ? parseConsumedFrom(row.consumedFrom) : [];
+                    if (allocs.length) {
+                        for (const a of allocs) {
+                            const aid = typeof getConsumedAllocationLotId === 'function' ? getConsumedAllocationLotId(a) : (a?.lotDocId || a?.docId || '');
+                            if (!aid) continue;
+                            if (String(aid).startsWith('__BATCH__:')) {
+                                const bp = typeof parseBatchLotId === 'function' ? parseBatchLotId(aid) : null;
+                                if (bp && String(bp.pCode) === pc && String(bp.batch) === bt && String(bp.warehouse) === wh) {
+                                    balance -= Math.max(0, Number(a?.qty) || 0);
+                                }
+                            }
+                        }
+                    } else {
+                        balance -= qty;
+                    }
+                }
+            }
+
+            // اسکن‌های سریع و هنوز ذخیره‌نشده را نیز از موجودی لحظه‌ای کم می‌کنیم.
+            for (const scan of (Array.isArray(currentDispatchScans) ? currentDispatchScans : [])) {
+                if (String(scan?.pCode || '').trim() !== pc) continue;
+                if (String(scan?.warehouse || 'انبار مرکزی').trim() !== wh) continue;
+                if (String(scan?.batch || '').trim() !== bt) continue;
+                balance -= Math.max(0, Number(scan?.pieces) || 0);
+            }
+
+            return {found, balance:Math.max(0,balance), price, prodDate, expDate};
+        }
+
+        async function validateDispatchScanInBackground(scanRecord, pCode, batch, warehouse) {
+            const validationId = ++dispatchValidationSeq;
+            scanRecord.validationId = validationId;
+            scanRecord.serverValidated = false;
+            dispatchPendingValidations.set(validationId, scanRecord);
+            try {
+                const resp = await fetch(`${DB_URL}/api/validate-dispatch-batch?company=${encodeURIComponent(companyPrefix)}`, {
+                    method:'POST',
+                    headers:{'Content-Type':'application/json','Authorization': `Bearer ${sessionStorage.getItem('v20SessionToken') || ''}`},
+                    body:JSON.stringify({pCode,batch,warehouse,docId:currentDispatchDocId}),
+                    cache:'no-store'
+                });
+                let result = null;
+                try { result = await resp.json(); } catch(e) {}
+                if (!resp.ok || !result?.valid) {
+                    throw new Error(result?.message || `اعتبارسنجی D1 ناموفق بود (${resp.status})`);
+                }
+                scanRecord.serverValidated = true;
+                scanRecord.serverPrice = Number(result?.price) || 0;
+                scanRecord.serverProdDate = result?.prodDate || '';
+                scanRecord.serverExpDate = result?.expDate || '';
+                dispatchPendingValidations.delete(validationId);
+                return true;
+            } catch (err) {
+                dispatchPendingValidations.delete(validationId);
+                const idx = currentDispatchScans.indexOf(scanRecord);
+                const reqKey = dispatchReqKey(pCode, warehouse);
+                const req = dispatchReqs?.[reqKey];
+                if (idx >= 0) currentDispatchScans.splice(idx, 1);
+                if (req) {
+                    req.scanned = Math.max(0, Number(req.scanned || 0) - Number(scanRecord.pieces || 0));
+                    req.scannedCartons = Math.max(0, Number(req.scannedCartons || 0) - Number(scanRecord.cartons || 0));
+                    req.scannedLoose = Math.max(0, Number(req.scannedLoose || 0) - Number(scanRecord.loose || 0));
+                }
+                try { saveDispatchProgress(); } catch(e) {}
+                renderDispatchTable();
+                updateDispatchScanSummary();
+                updateLiveInfoDispatch(true, `❌ بچ ${batch} برای ${pCode} تأیید نشد.`);
+                showScanError(`بارکد سریع ثبت شد، اما تأیید نهایی D1 رد شد.\n\n${err?.message || 'بچ در انبار موجود نیست یا اتصال D1 برقرار نیست.'}`);
+                return false;
+            } finally {
+                scanRecord.validationPending = false;
+                if (dispatchPendingValidations.size === 0) {
+                    try { updateLiveInfoDispatch(false, '✅ همه اسکن‌های ثبت‌شده تأیید شده‌اند.'); } catch(e) {}
+                }
+            }
+        }
+
+        function dispatchReqKey(pCode, warehouse) {
+            return `${String(pCode || '').trim()}||${String(warehouse || 'انبار مرکزی').trim()}`;
+        }
+        function getDispatchCandidates(pCode) {
+            const pc = String(pCode || '').trim();
+            return Object.keys(dispatchReqs || {}).filter(k => String(dispatchReqs[k]?.pCode || '').trim() === pc && Number(dispatchReqs[k]?.scanned || 0) < Number(dispatchReqs[k]?.req || 0));
+        }
+        function populateDispatchWarehousePicker() {
+            const sel = document.getElementById('dispatchWarehousePicker');
+            if (!sel) return;
+            const prev = sel.value || '__AUTO__';
+            const warehouses = [];
+            Object.values(dispatchReqs || {}).forEach(r => {
+                const wh = String(r?.warehouse || 'انبار مرکزی').trim();
+                if (wh && !warehouses.includes(wh)) warehouses.push(wh);
+            });
+            sel.innerHTML = '<option value="__AUTO__">تشخیص خودکار از روی بچ</option>' + warehouses.map(wh => `<option value="${String(wh).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}">${String(wh).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</option>`).join('');
+            if (prev === '__AUTO__' || warehouses.includes(prev)) sel.value = prev; else sel.value = '__AUTO__';
+        }
+
         function renderDispatchTable() {
             let tbody = document.getElementById('dispatchTableBody');
             let html = '';
@@ -3931,8 +4034,9 @@ function closeDispatchScanner() {
                 // فقط کالاهایی که واقعاً خرده موردنیاز دارند، ردیف خرده نشان می‌دهند.
                 let looseText = reqLoose > 0 ? `<div style="margin-top:3px;font-size:11px;color:#b45309;font-weight:900;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:4px 6px;">🟠 خرده موردنیاز: ${reqLoose.toLocaleString('fa-IR')} عدد | خرده اسکن‌شده: ${scannedLoose.toLocaleString('fa-IR')} عدد | خرده باقی‌مانده: ${Math.max(0, reqLoose - scannedLoose).toLocaleString('fa-IR')} عدد</div>` : '';
                 html += `<tr style="${bg}">
-                    <td style="text-align:right; font-weight:bold; line-height:1.5; cursor:pointer;" onclick="showDispatchScannedBarcodes('${String(r.pCode).replace(/'/g, "\'")}')" title="برای مشاهده بارکدهای گرفته‌شده کلیک کنید">
+                    <td style="text-align:right; font-weight:bold; line-height:1.5; cursor:pointer;" onclick="showDispatchScannedBarcodes(decodeURIComponent('${encodeURIComponent(String(key))}'))" title="برای مشاهده بارکدهای گرفته‌شده کلیک کنید">
                         <span style="text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px;">${r.name}</span><br>
+                        <span style="font-size:10px;font-weight:900;color:#2563eb;">انبار: ${r.warehouse}</span><br>
                         <span style="font-size:10px; color:var(--warning); background:#fffbeb; padding:2px 4px; border-radius:4px; border:1px solid #fde68a;">بچ: ${r.batch}</span>
                         <span style="display:block;margin-top:3px;font-size:9px;color:#6d28d9;font-weight:900;">👆 مشاهده بارکدهای گرفته‌شده</span>
                         ${looseText}
@@ -3951,7 +4055,7 @@ function closeDispatchScanner() {
                     let units=parseInt(productsUnitsMap[r.pCode]) || 1;
                     let remainingPieces=Math.max(0,(parseInt(r.req)||0)-(parseInt(r.scanned)||0));
                     let remainingCartons=Math.floor(remainingPieces/units);
-                    if(remainingCartons > 0) manualSel.innerHTML += `<option value="${k}">${r.name} — ${r.pCode} | ${remainingCartons} کارتن</option>`;
+                    if(remainingCartons > 0) manualSel.innerHTML += `<option value="${k}">${r.name} — ${r.pCode} | ${r.warehouse} | ${remainingCartons} کارتن</option>`;
                 });
                 if(prev && dispatchReqs[prev]) manualSel.value=prev;
             }
@@ -3964,24 +4068,24 @@ function closeDispatchScanner() {
                     let units=parseInt(productsUnitsMap[r.pCode]) || 1;
                     let remainingPieces=Math.max(0,(parseInt(r.req)||0)-(parseInt(r.scanned)||0));
                     let remainingLoose=remainingPieces % units;
-                    if(remainingLoose > 0) looseSel.innerHTML += `<option value="${k}">${r.name} — ${r.pCode} | خرده باقی‌مانده: ${remainingLoose}</option>`;
+                    if(remainingLoose > 0) looseSel.innerHTML += `<option value="${k}">${r.name} — ${r.pCode} | ${r.warehouse} | خرده باقی‌مانده: ${remainingLoose}</option>`;
                 });
                 if(prevLoose && dispatchReqs[prevLoose]) looseSel.value=prevLoose;
             }
             document.getElementById('btnFinalizeDispatch').style.display = allDone ? 'block' : 'none';
         }
 
-        function showDispatchScannedBarcodes(pCode){
-            const key = String(pCode || '').trim();
+        function showDispatchScannedBarcodes(reqKey){
+            const key = String(reqKey || '').trim();
             const r = dispatchReqs && dispatchReqs[key];
             const modal = document.getElementById('dispatchScannedBarcodesModal');
             const body = document.getElementById('dispatchScannedBarcodesBody');
             const title = document.getElementById('dispatchScannedBarcodesTitle');
             if(!r || !modal || !body) return;
-            const scans = (Array.isArray(currentDispatchScans) ? currentDispatchScans : []).filter(x => String(x.pCode || '').trim() === key);
+            const scans = (Array.isArray(currentDispatchScans) ? currentDispatchScans : []).filter(x => dispatchReqKey(x.pCode, x.warehouse) === key);
             const real = scans.filter(x => String(x.rawBarcode || '').trim() && !String(x.rawBarcode).startsWith('MANUAL-'));
             const manual = scans.filter(x => String(x.rawBarcode || '').startsWith('MANUAL-'));
-            if(title) title.innerText = `📦 ${r.name} — بارکدهای گرفته‌شده`;
+            if(title) title.innerText = `📦 ${r.name} — انبار: ${r.warehouse} — بارکدهای گرفته‌شده`;
             let html = '';
             if(real.length){
                 html += `<div style="font-size:11px;font-weight:900;color:#5b21b6;margin-bottom:7px;">بارکدهای واقعی اسکن‌شده: ${real.length.toLocaleString('fa-IR')}</div>`;
@@ -4013,7 +4117,8 @@ function closeDispatchScanner() {
             const scan = currentDispatchScans[idx];
             if(!scan || String(scan.rawBarcode || '').startsWith('MANUAL-')) return;
             const pCode = String(scan.pCode || '').trim();
-            const r = dispatchReqs && dispatchReqs[pCode];
+            const reqKey = dispatchReqKey(pCode, scan.warehouse);
+            const r = dispatchReqs && dispatchReqs[reqKey];
             if(!r) return;
 
             const barcode = String(scan.rawBarcode || '').trim();
@@ -4031,7 +4136,7 @@ function closeDispatchScanner() {
             saveDispatchProgress();
             renderDispatchTable();
             updateDispatchScanSummary();
-            showDispatchScannedBarcodes(pCode);
+            showDispatchScannedBarcodes(reqKey);
             updateLiveInfoDispatch(false, `🗑 بارکد ${barcode} حذف شد؛ مقدار بارگیری این کالا اصلاح شد.`);
         }
 
@@ -4099,9 +4204,23 @@ function closeDispatchScanner() {
             el.value = value;
         }
 
+        // انتخاب کالای دستی روی موبایل: به محض انتخاب، فیلد تعداد خالی و فعال می‌شود.
+        function activateManualDispatchInput(selectId, inputId) {
+            const sel = document.getElementById(selectId);
+            const input = document.getElementById(inputId);
+            if (!sel || !input) return;
+            if (!sel.value) {
+                input.value = '';
+                return;
+            }
+            input.value = '';
+            try { input.focus({ preventScroll: true }); }
+            catch (e) { try { input.focus(); } catch (_) {} }
+        }
+
         let dispatchScanTimer = null;
         let dispatchLastProcessed = '';
-        function processDispatchHardwareInput(force=false) {
+        async function processDispatchHardwareInput(force=false) {
             // وقتی خطای بارکد باز است، اسکنر سخت‌افزاری کاملاً متوقف است تا OK زده شود.
             if (document.getElementById('scan-error-modal')) return false;
             const input = document.getElementById('dispatchBarcode');
@@ -4112,7 +4231,15 @@ function closeDispatchScanner() {
             if(!force && txt.length < 6) return;
             if(txt === dispatchLastProcessed) return;
             dispatchLastProcessed = txt;
-            const ok = processDispatchScan(txt);
+            let ok = false;
+            try {
+                ok = await processDispatchScan(txt);
+            } catch (err) {
+                console.error('Dispatch scan processing error:', err);
+                updateLiveInfoDispatch(true, '❌ خطای پردازش اسکن: ' + (err?.message || err));
+                showScanError('خطایی هنگام پردازش بارکد رخ داد.\n\n' + (err?.message || err));
+                ok = false;
+            }
             if(ok !== false) {
                 input.value='';
                 const loose=document.getElementById('dispatchQtyLoose'); if(loose) loose.value=0;
@@ -4156,7 +4283,7 @@ function closeDispatchScanner() {
             if(remainingLoose <= 0) { showScanError('برای این قلم خرده موردنیازی باقی نمانده است.'); return; }
             if(l !== remainingLoose) { showScanError(`مقدار خرده باید دقیقاً ${remainingLoose.toLocaleString('fa-IR')} عدد باشد.`); return; }
             r.scanned += l; r.scannedLoose = (r.scannedLoose||0) + l;
-            currentDispatchScans.push({pCode:r.pCode,batch:r.batch||'نامشخص',rawBarcode:raw,pieces:l,cartons:0,loose:l});
+            currentDispatchScans.push({pCode:r.pCode,warehouse:r.warehouse,batch:r.batch||'نامشخص',rawBarcode:raw,pieces:l,cartons:0,loose:l});
             saveDispatchProgress();
             looseInput.value = 0;
             document.getElementById('dispatchBarcode').value = '';
@@ -4192,9 +4319,10 @@ function closeDispatchScanner() {
             }
             r.scanned=(r.scanned||0)+qty;
             r.scannedLoose=(r.scannedLoose||0)+qty;
-            currentDispatchScans.push({pCode:r.pCode,batch:r.batch||'بدون لیبل',rawBarcode:'MANUAL-LOOSE',pieces:qty,cartons:0,loose:qty});
+            currentDispatchScans.push({pCode:r.pCode,warehouse:r.warehouse,batch:r.batch||'بدون لیبل',rawBarcode:'MANUAL-LOOSE',pieces:qty,cartons:0,loose:qty});
             saveDispatchProgress();
-            qtyInput.value=0;
+            qtyInput.value='';
+            qtyInput.focus();
             playBeep('success');
             updateLiveInfoDispatch(false,`✅ ${qty.toLocaleString('fa-IR')} خرده برای ${r.name} ثبت شد.`);
             renderDispatchTable();
@@ -4239,9 +4367,10 @@ function closeDispatchScanner() {
             }
             r.scanned=(r.scanned||0)+(qty*units);
             r.scannedCartons=(r.scannedCartons||0)+qty;
-            currentDispatchScans.push({pCode:r.pCode,batch:r.batch||'بدون لیبل',rawBarcode:'MANUAL-CARTON',pieces:qty*units,cartons:qty,loose:0});
+            currentDispatchScans.push({pCode:r.pCode,warehouse:r.warehouse,batch:r.batch||'بدون لیبل',rawBarcode:'MANUAL-CARTON',pieces:qty*units,cartons:qty,loose:0});
             saveDispatchProgress();
-            document.getElementById('dispatchQtyManualCarton').value=0;
+            document.getElementById('dispatchQtyManualCarton').value='';
+            document.getElementById('dispatchQtyManualCarton').focus();
             playBeep('success');
             updateLiveInfoDispatch(false, `✅ ${qty.toLocaleString('fa-IR')} کارتن بدون لیبل برای ${r.name} ثبت شد.`);
             renderDispatchTable();
@@ -4249,7 +4378,7 @@ function closeDispatchScanner() {
             document.getElementById('dispatchBarcode').focus();
         }
 
- function processDispatchScan(raw) {
+ async function processDispatchScan(raw) {
     // بعد از هر خطای اسکن، تا زمانی که کاربر OK را نزده هیچ ورودی جدیدی پذیرفته نمی‌شود.
     if (dispatchErrorLocked || document.getElementById('scan-error-modal')) return false;
     raw = String(raw ?? '').trim();
@@ -4297,16 +4426,71 @@ function closeDispatchScanner() {
     const batch = raw.startsWith('M-') ? 'نامشخص' : (raw.length >= 9 ? raw.substring(6, 9) : 'نامشخص');
     const normalizedPCode = String(pCode).trim();
 
-    const keys = Object.keys(dispatchReqs || {});
-    let key = keys.find(k => String(k).trim() === normalizedPCode &&
-        Number(dispatchReqs[k]?.scanned || 0) < Number(dispatchReqs[k]?.req || 0));
+    // اعتبارسنجی واقعی بچ در D1: اسکن فقط کنترل صحت بار فیزیکی است و هیچ موجودی را کم نمی‌کند.
+    // اگر یک کالا از چند انبار در همین فاکتور خروج دارد، انبار بر اساس بچ پیدا می‌شود؛
+    // اگر همان بچ در بیش از یک انبار معتبر باشد، کاربر باید انبار را از انتخاب بالای اسکن تعیین کند.
+    let key = null;
+    let validCandidateMeta = {};
+    if (!raw.startsWith('M-') && /^\d{6}\d{3}/.test(raw)) {
+        const candidateKeys = getDispatchCandidates(normalizedPCode);
+        if (!candidateKeys.length) {
+            updateLiveInfoDispatch(true, `❌ کالای ${normalizedPCode} در صف بارگیری موجود نیست.`);
+            showScanError(`این کالا در حواله فعلی وجود ندارد یا مقدار آن قبلاً کامل شده است.\nکد خوانده‌شده: ${normalizedPCode}`);
+            return false;
+        }
+        const picker = document.getElementById('dispatchWarehousePicker');
+        const selectedWarehouse = picker && picker.value && picker.value !== '__AUTO__' ? String(picker.value).trim() : null;
+        const scopedCandidates = selectedWarehouse ? candidateKeys.filter(k => String(dispatchReqs[k]?.warehouse || 'انبار مرکزی').trim() === selectedWarehouse) : candidateKeys;
+        if (!scopedCandidates.length) {
+            updateLiveInfoDispatch(true, `❌ کالا ${normalizedPCode} از انبار انتخاب‌شده در این حواله وجود ندارد.`);
+            showScanError(`برای این کالا در انبار «${selectedWarehouse}» قلمی در حواله وجود ندارد.`);
+            return false;
+        }
+        const validCandidates = [];
+        const validCandidateMeta = {};
 
-    if(!key) {
-        key = keys.find(k => String(k).trim() === raw &&
-            Number(dispatchReqs[k]?.scanned || 0) < Number(dispatchReqs[k]?.req || 0));
+        // ۱) تصمیم‌گیری فوری از روی کاردکس محلی؛ اسکنر منتظر شبکه نمی‌ماند.
+        for (const candidateKey of scopedCandidates) {
+            const warehouse = String(dispatchReqs[candidateKey]?.warehouse || 'انبار مرکزی').trim();
+            const local = getLocalDispatchBatchInfo(normalizedPCode, batch, warehouse);
+            if (local.found && local.balance > 0) {
+                validCandidates.push(candidateKey);
+                validCandidateMeta[candidateKey] = {
+                    price: Number(local.price) || 0,
+                    prodDate: local.prodDate || '',
+                    expDate: local.expDate || ''
+                };
+            }
+        }
+
+        if (validCandidates.length === 1) {
+            key = validCandidates[0];
+            if (picker && picker.value === '__AUTO__') picker.value = String(dispatchReqs[key].warehouse || 'انبار مرکزی');
+        } else if (validCandidates.length > 1) {
+            const names = validCandidates.map(k => String(dispatchReqs[k].warehouse || 'انبار مرکزی')).join('، ');
+            updateLiveInfoDispatch(true, '⚠️ بچ در چند انبار موجود است؛ انبار مبدأ را انتخاب کنید.');
+            showScanError(`بچ ${batch} برای این کالا در چند انبار موجود است: ${names}\n\nبرای ثبت دقیق، ابتدا «انبار مبدأ اسکن» را انتخاب کنید.`);
+            return false;
+        } else {
+            const whText = selectedWarehouse ? `انبار «${selectedWarehouse}»` : 'هیچ‌کدام از انبارهای این حواله';
+            updateLiveInfoDispatch(true, `❌ بچ ${batch} در ${whText} موجود نیست.`);
+            showScanError(`بچ ${batch} برای کالای ${normalizedPCode} در ${whText} موجود نیست یا موجودی آن تمام شده است.\n\nبارکد: ${raw}`);
+            return false;
+        }
+    }
+else {
+        // مسیرهای دستی/قدیمی: اگر فقط یک کاندید باز مانده باشد همان را انتخاب کن.
+        const candidates = getDispatchCandidates(normalizedPCode);
+        key = candidates.length === 1 ? candidates[0] : null;
     }
 
     if(!key) {
+        const rawKey = Object.keys(dispatchReqs || {}).find(k => String(k).trim() === raw && Number(dispatchReqs[k]?.scanned || 0) < Number(dispatchReqs[k]?.req || 0));
+        if(rawKey) key = rawKey;
+    }
+
+    if(!key) {
+        const keys = Object.keys(dispatchReqs || {});
         const anyPCode = keys.some(k => String(dispatchReqs[k]?.pCode ?? '').trim() === normalizedPCode);
         if(anyPCode) {
             updateLiveInfoDispatch(true, `⚠️ تعداد کالای ${productsMap[normalizedPCode] || normalizedPCode} قبلاً تکمیل شده!`);
@@ -4319,6 +4503,10 @@ function closeDispatchScanner() {
     }
 
     const r = dispatchReqs[key];
+    const selectedScanMeta = validCandidateMeta[key] || {};
+    const scanPrice = Number(selectedScanMeta.price) || 0;
+    const scanProdDate = selectedScanMeta.prodDate || '';
+    const scanExpDate = selectedScanMeta.expDate || '';
     const units = Math.max(1, parseInt(productsUnitsMap[String(r.pCode).trim()]) || 1);
     const scanned = Number(r.scanned || 0);
     const req = Number(r.req || 0);
@@ -4363,12 +4551,25 @@ function closeDispatchScanner() {
 
     currentDispatchScans.push({
         pCode: String(r.pCode).trim(),
+        warehouse: String(r.warehouse || 'انبار مرکزی').trim(),
         batch: batch,
         rawBarcode: raw,
         pieces: addedPieces,
         cartons: c,
-        loose: l > 0 ? l : 0
+        loose: l > 0 ? l : 0,
+        price: scanPrice,
+        prodDate: scanProdDate,
+        expDate: scanExpDate
     });
+    const __scanRecord = currentDispatchScans[currentDispatchScans.length - 1];
+    if (!raw.startsWith('M-') && /^\d{6}\d{3}/.test(raw)) {
+        __scanRecord.validationPending = true;
+        __scanRecord.serverValidated = false;
+        void validateDispatchScanInBackground(__scanRecord, normalizedPCode, batch, String(r.warehouse || 'انبار مرکزی').trim());
+    } else {
+        __scanRecord.validationPending = false;
+        __scanRecord.serverValidated = true;
+    }
 
     saveDispatchProgress();
 
@@ -4436,7 +4637,7 @@ function startDispatchCamera() {
             html5QrCode_dispatch.start(
                 cameraConstraint,
                 cameraConfig,
-                (txt) => {
+                async (txt) => {
                     if (dispatchErrorLocked || document.getElementById('scan-error-modal')) return;
 
                     const now = Date.now();
@@ -4452,7 +4653,7 @@ function startDispatchCamera() {
                     if (input) input.value = value;
 
                     try {
-                        const ok = processDispatchScan(value);
+                        const ok = await processDispatchScan(value);
                         if (ok === false) {
                             stopDispatchCamera();
                             isDispatchScanning = true;
@@ -4546,14 +4747,18 @@ function finalizeDispatchDoc() {
                 if (scanned !== req) problems.push(`${r?.name || key}: موردنیاز ${req} عدد، اسکن‌شده ${scanned} عدد`);
             });
             if (!Array.isArray(currentDispatchScans) || currentDispatchScans.length === 0) problems.push('هیچ اسکن ثبت‌شده‌ای برای این حواله وجود ندارد.');
+            if (dispatchPendingValidations.size > 0) problems.push('هنوز چند اسکن در حال تأیید نهایی D1 است؛ چند ثانیه صبر کنید.');
             if (problems.length) { alert('⛔ تأیید نهایی متوقف شد.\n\n' + problems.slice(0,10).join('\n')); renderDispatchTable(); return; }
 
             const nowStr = new Date().toLocaleString('fa-IR');
-            const scanMetaByPCode = {};
+            const scanMetaByReqKey = {};
             (currentDispatchScans || []).forEach(scan => {
-                const pCode = String(scan?.pCode ?? '').trim(); if (!pCode) return;
-                if (!scanMetaByPCode[pCode]) scanMetaByPCode[pCode] = { barcodes: [], batches: [] };
-                const meta = scanMetaByPCode[pCode];
+                const pCode = String(scan?.pCode ?? '').trim();
+                const warehouse = String(scan?.warehouse || 'انبار مرکزی').trim();
+                if (!pCode) return;
+                const reqKey = dispatchReqKey(pCode, warehouse);
+                if (!scanMetaByReqKey[reqKey]) scanMetaByReqKey[reqKey] = { barcodes: [], batches: [] };
+                const meta = scanMetaByReqKey[reqKey];
                 const barcode = String(scan?.rawBarcode ?? '').trim();
                 const batch = String(scan?.batch ?? '').trim();
                 if (barcode && !meta.barcodes.includes(barcode)) meta.barcodes.push(barcode);
@@ -4564,7 +4769,8 @@ function finalizeDispatchDoc() {
             // مقادیر quantity و warehouse سند اصلی هرگز بر اساس بارکد محاسبه یا جایگزین نمی‌شوند.
             const updatedItems = oldItems.map(item => {
                 const clone = { ...item };
-                const meta = scanMetaByPCode[String(item.pCode ?? '').trim()];
+                const reqKey = dispatchReqKey(item.pCode, item.warehouse || 'انبار مرکزی');
+                const meta = scanMetaByReqKey[reqKey];
                 clone.qtyCarton = Number(item.qtyCarton) || 0;
                 clone.qtyLoose = Number(item.qtyLoose) || 0;
                 clone.totalPieces = Number(item.totalPieces) || 0;
@@ -4575,6 +4781,48 @@ function finalizeDispatchDoc() {
                     if (meta.barcodes.length) clone.rawBarcode = meta.barcodes.join(' | ');
                     if (meta.batches.length === 1) clone.batch = meta.batches[0];
                     else if (meta.batches.length > 1) clone.batch = meta.batches.join(' | ');
+
+                    // خروج نهایی باید بر اساس بچ‌های واقعی اسکن‌شده ثبت شود؛ قیمت از D1 بر اساس همان بچ تعیین می‌شود.
+                    const allocations = [];
+                    const scansForItem = (currentDispatchScans || []).filter(x => dispatchReqKey(x?.pCode, x?.warehouse) === reqKey);
+                    for (const scan of scansForItem) {
+                        const bt = String(scan?.batch || '').trim();
+                        const qty = Math.max(0, Number(scan?.pieces) || 0);
+                        if (!bt || bt === 'نامشخص' || bt === 'در انتظار' || qty <= 0) continue;
+                        const lotId = buildBatchLotId(item.pCode, bt, item.warehouse || 'انبار مرکزی');
+                        const scanPrice = Number(scan?.price) || 0;
+                        const existingAlloc = allocations.find(a => String(a.lotDocId) === lotId);
+                        if (existingAlloc) {
+                            existingAlloc.qty += qty;
+                            if (!(Number(existingAlloc.price) > 0) && scanPrice > 0) existingAlloc.price = scanPrice;
+                            if (!existingAlloc.prodDate && scan?.prodDate) existingAlloc.prodDate = scan.prodDate;
+                            if (!existingAlloc.expDate && scan?.expDate) existingAlloc.expDate = scan.expDate;
+                        } else {
+                            allocations.push({
+                                lotDocId: lotId,
+                                docId: lotId,
+                                qty,
+                                price: scanPrice,
+                                batch: bt,
+                                sourceType: 'batch',
+                                prodDate: scan?.prodDate || '',
+                                expDate: scan?.expDate || ''
+                            });
+                        }
+                    }
+                    clone.consumedFrom = JSON.stringify(allocations);
+                    const pricedPieces = allocations.reduce((sum, a) => sum + (Number(a?.qty) || 0), 0);
+                    const pricedCost = allocations.reduce((sum, a) => sum + ((Number(a?.price) || 0) * (Number(a?.qty) || 0)), 0);
+                    clone.price = pricedPieces > 0 ? (pricedCost / pricedPieces) : 0;
+                    clone.totalCost = pricedCost;
+                    if (!clone.prodDate) {
+                        const firstD = scansForItem.find(x => x?.prodDate);
+                        if (firstD) clone.prodDate = firstD.prodDate;
+                    }
+                    if (!clone.expDate) {
+                        const firstE = scansForItem.find(x => x?.expDate);
+                        if (firstE) clone.expDate = firstE.expDate;
+                    }
                 }
                 return clone;
             });
@@ -5011,46 +5259,32 @@ function printFactor() {
 
 
    
-        function getRequirementAvailableQty(req) {
-            try {
-                const wh = req.wh || document.getElementById('outWarehouseSelect')?.value || '';
-                const lots = typeof getAvailableLots === 'function' ? getAvailableLots(req.pCode, wh, editingExitDocId) : [];
-                if(req.lotDocId) {
-                    const exact = lots.find(l => String(l?.lotDocId || '') === String(req.lotDocId));
-                    if(exact) return Math.max(0, Number(exact.remaining) || 0);
-                }
-                return Math.max(0, Number(getActualStock(req.pCode, wh, editingExitDocId)) || 0);
-            } catch(e) {
-                return Math.max(0, Number(req.lotRemaining) || 0);
-            }
-        }
-
-        function updateExitRequirementQty(idx, value) {
+        function updateRequirementQty(idx, rawValue) {
             const req = outRequirements[idx];
             if(!req) return;
-            const nextQty = Math.floor(Number(value) || 0);
-            if(nextQty <= 0) {
-                alert('❌ تعداد باید بیشتر از صفر باشد. برای حذف قلم از دکمه «حذف» استفاده کنید.');
+            const nextQty = Math.max(0, parseInt(rawValue, 10) || 0);
+            if(nextQty === 0) {
+                outRequirements.splice(idx, 1);
                 renderRequirements();
+                updateRequirementStockInfo();
                 return;
             }
-            const available = getRequirementAvailableQty(req);
-            if(available > 0 && nextQty > available) {
-                alert(`⛔ مقدار درخواستی بیشتر از موجودی قابل استفاده این قلم است.\n\nمقدار قابل سفارش: ${available.toLocaleString('fa-IR')} عدد`);
+            const wh = req.wh || document.getElementById('outWarehouseSelect').value || 'انبار مرکزی';
+            const available = Math.max(0, Number(getActualStock(req.pCode, wh, editingExitDocId)) || 0);
+            if(nextQty > available) {
+                alert(`⛔ مقدار ${productsMap[req.pCode] || req.pCode} در انبار «${wh}» بیشتر از موجودی قابل استفاده است.\nموجودی قابل استفاده: ${available.toLocaleString('fa-IR')} عدد`);
                 renderRequirements();
                 return;
             }
             req.reqPieces = nextQty;
-            req.lotRemaining = available || req.lotRemaining || 0;
+            req.scannedPieces = 0;
             renderRequirements();
             updateRequirementStockInfo();
         }
 
-        function removeExitRequirement(idx) {
-            if(idx < 0 || idx >= outRequirements.length) return;
-            const req = outRequirements[idx];
-            if(!confirm(`قلم «${req?.name || 'کالا'}» از سفارش‌برداری حذف شود؟`)) return;
-            outRequirements.splice(idx,1);
+        function removeRequirement(idx) {
+            if(!outRequirements[idx]) return;
+            outRequirements.splice(idx, 1);
             renderRequirements();
             updateRequirementStockInfo();
         }
@@ -5061,38 +5295,27 @@ function printFactor() {
             if(!outRequirements.length){container.innerHTML='';if(totalDiv)totalDiv.style.display='none';return;}
             let tC=0,tL=0,tP=0,tW=0;
             container.innerHTML=outRequirements.map((req,idx)=>{
-                const units = Math.max(1, Number(req.uPerCarton) || 1);
-                const qty = Math.max(0, Number(req.reqPieces) || 0);
-                let c=Math.floor(qty/units),l=qty%units;
-                tC+=c;tL+=l;tP+=qty;tW+=getWeight(req.pCode,qty);
-                const currentWh = req.wh || document.getElementById('outWarehouseSelect')?.value || '';
-                const rowStock = Math.max(0, Number(getRequirementAvailableQty(req)) || 0);
-                const priceHtml = req.price ? `<div style="margin-top:3px;font-size:11px;font-weight:900;color:var(--success);">💰 قیمت انتخابی: ${Number(req.price).toLocaleString('fa-IR')} ریال</div>` : '';
-                return `<div class="req-item" style="align-items:stretch;gap:10px;">
+                let c=Math.floor(req.reqPieces/req.uPerCarton),l=req.reqPieces%req.uPerCarton;tC+=c;tL+=l;tP+=req.reqPieces;tW+=getWeight(req.pCode,req.reqPieces);
+                const wh = req.wh || document.getElementById('outWarehouseSelect').value || 'انبار مرکزی';
+                const rowStock = Math.max(0, Number(getActualStock(req.pCode, wh, editingExitDocId)) || 0);
+                const isEdit = Boolean(editingExitDocId);
+                return `<div class="req-item" style="align-items:flex-start;gap:10px;">
                     <div style="flex:1;min-width:0;">
-                        <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap;">
-                            <b>${req.name}</b>
-                            <span style="font-size:10px;color:var(--text-muted);font-weight:900;">کد: ${req.pCode}</span>
+                        <b>${req.name}</b><br>
+                        <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:6px;">
+                            <span style="font-size:10px;font-weight:900;color:var(--text-muted);">تعداد خروج:</span>
+                            <input type="number" min="1" value="${Number(req.reqPieces)||0}" style="width:110px;min-height:32px;padding:5px 7px;border:1px solid var(--border);border-radius:7px;font-weight:900;text-align:center;" onchange="updateRequirementQty(${idx}, this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();updateRequirementQty(${idx},this.value);this.blur();}">
+                            <span class="qty-secondary">${getPersianQtyStr(c,l)} | ${req.reqPieces.toLocaleString('fa-IR')} عدد</span>
                         </div>
-                        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:7px;">
-                            <span style="font-size:11px;font-weight:900;color:var(--dark);">تعداد کل:</span>
-                            <input type="number" min="1" step="1" value="${qty}" style="width:110px;min-width:110px;margin:0;padding:7px 8px;font-weight:900;text-align:center;border:2px solid #93c5fd;background:#eff6ff;" onchange="updateExitRequirementQty(${idx}, this.value)">
-                            <span class="qty-secondary">عدد</span>
-                            <span class="qty-secondary">| ${getPersianQtyStr(c,l)}</span>
-                            <span class="qty-weight">${formatWeight(getWeight(req.pCode,qty))}</span>
-                        </div>
-                        ${priceHtml}
-                        <div style="margin-top:6px;"><span style="font-size:10px;font-weight:900;">انبار مبدأ: </span><select class="item-wh-select" onchange="const old=outRequirements[${idx}].wh; outRequirements[${idx}].wh=this.value; if(getRequirementAvailableQty(outRequirements[${idx}])<outRequirements[${idx}].reqPieces){alert('⛔ موجودی این کالا در انبار انتخابی کافی نیست.'); outRequirements[${idx}].wh=old||document.getElementById('outWarehouseSelect').value;} renderRequirements(); updateRequirementStockInfo();">${warehouseOptions(currentWh)}</select></div>
-                        <div style="margin-top:4px;font-size:11px;font-weight:900;color:${rowStock > 0 ? 'var(--success)' : 'var(--danger)'};">📦 موجودی قابل سفارش: ${rowStock.toLocaleString('fa-IR')} عدد</div>
-                        ${req.scannedPieces ? `<span style="font-size:11px;color:var(--text-muted);">اسکن قبلی: <b style="color:var(--danger);">${req.scannedPieces}</b> عدد</span>` : ''}
+                        <span class="qty-weight">وزن: ${formatWeight(getWeight(req.pCode,req.reqPieces))}</span>
+                        <div style="margin-top:6px;"><span style="font-size:10px;font-weight:900;">انبار مبدأ: </span><select class="item-wh-select" onchange="const old=outRequirements[${idx}].wh; const next=this.value; const available=getActualStock(outRequirements[${idx}].pCode,next,editingExitDocId); if(available<outRequirements[${idx}].reqPieces){alert('⛔ موجودی این کالا در انبار انتخابی کافی نیست.'); this.value=old;} else {outRequirements[${idx}].wh=next;} renderRequirements(); updateRequirementStockInfo();">${warehouseOptions(wh)}</select></div>
+                        <div style="margin-top:4px;font-size:11px;font-weight:900;color:${rowStock >= req.reqPieces ? 'var(--success)' : 'var(--danger)'};">📦 موجودی قابل استفاده: ${rowStock.toLocaleString('fa-IR')} عدد</div>
+                        ${isEdit ? '<div style="margin-top:3px;font-size:10px;color:var(--primary);font-weight:900;">✏️ این قلم از سند قبلی برای ویرایش آورده شده است.</div>' : ''}
                     </div>
-                    <button type="button" style="width:auto;min-width:64px;align-self:center;padding:7px 9px;font-size:11px;background:var(--danger);color:#fff;" onclick="removeExitRequirement(${idx})">🗑 حذف</button>
+                    <button type="button" style="width:auto;padding:6px 10px;font-size:11px;background:var(--danger);color:#fff;white-space:nowrap;" onclick="removeRequirement(${idx})">🗑 حذف</button>
                 </div>`;
             }).join('');
-            if(totalDiv){
-                totalDiv.style.display='block';
-                totalDiv.innerHTML=`<span class="qty-primary">جمع: ${tC} کارتن</span> | <span class="qty-secondary">${tL} عدد خرد</span> | <span class="qty-secondary">کل: ${tP} عدد</span> <span class="qty-weight">| وزن: ${tW.toFixed(2)} kg</span>`;
-            }
+            if(totalDiv){ totalDiv.style.display='block';totalDiv.innerHTML=`<span class="qty-primary">جمع: ${tC} کارتن</span> | <span class="qty-secondary">${tL} عدد خرد</span> | <span class="qty-secondary">کل: ${tP} عدد</span> <span class="qty-weight">| وزن: ${tW.toFixed(2)} kg</span>`; }
         }
 
         function toggleExitScanMode() {
@@ -5216,7 +5439,9 @@ function stopScanner() {
                 if(isAuto && qtyC === 0 && qtyL === 0 && totalInput === 0) qtyC = 1; 
                 if(qtyC === 0 && qtyL === 0) { if(!isAuto) alert("هیچ تعدادی وارد نشده است."); return false; } 
                 
-                let batch = rawBarcode.length >= 9 && !rawBarcode.startsWith('M-') ? rawBarcode.substring(6, 9) : "نامشخص";
+                let batch = String(document.getElementById('inBatch').value || '').trim();
+                if (batch && !/^\d{3}$/.test(batch)) { if(!isAuto) alert("❌ شماره بچ باید دقیقاً ۳ رقم باشد؛ مثلاً 003."); return false; }
+                if (!batch) batch = "نامشخص";
                 let totalPieces = (qtyC * finalUnits) + qtyL; 
                 
                 let price = parseNumericInputValue(document.getElementById('inPrice').value);
@@ -5232,7 +5457,7 @@ function stopScanner() {
                     saveData(); 
                 }
                 
-                document.getElementById('inBarcode').value = ''; document.getElementById('inName').value = ''; document.getElementById('inWeight').value = ''; document.getElementById('inUnitsPerCarton').value = ''; document.getElementById('inCartonQty').value = '1'; document.getElementById('inLooseQty').value = '0'; document.getElementById('inTotalPiecesOnly').value = ''; document.getElementById('inPrice').value = ''; document.getElementById('inProdDate').value = ''; document.getElementById('inExpDate').value = '';
+                document.getElementById('inBarcode').value = ''; document.getElementById('inName').value = ''; document.getElementById('inWeight').value = ''; document.getElementById('inUnitsPerCarton').value = ''; document.getElementById('inCartonQty').value = '1'; document.getElementById('inLooseQty').value = '0'; document.getElementById('inTotalPiecesOnly').value = ''; document.getElementById('inBatch').value = ''; document.getElementById('inPrice').value = ''; document.getElementById('inProdDate').value = ''; document.getElementById('inExpDate').value = '';
                 renderDrafts(); 
                 updateLiveInfo('in', false, `✅ ${finalName} به لیست اضافه شد`);
                 playBeep('success');
@@ -5705,7 +5930,7 @@ if(companyPrefix) {
                                 ${lot.expDate ? `<br><span style="font-size:10px; color:#b45309;">انقضا: ${lot.expDate}</span>` : ''}
                             </td>
                             <td style="font-weight:bold; color:var(--success);">💰 ${lot.price > 0 ? lot.price.toLocaleString('fa-IR') + ' ریال' : 'بدون قیمت ثبت شده'}</td>
-                            <td dir="rtl" style="font-size:12px; font-weight:bold;">${lot.qty.toLocaleString('fa-IR')} عدد <span style="color:var(--text-muted); font-weight:normal;">(${lotC} کارتن و ${lotL} خرد)</span></td>
+                            <td dir="rtl" style="font-size:12px; font-weight:bold;">موجودی فعلی: ${lot.qty.toLocaleString('fa-IR')} عدد <span style="color:var(--text-muted); font-weight:normal;">(${lotC} کارتن و ${lotL} خرد)</span></td>
                         </tr>
                     `;
                 }
@@ -6972,6 +7197,29 @@ function isUnpricedLotId(lotDocId) {
 function buildUnpricedLotId(pCode, wh) {
     return `__UNPRICED__:${String(pCode)}:${String(wh || 'انبار مرکزی')}`;
 }
+function buildBatchLotId(pCode, batch, wh) {
+    return `__BATCH__:${encodeURIComponent(String(pCode || ''))}:${encodeURIComponent(String(batch || ''))}:${encodeURIComponent(String(wh || 'انبار مرکزی'))}`;
+}
+
+function parseBatchLotId(lotId) {
+    const raw = String(lotId || '');
+    if (!raw.startsWith('__BATCH__:')) return null;
+    const parts = raw.slice('__BATCH__:'.length).split(':');
+    if (parts.length < 3) return null;
+    try {
+        return {
+            pCode: decodeURIComponent(parts[0]),
+            batch: decodeURIComponent(parts[1]),
+            warehouse: decodeURIComponent(parts.slice(2).join(':'))
+        };
+    } catch (e) {
+        return null;
+    }
+}
+
+function isBatchLotId(lotId) {
+    return String(lotId || '').startsWith('__BATCH__:');
+}
 
 // ===== تکمیل مشخصات موجودی بدون قیمت =====
 function openUnpricedReclassModal() {
@@ -7266,6 +7514,41 @@ function getAvailableLots(pCode, wh, excludeDocId = null) {
             const lotId = getConsumedAllocationLotId(allocation);
             if (lotId && isUnpricedLotId(lotId)) continue;
 
+            if (lotId && isBatchLotId(lotId)) {
+                // بارگیری نهایی با lot نوع __BATCH__ ذخیره می‌شود.
+                // مقدار باید از همان بچِ همان انبار کم شود، نه اینکه مقدار اولیه ورود دوباره نمایش داده شود.
+                const batchInfo = parseBatchLotId(lotId);
+                if (batchInfo) {
+                    const allocationPrice = Number(allocation?.price) || 0;
+                    const allocationProd = String(allocation?.prodDate || '');
+                    const allocationExp = String(allocation?.expDate || '');
+                    let candidates = pricedLots.filter(x =>
+                        String(x.batch || '') === String(batchInfo.batch || '')
+                    );
+                    if (allocationPrice > 0) {
+                        const byPrice = candidates.filter(x => Math.abs((Number(x.price) || 0) - allocationPrice) < 0.000001);
+                        if (byPrice.length) candidates = byPrice;
+                    }
+                    if (allocationProd) {
+                        const byProd = candidates.filter(x => String(x.prodDate || '') === allocationProd);
+                        if (byProd.length) candidates = byProd;
+                    }
+                    if (allocationExp) {
+                        const byExp = candidates.filter(x => String(x.expDate || '') === allocationExp);
+                        if (byExp.length) candidates = byExp;
+                    }
+                    let remainingToDeduct = qty;
+                    for (const lot of candidates) {
+                        if (remainingToDeduct <= 0) break;
+                        if (lot.remaining <= 0) continue;
+                        const take = Math.min(lot.remaining, remainingToDeduct);
+                        lot.remaining -= take;
+                        remainingToDeduct -= take;
+                    }
+                }
+                continue;
+            }
+
             if (lotId) {
                 let lot = lotById.get(String(lotId));
                 // سازگاری با خروج‌های قدیمی که فقط docId را ذخیره کرده‌اند.
@@ -7336,17 +7619,7 @@ function updateRequirementStockInfo() {
         `<span style="font-size:12px;"> | ${cartons.toLocaleString('fa-IR')} کارتن + ${loose.toLocaleString('fa-IR')} خرده</span><br>` +
         `<span style="font-size:11px;">درخواست ثبت‌شده: ${requested.toLocaleString('fa-IR')} عدد | قابل سفارش: <b>${free.toLocaleString('fa-IR')} عدد</b></span>`;
 
-    let lots = getAvailableLots(pCode, wh, editingExitDocId);
-    if (lots.length) {
-        box.innerHTML += `<div style="margin-top:10px;text-align:right;border-top:1px dashed #cbd5e1;padding-top:8px;">
-            <div style="font-size:11px;font-weight:900;margin-bottom:6px;color:var(--dark);">💰 انتخاب قیمت/محموله (اختیاری) — اگر انتخاب نکنید، خروج فقط از «بدون قیمت» کسر می‌شود:</div>
-            ${lots.map((l, i) => `
-                <label style="display:flex;align-items:center;gap:8px;padding:7px 9px;margin-bottom:4px;border:1.5px solid #cbd5e1;border-radius:6px;background:#fff;cursor:pointer;font-size:11px;color:var(--dark);">
-                    <input type="radio" name="reqLotChoice" value="${l.lotDocId}" data-price="${l.price}" data-proddate="${l.prodDate}" data-expdate="${l.expDate}" data-remaining="${l.remaining}" style="width:auto;margin:0;">
-                    <span style="flex:1;">💰 <b>${l.price > 0 ? l.price.toLocaleString('fa-IR') + ' ریال' : 'بدون قیمت ثبت شده'}</b> &nbsp;\vert{}&nbsp; موجودی: <b>${l.remaining.toLocaleString('fa-IR')} عدد</b>${l.batch && l.batch!=='نامشخص' ? ' &nbsp;\vert{}&nbsp; بچ: '+l.batch : ''}${l.expDate ? ' &nbsp;|&nbsp; ⏳ انقضا: '+l.expDate : ''}</span>
-                </label>`).join('')}
-        </div>`;
-    }
+    box.innerHTML += `<div style="margin-top:10px;padding:8px 10px;border-top:1px dashed #cbd5e1;color:#475569;font-size:11px;font-weight:800;line-height:1.7;">🏷️ شماره بچ در سفارش‌برداری انتخاب نمی‌شود. هنگام بارگیری، بچ از بارکد واقعی کارتن استخراج و فقط در صورت وجود همان بچ در همین انبار پذیرفته می‌شود.</div>`;
 }
 
 // addRequirement is defined once below as window.addRequirement.\n\n// ===== ۳. فرم اسکنر بارکد خروج =====
@@ -7366,17 +7639,9 @@ function parseLiveBarcode(mode) {
             if(mode === 'out') {
                 let wh = document.getElementById('outWarehouseSelect').value;
                 let panel = document.getElementById('outLotsPanel');
-                if (panel && wh) {
-                    let lots = getAvailableLots(pCode, wh, editingExitDocId);
-                    if (lots.length) {
-                        panel.style.display = 'block';
-                        panel.innerHTML = `<div style="font-size:11px;font-weight:900;margin-bottom:6px;">💰 قیمت/محموله خروج را انتخاب کنید (اختیاری؛ بدون انتخاب = کسر از «بدون قیمت»):</div>` +
-                            lots.map((l, i) => `
-                                <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;margin-bottom:4px;border:1.5px solid #cbd5e1;border-radius:6px;background:#fff;cursor:pointer;font-size:11px;">
-                                    <input type="radio" name="outLotChoice" value="${l.lotDocId}" data-price="${l.price}" data-proddate="${l.prodDate}" data-expdate="${l.expDate}" data-remaining="${l.remaining}" style="width:auto;margin:0;">
-                                    <span style="flex:1;">💰 <b>${l.price > 0 ? l.price.toLocaleString('fa-IR') + ' ریال' : 'بدون قیمت ثبت شده'}</b> | موجودی: <b>${l.remaining.toLocaleString('fa-IR')} عدد</b>${l.batch && l.batch!=='نامشخص' ? ' | بچ: '+l.batch : ''}${l.expDate ? ' | ⏳ انقضا: '+l.expDate : ''}</span>
-                                </label>`).join('');
-                    } else { panel.style.display = 'none'; panel.innerHTML = ''; }
+                if (panel) {
+                    panel.style.display = 'block';
+                    panel.innerHTML = `<div style="padding:7px 9px;border:1px dashed #cbd5e1;border-radius:7px;background:#f8fafc;font-size:11px;font-weight:800;color:#475569;">🏷️ بچ انتخاب نمی‌شود؛ بچ <b>${batch}</b> از بارکد خوانده می‌شود و هنگام ثبت خروج در دیتابیس بررسی می‌شود.</div>`;
                 }
             }
         } else {
@@ -7429,22 +7694,8 @@ function addToExitDraft(isAuto = false) {
             alert(`⛔ اجازه خروج داده نشد!\nموجودی قابل خروج: ${availableStock} عدد\nمقدار درخواستی: ${addedPieces} عدد`); return false;
         }
         
-        let selectedOutLotEl = document.querySelector('input[name="outLotChoice"]:checked');
-        let selectedOutLotDocId = null, selectedOutPrice = 0, selectedOutProdDate = '', selectedOutExpDate = '', selectedOutLotRemaining = 0;
-        
-        if (selectedOutLotEl) {
-            selectedOutLotDocId = selectedOutLotEl.value;
-            selectedOutPrice = Number(selectedOutLotEl.getAttribute('data-price')) || 0;
-            selectedOutProdDate = selectedOutLotEl.getAttribute('data-proddate') || '';
-            selectedOutExpDate = selectedOutLotEl.getAttribute('data-expdate') || '';
-            selectedOutLotRemaining = Number(selectedOutLotEl.getAttribute('data-remaining')) || 0;
-        } else {
-            const availableLotsNow = getAvailableLots(pCode, wh, editingExitDocId);
-            const unpricedLotNow = availableLotsNow.find(l => isUnpricedLotId(l.lotDocId));
-            selectedOutLotRemaining = Number(unpricedLotNow?.remaining) || 0;
-        }
-
-        draftExitItems.push({ raw: rawBarcode, pCode, batch, qtyCarton: qtyC, qtyLoose: qtyL, totalPieces: addedPieces, name: productsMap[pCode], wh, units, lotDocId: selectedOutLotDocId, price: selectedOutPrice, lotRemaining: selectedOutLotRemaining, prodDate: selectedOutProdDate, expDate: selectedOutExpDate });
+        // هیچ بچ/قیمتی از کاربر گرفته نمی‌شود؛ بچ از همین بارکد در سند خروج ثبت می‌شود.
+        draftExitItems.push({ raw: rawBarcode, pCode, batch, qtyCarton: qtyC, qtyLoose: qtyL, totalPieces: addedPieces, name: productsMap[pCode], wh, units, lotDocId: null, price: 0, lotRemaining: 0, prodDate: '', expDate: '' });
         
         if (outRequirements.length > 0) { 
             let req = outRequirements.find(r => r.pCode === pCode);
@@ -7513,37 +7764,40 @@ function viewSystemFactor(docId) {
             if (isExitDoc) {
                 try {
                     parsedConsumed = typeof item.consumedFrom === 'string' ? JSON.parse(item.consumedFrom) : item.consumedFrom;
+
                     if (Array.isArray(parsedConsumed) && parsedConsumed.length > 0) {
-                        const firstAllocation = parsedConsumed[0] || {};
-                        const sourceType = String(firstAllocation.sourceType || '').toLowerCase();
-                        const sourceId = String(firstAllocation.lotDocId || firstAllocation.docId || '');
-                        isExplicitlyUnpriced = sourceType === 'unpriced' || sourceId.startsWith('__UNPRICED__:') || Number(firstAllocation.price) === 0;
+                        // قیمت و تاریخ باید برای همین ردیف، از allocationهای همان ردیف خوانده شوند.
+                        // این موضوع مخصوصاً وقتی یک کالا از دو انبار با قیمت متفاوت خارج شده مهم است.
+                        const rowAllocations = parsedConsumed.filter(a => a && typeof a === 'object');
 
-                        // اگر قیمت روی خود خروج صفر است ولی allocation قیمت‌دار دارد، همان قیمت ثبت‌شده را نمایش بده.
-                        if (unitPrice === 0 && !isExplicitlyUnpriced && Number(firstAllocation.price) > 0) {
-                            unitPrice = Number(firstAllocation.price);
-                        }
+                        const priced = rowAllocations.filter(a => Number(a.price) > 0);
+                        const unpriced = rowAllocations.some(a => {
+                            const sid = String(a.lotDocId || a.docId || '');
+                            return String(a.sourceType || '').toLowerCase() === 'unpriced'
+                                || sid.startsWith('__UNPRICED__:');
+                        });
 
-                        // بازیابی قیمت و تاریخ فقط برای allocation قیمت‌دارِ قدیمی؛
-                        // خروج بدون قیمت هرگز نباید از یک ورود دیگر قیمت بگیرد.
-                        if (unitPrice === 0 && !isExplicitlyUnpriced && firstAllocation.docId) {
-                            const originalEntry = historyLog.find(l =>
-                                String(l.docId) === String(firstAllocation.docId) &&
-                                String(l.pCode) === String(pCode) &&
-                                (l.type === 'ورود' || l.type === 'اول دوره') &&
-                                Number(l.price) > 0
-                            );
-                            if (originalEntry) {
-                                unitPrice = Number(originalEntry.price) || 0;
-                                if(!item.prodDate) item.prodDate = originalEntry.prodDate;
-                                if(!item.expDate) item.expDate = originalEntry.expDate;
-                            }
+                        isExplicitlyUnpriced = priced.length === 0 && unpriced;
+
+                        if (priced.length > 0) {
+                            const totalAllocQty = priced.reduce((s, a) => s + Math.max(0, Number(a.qty) || 0), 0);
+                            const totalAllocValue = priced.reduce((s, a) =>
+                                s + ((Number(a.price) || 0) * Math.max(0, Number(a.qty) || 0)), 0);
+                            if (totalAllocQty > 0) unitPrice = totalAllocValue / totalAllocQty;
+
+                            const firstPriced = priced[0];
+                            if (!item.prodDate && firstPriced.prodDate) item.prodDate = firstPriced.prodDate;
+                            if (!item.expDate && firstPriced.expDate) item.expDate = firstPriced.expDate;
+                        } else if (isExplicitlyUnpriced) {
+                            unitPrice = 0;
                         }
                     }
-                } catch(e) {}
+                } catch(e) {
+                    // در سندهای قدیمی، همان price خود ردیف استفاده می‌شود.
+                }
 
-                // برای خروج بدون قیمت، عمداً هیچ fallback قیمتی نداریم.
-                // بنابراین latestLog دیگر هرگز قیمت را به آیتم بدون قیمت تزریق نمی‌کند.
+                // اگر allocation اطلاعات قیمت نداشت، فقط برای اسناد قدیمی از قیمت خود ردیف استفاده می‌کنیم.
+                // هیچ قیمت ردیف دیگری وارد این ردیف نمی‌شود.
             }
 
             const lineTotal = unitPrice * tp;
@@ -7598,7 +7852,11 @@ function viewSystemFactor(docId) {
                 </div>
                 <div style="display:flex; justify-content:space-between; background:var(--bg-color); padding:12px; border-radius:8px; margin-bottom: 15px; font-size:12px; border:1px solid var(--border);">
                     <div><b>فاکتور مرجع:</b> ${master.officeDoc || 'بدون شماره'} <br> <b style="margin-top:4px; display:inline-block;">کاربر ثبت:</b> ${master.operator || 'سیستم'}</div>
-                    <div style="text-align:left;"><b>${senderOrReceiverTitle}:</b> ${master.ref || '—'} <br> <b style="margin-top:4px; display:inline-block;">انبار:</b> ${master.warehouse || '—'}</div>
+                    <div style="text-align:left;">
+                        <b>${senderOrReceiverTitle}:</b> ${master.ref || '—'} <br>
+                        <b style="margin-top:4px; display:inline-block;">انبار:</b>
+                        ${(Array.from(new Set(docs.map(x => String(x?.warehouse || master.warehouse || '—').trim()).filter(Boolean))).join('، ') || '—')}
+                    </div>
                 </div>
                 <table style="width: 100%; border-collapse: collapse; font-size:13px; margin-bottom:15px; background:#fff;">
                     <thead>
@@ -7763,7 +8021,7 @@ function viewSystemFactor(docId) {
                     if (cloudData.productsUnitsMap) productsUnitsMap = cloudData.productsUnitsMap;
                     if (cloudData.productsWeightMap) productsWeightMap = cloudData.productsWeightMap;
                     if (cloudData.sysSettings) sysSettings = cloudData.sysSettings;
-                    if (Array.isArray(cloudData.sysUsers)) sysUsers = cloudData.sysUsers;
+                    // کاربران ورود فقط محلی هستند؛ sysUsers را از D1 جایگزین نمی‌کنیم.
                     if (Array.isArray(cloudData.inventoryReclassifications)) inventoryReclassifications = cloudData.inventoryReclassifications.filter(Boolean);
                     
                     if (Array.isArray(cloudData.historyLog)) {
@@ -7805,7 +8063,7 @@ if(typeof updateTodayCounter === 'function') updateTodayCounter();
         fetch(`${DB_URL}/api/save-master?company=${companyPrefix}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ productsMap, productsUnitsMap, productsWeightMap, sysUsers, sysSettings })
+            body: JSON.stringify({ productsMap, productsUnitsMap, productsWeightMap, sysSettings })
         }).catch(e => console.warn("خطا در همگام‌سازی تنظیمات:", e));
     };
 
@@ -7967,7 +8225,7 @@ if(typeof updateTodayCounter === 'function') updateTodayCounter();
             if(typeof updateTodayCounter === 'function') updateTodayCounter();
 
             draftEntryItems = []; editingEntryDocId = null; 
-            ['inOfficeDoc','inBarcode','inName','inWeight','inUnitsPerCarton','inCartonQty','inLooseQty','inTotalPiecesOnly','inSender','inPrice','inProdDate','inExpDate'].forEach(id=>{const el=document.getElementById(id); if(el) el.value = (id==='inCartonQty' ? '1' : (id==='inLooseQty' ? '0' : ''));});
+            ['inOfficeDoc','inBarcode','inName','inWeight','inUnitsPerCarton','inCartonQty','inLooseQty','inTotalPiecesOnly','inSender','inBatch','inPrice','inProdDate','inExpDate'].forEach(id=>{const el=document.getElementById(id); if(el) el.value = (id==='inCartonQty' ? '1' : (id==='inLooseQty' ? '0' : ''));});
             const inInfo=document.getElementById('inBarcodeInfo'); if(inInfo) inInfo.innerText='';
             renderDrafts();
             
@@ -7981,37 +8239,32 @@ if(typeof updateTodayCounter === 'function') updateTodayCounter();
 // --- محاسبه خروج فقط بر اساس انتخاب صریح کاربر ---
 // انتخاب قیمت/محموله = فقط همان lot.
 // بدون انتخاب = فقط سهم «بدون قیمت».
+function computeBatchExitAllocation(pCode, warehouse, batch, qtyNeeded) {
+    qtyNeeded = Math.max(0, Number(qtyNeeded) || 0);
+    const bt = String(batch || '').trim();
+    if (!bt || bt === 'نامشخص' || bt === 'در انتظار' || qtyNeeded <= 0) {
+        return { consumedFrom: [], totalCost: 0, avgPrice: 0 };
+    }
+    const lotId = buildBatchLotId(pCode, bt, warehouse);
+    return {
+        consumedFrom: [{ lotDocId: lotId, docId: lotId, qty: qtyNeeded, price: 0, batch: bt, sourceType: 'batch' }],
+        totalCost: 0, avgPrice: 0
+    };
+}
+
 function computeSelectedExitCost(pCode, warehouse, qtyNeeded, excludeDocId, localReserved, selectedLotDocId, selectedPrice, selectedLotRemaining) {
+    // سازگاری اسناد قدیمی؛ خروج‌های جدید از batch allocation استفاده می‌کنند.
     localReserved = localReserved || {};
     qtyNeeded = Math.max(0, Number(qtyNeeded) || 0);
     if (qtyNeeded <= 0) return { consumedFrom: [], totalCost: 0, avgPrice: 0 };
-
     const chosenId = selectedLotDocId ? String(selectedLotDocId) : buildUnpricedLotId(pCode, warehouse);
     const remainingAtSelection = Math.max(0, Number(selectedLotRemaining) || 0);
     const reserved = Number(localReserved[chosenId]) || 0;
     const available = Math.max(0, remainingAtSelection - reserved);
-
-    if (available < qtyNeeded) {
-        const label = Number(selectedPrice) > 0
-            ? `قیمت ${Number(selectedPrice).toLocaleString('fa-IR')} ریال`
-            : 'بدون قیمت';
-        throw new Error(`موجودی ${label} برای ${pCode} کافی نیست. موجودی قابل خروج: ${available.toLocaleString('fa-IR')} عدد`);
-    }
-
+    if (available < qtyNeeded) throw new Error(`موجودی منبع انتخاب‌شده برای ${pCode} کافی نیست.`);
     const price = Number(selectedPrice) || 0;
     localReserved[chosenId] = reserved + qtyNeeded;
-
-    return {
-        consumedFrom: [{
-            lotDocId: chosenId,
-            docId: chosenId,
-            qty: qtyNeeded,
-            price,
-            sourceType: price > 0 ? 'priced' : 'unpriced'
-        }],
-        totalCost: qtyNeeded * price,
-        avgPrice: price
-    };
+    return { consumedFrom: [{ lotDocId: chosenId, docId: chosenId, qty: qtyNeeded, price, sourceType: price > 0 ? 'priced' : 'unpriced' }], totalCost: qtyNeeded * price, avgPrice: price };
 }
 
    window.finalizeExitDoc = async function() {
@@ -8036,10 +8289,7 @@ function computeSelectedExitCost(pCode, warehouse, qtyNeeded, excludeDocId, loca
                     const c = Math.floor(req.reqPieces / req.uPerCarton);
                     const l = req.reqPieces % req.uPerCarton;
                     const wh = req.wh || defaultWh;
-                    const allocation = computeSelectedExitCost(
-                        req.pCode, wh, req.reqPieces, currentDocId, exitReserved,
-                        req.lotDocId, req.price, req.lotRemaining
-                    );
+                    // حواله pending هنوز بچ واقعی را نمی‌داند؛ بچ فقط هنگام اسکن بارگیر تعیین می‌شود.
                     newItems.push({
                         docId: currentDocId,
                         officeDoc: document.getElementById('outOfficeDoc').value || "بدون شماره",
@@ -8055,18 +8305,15 @@ function computeSelectedExitCost(pCode, warehouse, qtyNeeded, excludeDocId, loca
                         ref: cust,
                         operator: currentUser ? currentUser.name : "نامشخص",
                         dispatchStatus: 'pending',
-                        price: allocation.avgPrice,
-                        totalCost: allocation.totalCost,
-                        consumedFrom: allocation.consumedFrom
+                        price: 0,
+                        totalCost: 0,
+                        consumedFrom: ''
                     });
                 }
             } else {
                 for (const item of draftExitItems) {
                     const wh = item.wh || defaultWh;
-                    const allocation = computeSelectedExitCost(
-                        item.pCode, wh, item.totalPieces, currentDocId, exitReserved,
-                        item.lotDocId, item.price, item.lotRemaining
-                    );
+                    const allocation = computeBatchExitAllocation(item.pCode, wh, item.batch, item.totalPieces);
                     newItems.push({
                         docId: currentDocId,
                         officeDoc: document.getElementById('outOfficeDoc').value || "بدون شماره",
@@ -8261,76 +8508,24 @@ function computeSelectedExitCost(pCode, warehouse, qtyNeeded, excludeDocId, loca
         if(!pCode || !productsMap[pCode]) { return alert("❌ کد یا نام کالا اشتباه است!"); }
         if(reqP <= 0) { return alert("❌ تعداد سفارش را به درستی وارد کنید."); }
 
-        // انتخاب قیمت کاملاً صریح است؛ عدم انتخاب = سهم بدون قیمت.
-        const selectedLotEl = document.querySelector('input[name="reqLotChoice"]:checked');
-        let selectedLotDocId = null;
-        let selectedPrice = 0;
-        let selectedProdDate = '';
-        let selectedExpDate = '';
-        let selectedLotRemaining = 0;
-        let selectedSourceType = 'unpriced';
-
-        if (selectedLotEl) {
-            selectedLotDocId = String(selectedLotEl.value || '').trim() || null;
-            selectedPrice = Number(selectedLotEl.getAttribute('data-price')) || 0;
-            selectedProdDate = selectedLotEl.getAttribute('data-proddate') || '';
-            selectedExpDate = selectedLotEl.getAttribute('data-expdate') || '';
-            selectedLotRemaining = Math.max(0, Number(selectedLotEl.getAttribute('data-remaining')) || 0);
-            selectedSourceType = selectedLotDocId && !isUnpricedLotId(selectedLotDocId) && selectedPrice > 0 ? 'priced' : 'unpriced';
-        } else {
-            const availableLotsNow = getAvailableLots(pCode, wh, editingExitDocId);
-            const unpricedLotNow = availableLotsNow.find(l => isUnpricedLotId(l.lotDocId));
-            selectedLotDocId = unpricedLotNow ? String(unpricedLotNow.lotDocId) : buildUnpricedLotId(pCode, wh);
-            selectedLotRemaining = Math.max(0, Number(unpricedLotNow?.remaining) || 0);
-            selectedSourceType = 'unpriced';
-        }
-
-        // به‌جای موجودی کل کالا، موجودی منبع انتخاب‌شده را کنترل می‌کنیم.
-        // هر قیمت باید lotDocId مستقل داشته باشد؛ قیمت‌های متفاوت هرگز یک منبع محسوب نمی‌شوند.
-        if (selectedSourceType === 'priced' && (!selectedLotDocId || selectedPrice <= 0)) {
-            return alert('⛔ شناسه یا قیمت محموله انتخاب‌شده معتبر نیست؛ لطفاً قیمت را دوباره انتخاب کنید.');
-        }
-        const sourceLabel = selectedSourceType === 'priced'
-            ? `قیمت ${selectedPrice.toLocaleString('fa-IR')} ریال`
-            : 'بدون قیمت';
-        const existingForSameSource = outRequirements.find(r =>
-            String(r.pCode) === String(pCode) &&
-            String(r.wh || wh) === String(wh) &&
-            String(r.lotDocId || buildUnpricedLotId(pCode, wh)) === String(selectedLotDocId)
+        // در سفارش‌برداری هیچ بچ/قیمتی انتخاب نمی‌شود.
+        // کنترل بچ فقط هنگام اسکن واقعی بارکد انجام می‌شود.
+        const existingRequirement = outRequirements.find(r =>
+            String(r.pCode) === String(pCode) && String(r.wh || wh) === String(wh)
         );
-        const alreadyRequestedFromSource = existingForSameSource ? (Number(existingForSameSource.reqPieces) || 0) : 0;
-
-        if (alreadyRequestedFromSource + reqP > selectedLotRemaining) {
+        const alreadyRequested = existingRequirement ? (Number(existingRequirement.reqPieces) || 0) : 0;
+        const availableStock = Math.max(0, Number(getActualStock(pCode, wh, editingExitDocId)) || 0);
+        if (alreadyRequested + reqP > availableStock) {
             playBeep('error');
-            return alert(
-                `❌ موجودی ${sourceLabel} کافی نیست.\n` +
-                `موجودی این منبع: ${selectedLotRemaining.toLocaleString('fa-IR')} عدد\n` +
-                `درخواست این منبع تا الان: ${alreadyRequestedFromSource.toLocaleString('fa-IR')} عدد\n` +
-                `درخواست جدید: ${reqP.toLocaleString('fa-IR')} عدد`
-            );
+            return alert(`❌ موجودی فعلی کالا در انبار کافی نیست.\nموجودی: ${availableStock.toLocaleString('fa-IR')} عدد\nدرخواست جدید: ${reqP.toLocaleString('fa-IR')} عدد`);
         }
-
-        if(existingForSameSource) {
-            existingForSameSource.reqPieces = alreadyRequestedFromSource + reqP;
-            existingForSameSource.lotRemaining = selectedLotRemaining;
-            existingForSameSource.price = selectedPrice;
-            existingForSameSource.prodDate = selectedProdDate;
-            existingForSameSource.expDate = selectedExpDate;
-            existingForSameSource.sourceType = selectedSourceType;
+        if (existingRequirement) {
+            existingRequirement.reqPieces = alreadyRequested + reqP;
         } else {
             outRequirements.push({
-                pCode,
-                name: productsMap[pCode],
-                uPerCarton: parseInt(productsUnitsMap[pCode]) || 1,
-                reqPieces: reqP,
-                scannedPieces: 0,
-                wh,
-                lotDocId: selectedLotDocId,
-                price: selectedPrice,
-                lotRemaining: selectedLotRemaining,
-                sourceType: selectedSourceType,
-                prodDate: selectedProdDate,
-                expDate: selectedExpDate
+                pCode, name: productsMap[pCode], uPerCarton: parseInt(productsUnitsMap[pCode]) || 1,
+                reqPieces: reqP, scannedPieces: 0, wh,
+                lotDocId: null, price: 0, lotRemaining: availableStock, sourceType: 'batch', prodDate: '', expDate: ''
             });
         }
 
@@ -8361,17 +8556,21 @@ function computeSelectedExitCost(pCode, warehouse, qtyNeeded, excludeDocId, loca
             dispatchReqs = {};
 
             docs.forEach(item => {
-                const key = String(item.pCode ?? '').trim();
-                if(!key) return;
+                const pCode = String(item.pCode ?? '').trim();
+                const warehouse = String(item.warehouse || docs[0].warehouse || 'انبار مرکزی').trim();
+                if(!pCode) return;
+                const key = `${pCode}||${warehouse}`;
                 if(!dispatchReqs[key]) {
                     dispatchReqs[key] = {
-                        pCode: key, batch: item.batch || 'نامشخص', name: productsMap[key] || key,
+                        key, pCode, batch: item.batch || 'نامشخص', name: productsMap[pCode] || pCode,
                         req: 0, scanned: 0, scannedCartons: 0, scannedLoose: 0,
-                        warehouse: item.warehouse || docs[0].warehouse 
+                        warehouse
                     };
                 }
                 dispatchReqs[key].req += Number(item.totalPieces) || 0;
             });
+            populateDispatchWarehousePicker();
+            const _picker2 = document.getElementById('dispatchWarehousePicker'); if (_picker2) _picker2.value = '__AUTO__';
 
             restoreDispatchProgress(targetDocId);
 
@@ -8878,13 +9077,13 @@ window.startDispatchCamera = function(){
     startInlineScanner({
         title: '📷 اسکن بارگیری',
         badge: dispatchBadge,
-        onCode: function(value){
+        onCode: async function(value){
             if (typeof dispatchErrorLocked !== 'undefined' && dispatchErrorLocked) return;
             if (document.getElementById('scan-error-modal')) return;
             var input = document.getElementById('dispatchBarcode');
             if (input) input.value = value;
             var ok;
-            try { ok = processDispatchScan(value); }
+            try { ok = await processDispatchScan(value); }
             catch(err){ stopInlineScanner(); alert('خطای پردازش: ' + err.message); return; }
             if (ok === false){ stopInlineScanner(); return; }
             try { playBeep('success'); } catch(e){}
@@ -9225,13 +9424,13 @@ var checkTimer = setInterval(function(){
     var origScanner   = window.startScanner;
 
     window.startDispatchCamera = function(){
-        window.__inlineScanOnCode = function(value){
+        window.__inlineScanOnCode = async function(value){
             if (typeof dispatchErrorLocked !== 'undefined' && dispatchErrorLocked) return;
             if (document.getElementById('scan-error-modal')) return;
             var input = document.getElementById('dispatchBarcode');
             if (input) input.value = value;
             var ok;
-            try { ok = processDispatchScan(value); } catch(err){ alert('خطای پردازش: ' + err.message); return; }
+            try { ok = await processDispatchScan(value); } catch(err){ alert('خطای پردازش: ' + err.message); return; }
             if (ok === false) return;
             try { playBeep('success'); } catch(e){}
             try { if (navigator.vibrate) navigator.vibrate(60); } catch(e){}
@@ -10032,13 +10231,13 @@ window.startDispatchCamera = function(){
     startLive({
         title: '📷 اسکن بارگیری (زنده)',
         badge: dispatchBadge,
-        onCode: function(value){
+        onCode: async function(value){
             if (typeof dispatchErrorLocked !== 'undefined' && dispatchErrorLocked) return;
             if (document.getElementById('scan-error-modal')) return;
             var input = document.getElementById('dispatchBarcode');
             if (input) input.value = value;
             var ok;
-            try { ok = processDispatchScan(value); }
+            try { ok = await processDispatchScan(value); }
             catch(err){ diagLog('خطای پردازش: ' + err.message); return; }
             if (ok === false){ return; } /* روی خطا اسکنر باز می‌ماند تا کارتن بعدی را بگیرید */
             try { playBeep('success'); } catch(e){}
@@ -11430,99 +11629,267 @@ html[data-theme="dark"] .tab-btn .tab-label{
 }
 </style>
 
-<script id="rojin-server-auth-v22">
+
+<!-- ========================= V20 ENTERPRISE PACK ========================= -->
+<style>
+#v20-launchbar{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin:10px 0;padding:10px;background:linear-gradient(135deg,#0f172a,#1e293b);border-radius:12px;box-shadow:0 5px 16px rgba(15,23,42,.16)}
+#v20-launchbar button{border:0;border-radius:8px;padding:8px 11px;color:#fff;font-weight:900;cursor:pointer;font-size:11px}
+#v20LaunchReports{background:#2563eb} #v20LaunchReservations{background:#7c3aed} #v20LaunchHealth{background:#059669} #v20LaunchAudit{background:#b45309} #v20LaunchBackup{background:#334155}
+#v20CenterModal .v20-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.v20-card{background:#fff;border:1px solid #dbe3ed;border-radius:10px;padding:10px;box-shadow:0 3px 10px rgba(15,23,42,.05)}
+.v20-stat{display:flex;justify-content:space-between;gap:7px;align-items:center;padding:8px;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0}
+.v20-stat b{font-size:16px;color:#0f172a}.v20-muted{font-size:10px;color:#64748b;font-weight:800}.v20-table{width:100%;border-collapse:collapse;font-size:10px}.v20-table th,.v20-table td{border-bottom:1px solid #e5e7eb;padding:7px;text-align:right}.v20-table th{background:#f8fafc;font-weight:900;position:sticky;top:0}.v20-chip{display:inline-block;border-radius:999px;padding:3px 7px;font-size:9px;font-weight:900}.v20-ok{background:#dcfce7;color:#166534}.v20-warn{background:#fef3c7;color:#92400e}.v20-danger{background:#fee2e2;color:#991b1b}.v20-info{background:#dbeafe;color:#1d4ed8}
+#v20EnterpriseModal .modal-body{max-height:78vh;overflow:auto}
+#v20EnterpriseModal .v20-modal-close{display:inline-flex;align-items:center;justify-content:center;gap:5px;width:auto;min-width:96px;margin:0;padding:7px 14px;border:1px solid #fecaca;border-radius:9px;background:#fff1f2;color:#991b1b;font-weight:900;font-size:12px;cursor:pointer;box-shadow:0 2px 6px rgba(15,23,42,.08)}
+#v20EnterpriseModal .v20-modal-close:hover{background:#fee2e2}
+#v20EnterpriseModal .v20-modal-footer{display:flex;justify-content:flex-start;align-items:center;padding:8px 10px;border-top:1px solid #e5e7eb;background:#f8fafc}
+#v20EnterpriseModal .modal-header{position:sticky;top:0;z-index:6;background:#fff}
+#v20EnterpriseModal .modal-box{max-height:92vh;display:flex;flex-direction:column}
+#v20EnterpriseModal .modal-body{flex:1;min-height:0}
+.v20-loading{padding:28px;text-align:center;font-weight:900;color:#475569;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:10px}
+@media(max-width:760px){#v20CenterModal .v20-grid{grid-template-columns:1fr}.v20-table{min-width:760px}.v20-scroll{overflow:auto}}
+</style>
+<script>
 (function(){
-  if (window.__ROJIN_SERVER_AUTH_V22__) return;
-  window.__ROJIN_SERVER_AUTH_V22__ = true;
-  const nativeFetch = window.fetch.bind(window);
-  const DB = DB_URL;
-  const SESSION_KEY = 'v20SessionToken';
-  const AUTH_USER_KEY = 'activeUser';
-
-  function mergeServerUser(u){
-    if(!u || !u.name) return;
-    const list = Array.isArray(sysUsers) ? sysUsers.slice() : [];
-    const i = list.findIndex(x => String(x?.name||'').trim() === String(u.name).trim());
-    if(i >= 0) list[i] = {...list[i], ...u}; else list.push(u);
-    sysUsers = list;
-    try { localStorage.setItem(companyPrefix + '_sysUsersList', JSON.stringify(sysUsers)); } catch(e) {}
+  function localAuthTokenForUser(u){
+    return `LOCAL:${encodeURIComponent(String(u?.name||'سیستم'))}:${encodeURIComponent(String(u?.role||'user'))}`;
   }
-
-  window.fetch = function(input, init={}){
-    try{
-      const url = typeof input === 'string' ? input : (input?.url || '');
-      if(String(url).startsWith(DB)){
-        const token = sessionStorage.getItem(SESSION_KEY) || '';
-        if(token){
-          init = {...init, headers:{...(init.headers||{}), Authorization:`Bearer ${token}`}};
-        }
-      }
-    }catch(e){}
-    return nativeFetch(input, init);
-  };
-
-  window.performLogin = async function(){
-    if(typeof selectedLoginIndex === 'undefined' || selectedLoginIndex === null) return;
-    const user = (Array.isArray(sysUsers) ? sysUsers[selectedLoginIndex] : null);
-    if(!user) return;
-    const password = document.getElementById('loginPassword')?.value || '';
-    const legacyPassword = (user.pass && user.pass !== '__SERVER__' && !String(user.pass).startsWith('sha256:')) ? String(user.pass) : '';
-    try{
-      const r = await nativeFetch(`${DB}/api/auth/login?company=${encodeURIComponent(companyPrefix)}`, {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({userName:user.name,password,legacyPassword}),
-        cache:'no-store'
-      });
-      const j = await r.json();
-      if(!r.ok || !j.success) throw new Error(j.message || 'ورود ناموفق');
-      if(j.token) sessionStorage.setItem(SESSION_KEY, j.token);
-      if(j.user){ currentUser = j.user; mergeServerUser(j.user); }
-      else { currentUser = user; }
-      sessionStorage.setItem(AUTH_USER_KEY, JSON.stringify(currentUser));
-      document.getElementById('login-overlay').style.display='none';
-      initAfterLogin();
-      if(window.fetchDataFromServer) window.fetchDataFromServer();
-    }catch(e){
-      console.error('Server login failed:',e);
-      alert('❌ ورود ناموفق: ' + (e?.message || e));
-    }
-  };
-
-  const oldLogout = window.logoutApp;
-  window.logoutApp = async function(){
-    const token = sessionStorage.getItem(SESSION_KEY) || '';
-    try{
-      if(token) await nativeFetch(`${DB}/api/auth/logout?company=${encodeURIComponent(companyPrefix)}`,{method:'POST',headers:{Authorization:`Bearer ${token}`},cache:'no-store'});
-    }catch(e){}
-    sessionStorage.removeItem(SESSION_KEY);
-    if(oldLogout) return oldLogout();
-    currentUser = null;
-    location.reload();
-  };
-
-  const oldFetchData = window.fetchDataFromServer;
-  if(typeof oldFetchData === 'function'){
-    window.fetchDataFromServer = async function(){
-      try { return await oldFetchData.apply(this, arguments); }
-      finally {
-        // Do not let a masked server password erase a working local password.
-        try{
-          const local = getSafeLocal(companyPrefix + '_sysUsersList', []);
-          const localByName = new Map((Array.isArray(local)?local:Object.values(local||{})).filter(Boolean).map(u=>[String(u.name||'').trim(),u]));
-          if(Array.isArray(sysUsers)){
-            sysUsers = sysUsers.map(u=>{
-              const old = localByName.get(String(u?.name||'').trim());
-              const masked = String(u?.pass||'') === '__SERVER__';
-              return masked && old?.pass && old.pass !== '__SERVER__' ? {...u,pass:old.pass} : u;
-            });
-            try { localStorage.setItem(companyPrefix + '_sysUsersList', JSON.stringify(sysUsers)); } catch(e){}
-          }
-        }catch(e){}
-      }
+  let __storedUser=null; try{ __storedUser=JSON.parse(sessionStorage.getItem('activeUser')||'null'); }catch(e){}
+  const __storedToken=sessionStorage.getItem('v20SessionToken')||'';
+  const V20 = window.__V20 = { token: (__storedUser ? localAuthTokenForUser(__storedUser) : __storedToken), reservations:[], audit:[], serverVersion:'', reportCache:null, reportLoading:false };
+  try{ if(__storedUser) sessionStorage.setItem('v20SessionToken',V20.token); }catch(e){}
+  const DB = (typeof DB_URL !== 'undefined') ? DB_URL : 'https://anbar-db.mojtaba-hanafi13.workers.dev';
+  function jsonHeaders(){ return {'Content-Type':'application/json'}; }
+  function escapeV20(v){return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+  function pnum(n){return Number(n||0).toLocaleString('fa-IR');}
+  function getLots(){ try{return Object.keys(productsMap||{}).flatMap(p=>getAvailableLots(p,Object.keys(sysSettings?.warehouses||{})[0]||'').map(x=>({...x,pCode:p})));}catch(e){return[];} }
+  function injectLaunchbar(){
+    if(document.getElementById('v20-launchbar')) return;
+    const dash=document.getElementById('tab-dashboard'); if(!dash) return;
+    const bar=document.createElement('div'); bar.id='v20-launchbar'; bar.innerHTML=`
+      <button id="v20LaunchReports">📊 گزارش حرفه‌ای</button>
+      <button id="v20LaunchReservations">📦 سفارش / رزرو</button>
+      <button id="v20LaunchHealth">🛡️ سلامت سیستم</button>
+      <button id="v20LaunchAudit" style="display:none">🧾 Audit Log</button>
+      <button id="v20LaunchBackup" style="display:none">💾 Backup / Restore</button>`;
+    const first=dash.firstElementChild; if(first) first.after(bar); else dash.prepend(bar);
+    document.getElementById('v20LaunchReports').onclick=()=>openV20('reports');
+    document.getElementById('v20LaunchReservations').onclick=()=>openV20('reservations');
+    document.getElementById('v20LaunchHealth').onclick=()=>openV20('health');
+    document.getElementById('v20LaunchAudit').onclick=()=>openV20('audit');
+    document.getElementById('v20LaunchBackup').onclick=()=>openV20('backup');
+  }
+  function closeV20(){const el=document.getElementById('v20EnterpriseModal');if(el)el.style.display='none';}
+  function injectModal(){
+    if(document.getElementById('v20EnterpriseModal')) return;
+    const m=document.createElement('div'); m.id='v20EnterpriseModal'; m.className='modal-overlay'; m.style.zIndex='10020'; m.innerHTML=`
+      <div class="modal-box" style="max-width:1100px;width:96%;direction:rtl" onclick="event.stopPropagation()">
+        <div class="modal-header"><h3 id="v20ModalTitle">مرکز مدیریت حرفه‌ای</h3><button class="v20-modal-close" onclick="window.__V20.close()">✕ بستن</button></div>
+        <div class="modal-body" id="v20ModalBody"></div>
+        <div class="v20-modal-footer"><button class="v20-modal-close" onclick="window.__V20.close()">✕ بستن پنجره</button></div>
+      </div>`; document.body.appendChild(m); m.addEventListener('click',e=>{if(e.target===m)closeV20()});}
+  function show(title,html){injectModal();document.getElementById('v20ModalTitle').textContent=title;document.getElementById('v20ModalBody').innerHTML=html;document.getElementById('v20EnterpriseModal').style.display='flex';}
+  window.__V20.close=closeV20;
+  document.addEventListener('keydown',e=>{if(e.key==='Escape' && document.getElementById('v20EnterpriseModal')?.style.display==='flex')closeV20();});
+  async function api(path,opts={}){
+    const o={...opts,headers:{...(opts.headers||{}),'Authorization':V20.token?`Bearer ${V20.token}`:'',...(opts.body?jsonHeaders():{})}};
+    const r=await fetch(`${DB}${path}`,o); const t=await r.text(); let j={}; try{j=JSON.parse(t)}catch(e){j={success:false,message:t}}; if(r.status===401){V20.token='';sessionStorage.removeItem('v20SessionToken');} if(!r.ok||j.success===false) throw new Error(j.message||j.error||`HTTP ${r.status}`); return j;
+  }
+  async function loadReservations(){try{const j=await api(`/api/reservations?company=${encodeURIComponent(companyPrefix)}`);V20.reservations=j.rows||[];return V20.reservations}catch(e){return[]}}
+  function fastReportRows(){
+    const pairKey=(p,w)=>String(p)+'\\u0000'+String(w||'انبار مرکزی');
+    const physical=new Map(), lots=[], lotById=new Map(), exits=[];
+    const addPhysical=(p,w,delta)=>{const k=pairKey(p,w);physical.set(k,(physical.get(k)||0)+delta);};
+    const pushLot=(entry, lotId, sourceType)=>{
+      const lot={lotDocId:String(lotId),legacyDocId:String(entry.docId||entry.reclassId||''),pCode:String(entry.pCode),warehouse:String(entry.warehouse||'انبار مرکزی'),price:Number(entry.price)||0,batch:entry.batch||'نامشخص',prodDate:entry.prodDate||'',expDate:entry.expDate||'',remaining:Math.max(0,Number(entry.totalPieces ?? entry.qty ?? entry.sourceQty)||0),sourceType};
+      lots.push(lot); lotById.set(lot.lotDocId,lot);
     };
+    for(const log of (Array.isArray(historyLog)?historyLog:[])){
+      const p=String(log?.pCode||'').trim(); if(!p) continue;
+      const w=String(log?.warehouse||'انبار مرکزی');
+      const t=String(log?.type||''); const mt=String(log?.movementType||'');
+      const q=Math.max(0,Number(log?.totalPieces)||0); if(!q) continue;
+      const incoming=t==='ورود'||t==='اول دوره'||(t==='انتقال بین انبار'&&mt==='ورود');
+      const outgoing=t==='خروج'||(t==='انتقال بین انبار'&&mt==='خروج');
+      if(incoming){
+        addPhysical(p,w,q);
+        if(Number(log?.price)>0) pushLot(log, buildPricedLotId(log), 'priced');
+      }else if(outgoing){
+        addPhysical(p,w,-q); exits.push(log);
+      }
+    }
+    for(const r of (Array.isArray(inventoryReclassifications)?inventoryReclassifications:[])){
+      const p=String(r?.pCode||'').trim(); if(!p||Number(r?.price)<=0) continue;
+      pushLot({...r,totalPieces:getReclassQty(r),docId:r.reclassId||r.docId,batch:'تکمیل مشخصات'},buildReclassLotId(r),'priced');
+    }
+    const deductSamePrice=(p,w,qty,price)=>{ let rem=Math.max(0,Number(qty)||0); for(const lot of lots){ if(rem<=0)break; if(lot.pCode!==p||lot.warehouse!==w||lot.sourceType!=='priced'||lot.remaining<=0||Number(lot.price)!==Number(price))continue; const take=Math.min(lot.remaining,rem);lot.remaining-=take;rem-=take; } };
+    for(const exit of exits){
+      const p=String(exit?.pCode||'').trim(),w=String(exit?.warehouse||'انبار مرکزی'),q=Math.max(0,Number(exit?.totalPieces)||0); if(!q) continue;
+      const allocs=parseConsumedFrom(exit?.consumedFrom);
+      if(!allocs.length){ if(Number(exit?.price)>0) deductSamePrice(p,w,q,Number(exit.price)); continue; }
+      for(const a of allocs){ const aq=Math.max(0,Number(a?.qty)||0); if(aq<=0)continue; const id=getConsumedAllocationLotId(a); if(!id||isUnpricedLotId(id))continue; const lot=lotById.get(String(id)); if(lot)lot.remaining=Math.max(0,lot.remaining-aq); }
+    }
+    const grouped=new Map();
+    for(const lot of lots){ if(lot.remaining<=0)continue; const k=pairKey(lot.pCode,lot.warehouse); if(!grouped.has(k)) grouped.set(k,{wh:lot.warehouse,p:lot.pCode,name:productsMap[lot.pCode]||lot.pCode,total:0,priced:0,unpriced:0,value:0,minExp:'',lots:[]}); const row=grouped.get(k); row.total+=lot.remaining; row.priced+=lot.price>0?lot.remaining:0; row.unpriced+=lot.price>0?0:lot.remaining; row.value+=lot.price>0?lot.remaining*lot.price:0; if(lot.expDate && (!row.minExp||String(lot.expDate)<String(row.minExp)))row.minExp=lot.expDate; row.lots.push(lot); }
+    for(const [k,ph] of physical){ const g=grouped.get(k)||{wh:ph?String(k.split('\\u0000')[1]||'انبار مرکزی'):'انبار مرکزی',p:String(k.split('\\u0000')[0]||''),name:productsMap[String(k.split('\\u0000')[0]||'')]||String(k.split('\\u0000')[0]||''),total:0,priced:0,unpriced:0,value:0,minExp:'',lots:[]}; const pricedRemain=g.priced; const unpriced=Math.max(0,Number(ph)-pricedRemain); if(unpriced>0){g.unpriced=unpriced;g.total=pricedRemain+unpriced;g.lots.push({lotDocId:buildUnpricedLotId(g.p,g.wh),legacyDocId:'',pCode:g.p,warehouse:g.wh,price:0,batch:'موجودی بدون قیمت',prodDate:'',expDate:'',remaining:unpriced,sourceType:'unpriced'});} if(!grouped.has(k))grouped.set(k,g); }
+    return Array.from(grouped.values()).filter(r=>r.total>0);
+  }
+  function reportRows(){
+    const key=[historyLog?.length||0, inventoryReclassifications?.length||0, Object.keys(productsMap||{}).length, Object.keys(sysSettings?.warehouses||{}).length, V20.serverVersion||''].join('|');
+    if(V20.reportCache && V20.reportCache.key===key) return V20.reportCache.rows;
+    const rows=fastReportRows(); V20.reportCache={key,rows}; return rows;
+  }
+  function jalaliNow(){ try{const s=new Intl.DateTimeFormat('en-u-ca-persian-nu-latn',{year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()); const m=s.match(/(\d{4})\D(\d{1,2})\D(\d{1,2})/); return m?{y:+m[1],m:+m[2],d:+m[3]}:null;}catch(e){return null;} }
+  function jalaliJdn(jy,jm,jd){
+    const breaks=[-61,9,38,199,426,686,756,818,1111,1181,1210,1635,2060,2097,2192,2262,2274,2371,2450,2455,2462,2468,2475,2481,2490,2496,2500,2505,2508]; let bl=breaks.length, gy=jy+621, leapJ=-14, jp=breaks[0], jump=0;
+    for(let i=1;i<bl;i++){const jm0=breaks[i]; jump=jm0-jp; if(jy<jm0) break; leapJ+=Math.floor(jump/33)*8+Math.floor(jump%33/4); jp=jm0;} let n=jy-jp; leapJ+=Math.floor(n/33)*8+Math.floor((n%33+3)/4); if(jump%33===4&&jump-n===4) leapJ++; const leapG=Math.floor(gy/4)-Math.floor((Math.floor(gy/100)+1)*3/4)-150; const march=20+leapJ-leapG; let days=(jm<=7?(jm-1)*31:(jm-1)*30+6)+jd-1; const d=new Date(Date.UTC(gy,2,march)); d.setUTCDate(d.getUTCDate()+days); return Math.floor(d.getTime()/86400000)+2440588;
+  }
+  function daysToExpiry(exp){const m=String(exp||'').match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);const n=jalaliNow();if(!m||!n)return null;return jalaliJdn(+m[1],+m[2],+m[3])-jalaliJdn(n.y,n.m,n.d)}
+  async function renderReports(){
+    show('📊 گزارش حرفه‌ای','<div class="v20-loading">⏳ در حال آماده‌سازی گزارش سریع موجودی…</div>');
+    await new Promise(r=>setTimeout(r,20));
+    const rows=reportRows(); const totalValue=rows.reduce((s,r)=>s+r.value,0); const unpriced=rows.reduce((s,r)=>s+r.unpriced,0); const stock=rows.reduce((s,r)=>s+r.total,0); const exp30=[];
+    rows.forEach(r=>r.lots.forEach(l=>{const d=daysToExpiry(l.expDate);if(d!==null&&d<=30&&d>=0)exp30.push({...r,lot:l,days:d});}));
+    show('📊 گزارش حرفه‌ای',`<div style="display:flex;justify-content:flex-start;gap:7px;margin-bottom:8px"><button class="btn-blue" style="width:auto;margin:0;padding:7px 10px" onclick="window.__V20.refreshReports()">🔄 به‌روزرسانی</button></div><div class="v20-grid">
+      <div class="v20-card"><div class="v20-stat"><span>تعداد کل</span><b>${pnum(stock)}</b></div></div>
+      <div class="v20-card"><div class="v20-stat"><span>ارزش قیمت‌دار</span><b>${pnum(totalValue)} ریال</b></div></div>
+      <div class="v20-card"><div class="v20-stat"><span>بدون قیمت</span><b>${pnum(unpriced)}</b></div></div>
+      <div class="v20-card"><div class="v20-stat"><span>Lot زیر ۳۰ روز</span><b>${pnum(exp30.length)}</b></div></div>
+    </div>
+    <div class="v20-card" style="margin-top:10px"><h4>📦 ارزش و موجودی به تفکیک lot</h4><div class="v20-scroll"><table class="v20-table"><thead><tr><th>انبار</th><th>کالا</th><th>قیمت</th><th>موجودی</th><th>ارزش</th><th>انقضا</th><th>نوع</th></tr></thead><tbody>
+    ${rows.flatMap(r=>r.lots.map(l=>`<tr><td>${escapeV20(r.wh)}</td><td>${escapeV20(r.name)}</td><td>${l.price>0?pnum(l.price)+' ریال':'—'}</td><td>${pnum(l.remaining)}</td><td>${l.price>0?pnum(l.remaining*l.price)+' ریال':'—'}</td><td>${escapeV20(l.expDate||'—')}</td><td><span class="v20-chip ${l.price>0?'v20-info':'v20-warn'}">${l.price>0?'قیمت‌دار':'بدون قیمت'}</span></td></tr>`)).join('')}</tbody></table></div></div>
+    ${exp30.length?`<div class="v20-card" style="margin-top:10px"><h4>⏳ نزدیک انقضا</h4><div class="v20-scroll"><table class="v20-table"><thead><tr><th>کالا</th><th>انبار</th><th>موجودی</th><th>انقضا</th><th>روز</th></tr></thead><tbody>${exp30.sort((a,b)=>a.days-b.days).slice(0,100).map(x=>`<tr><td>${escapeV20(x.name)}</td><td>${escapeV20(x.wh)}</td><td>${pnum(x.lot.remaining)}</td><td>${escapeV20(x.lot.expDate)}</td><td><span class="v20-chip ${x.days<=7?'v20-danger':'v20-warn'}">${pnum(x.days)}</span></td></tr>`).join('')}</tbody></table></div></div>`:''}`);
+  }
+  async function renderReservations(){const rs=await loadReservations();show('📦 سفارش فروش / رزرو موجودی',`<div class="v20-card"><form id="v20ResForm" class="v20-grid">
+      <div><label>کالا</label><select id="v20ResProduct">${Object.keys(productsMap||{}).map(p=>`<option value="${escapeV20(p)}">${escapeV20(p+' - '+productsMap[p])}</option>`).join('')}</select></div>
+      <div><label>انبار</label><select id="v20ResWh">${(sysSettings?.warehouses||[]).map(w=>`<option>${escapeV20(w)}</option>`).join('')}</select></div>
+      <div><label>مقدار</label><input id="v20ResQty" type="number" min="1" value="1"></div>
+      <div><label>مشتری</label><input id="v20ResCustomer" placeholder="نام مشتری"></div>
+      <div style="grid-column:1/-1"><label>توضیحات</label><input id="v20ResNote" placeholder="مثلاً رزرو برای سفارش فروش"></div>
+      <div style="grid-column:1/-1"><button class="btn-purple" type="submit">✅ ثبت رزرو</button></div></form></div>
+      <div class="v20-card" style="margin-top:10px"><div class="v20-scroll"><table class="v20-table"><thead><tr><th>شناسه</th><th>کالا</th><th>انبار</th><th>مقدار</th><th>مشتری</th><th>وضعیت</th><th></th></tr></thead><tbody>${rs.map(r=>`<tr><td>${escapeV20(r.id)}</td><td>${escapeV20(productsMap[r.pCode]||r.pCode)}</td><td>${escapeV20(r.warehouse)}</td><td>${pnum(r.qty)}</td><td>${escapeV20(r.customer||'—')}</td><td><span class="v20-chip ${r.status==='active'?'v20-info':'v20-warn'}">${r.status==='active'?'فعال':'لغو شده'}</span></td><td>${r.status==='active'?`<button class="btn-red" style="width:auto;margin:0;padding:5px 8px" onclick="window.__V20.cancelReservation('${escapeV20(r.id)}')">لغو</button>`:''}</td></tr>`).join('')}</tbody></table></div></div>`); document.getElementById('v20ResForm').onsubmit=async(e)=>{e.preventDefault();try{await api(`/api/reservation?company=${encodeURIComponent(companyPrefix)}`,{method:'POST',body:JSON.stringify({pCode:document.getElementById('v20ResProduct').value,warehouse:document.getElementById('v20ResWh').value,qty:Number(document.getElementById('v20ResQty').value),customer:document.getElementById('v20ResCustomer').value,note:document.getElementById('v20ResNote').value})});alert('✅ رزرو ثبت شد.');renderReservations();}catch(err){alert('❌ '+err.message)}};
+  }
+  V20.cancelReservation=async id=>{try{await api(`/api/reservation?company=${encodeURIComponent(companyPrefix)}`,{method:'DELETE',body:JSON.stringify({id})});renderReservations();}catch(e){alert('❌ '+e.message)}};
+  V20.refreshReports=async()=>{V20.reportCache=null;await renderReports();};
+  async function renderHealth(){let j=null;try{j=await api(`/api/audit-log?company=${encodeURIComponent(companyPrefix)}&limit=1`)}catch(e){} let local=[];try{local=validateDataIntegrity()}catch(e){local=[e.message]}; show('🛡️ سلامت سیستم',`<div class="v20-grid"><div class="v20-card"><h4>داده‌های محلی</h4><div class="v20-stat"><span>کالاها</span><b>${pnum(Object.keys(productsMap||{}).length)}</b></div><div class="v20-stat"><span>اسناد حافظه</span><b>${pnum((historyLog||[]).length)}</b></div><div class="v20-stat"><span>خطای یکپارچگی</span><b>${pnum(local.length)}</b></div></div><div class="v20-card"><h4>اتصال امن</h4><div class="v20-stat"><span>نشست</span><b class="v20-chip ${V20.token?'v20-ok':'v20-danger'}">${V20.token?'فعال':'غیرفعال'}</b></div><div class="v20-stat"><span>Audit</span><b class="v20-chip ${j?'v20-ok':'v20-warn'}">${j?'فعال':'در دسترس نیست'}</b></div></div></div><div class="v20-card" style="margin-top:10px"><h4>پیشنهادهای کنترل</h4><div class="v20-muted">قبل از حذف یا اصلاح اطلاعات حیاتی، Backup بگیرید. اسناد خروجی قیمت‌دار همیشه باید allocation مشخص داشته باشند. موجودی بدون قیمت جداگانه نگهداری می‌شود.</div></div>`);}
+  async function renderAudit(){try{const j=await api(`/api/audit-log?company=${encodeURIComponent(companyPrefix)}&limit=300`);V20.audit=j.rows||[];show('🧾 Audit Log','<div class="v20-card"><div class="v20-scroll"><table class="v20-table"><thead><tr><th>زمان</th><th>کاربر</th><th>عملیات</th><th>نوع</th><th>شناسه</th><th>جزئیات</th></tr></thead><tbody>'+V20.audit.map(a=>`<tr><td>${escapeV20(a.createdAt)}</td><td>${escapeV20(a.userName)}</td><td>${escapeV20(a.action)}</td><td>${escapeV20(a.entityType)}</td><td>${escapeV20(a.entityId)}</td><td>${escapeV20(a.detail)}</td></tr>`).join('')+'</tbody></table></div></div>')}catch(e){show('🧾 Audit Log',`<div class="v20-card">❌ ${escapeV20(e.message)}</div>`)} }
+  async function renderBackup(){show('💾 Backup / Restore',`<div class="v20-grid"><div class="v20-card"><h4>دانلود پشتیبان</h4><p class="v20-muted">پشتیبان شامل master، اسناد و اقلام است. فایل را خارج از سیستم نگهداری کنید.</p><button class="btn-blue" onclick="window.__V20.downloadBackup()">⬇️ دانلود Backup</button></div><div class="v20-card"><h4>بازگردانی</h4><input id="v20BackupFile" type="file" accept="application/json"><button class="btn-red" onclick="window.__V20.restoreBackup()" style="margin-top:7px">⚠️ Restore</button><p class="v20-muted">Restore اطلاعات اسناد و تنظیمات فعلی را جایگزین می‌کند.</p></div></div>`)}
+  V20.downloadBackup=async()=>{try{const r=await fetch(`${DB}/api/backup?company=${encodeURIComponent(companyPrefix)}`,{headers:{Authorization:`Bearer ${V20.token}`}});if(!r.ok)throw new Error('HTTP '+r.status);const blob=await r.blob();const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='warehouse-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();URL.revokeObjectURL(a.href)}catch(e){alert('❌ '+e.message)}};
+  V20.restoreBackup=async()=>{const f=document.getElementById('v20BackupFile')?.files?.[0];if(!f)return alert('فایل پشتیبان را انتخاب کنید.');if(!confirm('⚠️ تمام اسناد و تنظیمات فعلی جایگزین می‌شود. ادامه می‌دهید؟'))return;try{const data=JSON.parse(await f.text());await api(`/api/restore?company=${encodeURIComponent(companyPrefix)}`,{method:'POST',body:JSON.stringify(data)});alert('✅ Restore انجام شد. صفحه دوباره بارگذاری می‌شود.');location.reload()}catch(e){alert('❌ '+e.message)}};
+  function openV20(mode){if(mode==='reports')renderReports();else if(mode==='reservations')renderReservations();else if(mode==='health')renderHealth();else if(mode==='audit')renderAudit();else renderBackup();}
+  window.openV20=openV20;
+  window.addEventListener('load',()=>{injectLaunchbar();injectModal(); const ab=document.getElementById('v20LaunchAudit'),bb=document.getElementById('v20LaunchBackup'); if(currentUser?.role==='admin'){if(ab)ab.style.display='inline-block';if(bb)bb.style.display='inline-block';}});
+  setTimeout(()=>{injectLaunchbar();injectModal(); const ab=document.getElementById('v20LaunchAudit'),bb=document.getElementById('v20LaunchBackup'); if(currentUser?.role==='admin'){if(ab)ab.style.display='inline-block';if(bb)bb.style.display='inline-block';} if(V20.token&&currentUser){window.fetchDataFromServer&&window.fetchDataFromServer();}},1200);
+  V20.setStatus=(text,kind='ok')=>{const s=document.getElementById('cloudStatus');if(!s)return;s.innerText=text;s.style.background=kind==='ok'?'rgba(16,185,129,.9)':kind==='warn'?'rgba(245,158,11,.9)':'rgba(239,68,68,.9)';};
+  V20.checkVersion=async()=>{if(!V20.token||!companyPrefix)return;try{const j=await api(`/api/version?company=${encodeURIComponent(companyPrefix)}`);V20.setStatus('☁️ آنلاین (D1)','ok');if(j.version && j.version!==V20.serverVersion){await window.fetchDataFromServer();}}catch(e){V20.setStatus('⚠️ اتصال D1 قطع است','error');}};
+  try{ if(typeof autoSyncInterval!=='undefined' && autoSyncInterval){ clearInterval(autoSyncInterval); autoSyncInterval=setInterval(()=>{if(V20.token)V20.checkVersion();},30000); } }catch(e){}
+
+
+  /* -------- local login + local session bridge -------- */
+  const originalFetch=window.fetch.bind(window);
+  window.fetch=function(input,init={}){
+    try{
+      const url=typeof input==='string'?input:(input?.url||'');
+      if(String(url).startsWith(DB)){
+        const h={...(init.headers||{})};
+        if(currentUser && (!V20.token || V20.token==='LOCAL-SESSION')) V20.token=localAuthTokenForUser(currentUser);
+        if(V20.token) h.Authorization=`Bearer ${V20.token}`;
+        init={...init,headers:h};
+      }
+    }catch(e){}
+    return originalFetch(input,init);
+  };
+  const XO=XMLHttpRequest.prototype.open, XS=XMLHttpRequest.prototype.setRequestHeader, XSend=XMLHttpRequest.prototype.send;
+  XMLHttpRequest.prototype.open=function(method,url,...rest){this.__v20Url=String(url||'');return XO.call(this,method,url,...rest)};
+  XMLHttpRequest.prototype.setRequestHeader=function(k,v){
+    try{
+      if(this.__v20Url&&this.__v20Url.startsWith(DB)&&V20.token&&String(k).toLowerCase()!=='authorization') XS.call(this,'Authorization',`Bearer ${V20.token}`);
+    }catch(e){}
+    return XS.call(this,k,v);
+  };
+  XMLHttpRequest.prototype.send=function(body){
+    try{
+      if(this.__v20Url&&this.__v20Url.startsWith(DB)&&V20.token){try{XS.call(this,'Authorization',`Bearer ${V20.token}`)}catch(e){}}
+    }catch(e){}
+    return XSend.call(this,body);
+  };
+
+  /* -------- local login: no password request to D1 -------- */
+  window.performLogin=async function(){
+    if(typeof selectedLoginIndex==='undefined'||selectedLoginIndex===null)return;
+    const user=Array.isArray(sysUsers)?sysUsers[selectedLoginIndex]:null;
+    if(!user)return;
+    const pass=String(document.getElementById('loginPassword')?.value||'');
+    const expected=String(user.pass??'');
+    if(expected && pass!==expected){ alert('❌ رمز عبور صحیح نیست.'); return; }
+    currentUser={name:String(user.name||'سیستم'),role:String(user.role||'user')};
+    V20.token=localAuthTokenForUser(currentUser);
+    sessionStorage.setItem('v20SessionToken',V20.token);
+    sessionStorage.setItem('activeUser',JSON.stringify(currentUser));
+    V20.setStatus('✅ ورود محلی سریع','ok');
+    document.getElementById('login-overlay').style.display='none';
+    if(window.initAfterLogin) window.initAfterLogin();
+    if(window.fetchDataFromServer) window.fetchDataFromServer();
+    injectLaunchbar();
+  };
+  const legacyLogout=window.logoutApp;
+  window.logoutApp=async function(){
+    V20.token='';
+    sessionStorage.removeItem('v20SessionToken');
+    if(legacyLogout) legacyLogout();
+  };
+
+  /* -------- enforce admin visibility after login -------- */
+  const legacyInit=window.initAfterLogin;
+  window.initAfterLogin=function(){ if(legacyInit)legacyInit(); injectLaunchbar(); setTimeout(()=>{const ab=document.getElementById('v20LaunchAudit'),bb=document.getElementById('v20LaunchBackup'); if(ab)ab.style.display=currentUser?.role==='admin'?'inline-block':'none';if(bb)bb.style.display=currentUser?.role==='admin'?'inline-block':'none';},80); };
+
+  window.fetchDataFromServer=async function(){
+    if(!V20.token||!companyPrefix) return;
+    V20.setStatus('⏳ در حال اتصال به D1…','warn');
+    try{
+      const r=await api(`/api/init?company=${encodeURIComponent(companyPrefix)}&t=${Date.now()}`);
+      if(r.productsMap) productsMap=r.productsMap; if(r.productsUnitsMap) productsUnitsMap=r.productsUnitsMap; if(r.productsWeightMap) productsWeightMap=r.productsWeightMap; if(r.sysSettings) sysSettings=r.sysSettings;
+      if(Array.isArray(r.inventoryReclassifications)) inventoryReclassifications=r.inventoryReclassifications; if(r.lastDocNumber) lastDocNumber=Number(r.lastDocNumber)||lastDocNumber; if(Array.isArray(r.historyLog)) historyLog=r.historyLog.filter(x=>x&&x.docId!=null&&!isReclassDoc(x));
+      V20.serverVersion=r.serverVersion||V20.serverVersion; V20.reportCache=null;
+      rebuildInventory(); updateLocalCacheOnly(); V20.setStatus('☁️ آنلاین (D1)','ok');
+      if(currentUser){loadDropdowns&&loadDropdowns(); renderInventory&&renderInventory(); if(document.getElementById('tab-dashboard')?.style.display==='block') renderDashboard&&renderDashboard(); if(document.getElementById('tab-cardex')?.style.display==='block') generateCardex&&generateCardex();} injectLaunchbar();
+    }catch(e){ V20.setStatus('⚠️ اتصال D1 قطع است','error'); if(String(e.message||'').toLowerCase().includes('auth')){sessionStorage.removeItem('v20SessionToken');V20.token='';} }
+  };
+
+})();
+</script>
+<!-- ======================= END V20 ENTERPRISE PACK ======================== -->
+
+
+<script>
+(function(){
+  function ensureTransferLotPanel(){
+    let p=document.getElementById('v20TransferLotPanel'); if(p) return p;
+    const info=document.getElementById('transferBarcodeInfo'); if(!info) return null;
+    p=document.createElement('div'); p.id='v20TransferLotPanel'; p.style.cssText='margin-top:6px;border:1px solid #ddd6fe;background:#faf5ff;border-radius:9px;padding:8px;display:none;'; info.after(p); return p;
+  }
+  const oldHandle=window.handleTransferBarcodeInput;
+  window.handleTransferBarcodeInput=function(){ if(oldHandle)oldHandle(); const raw=(document.getElementById('transferBarcode')?.value||'').trim(); const pCode=raw.length>=6&&!raw.startsWith('M-')?raw.substring(0,6):raw; const wh=document.getElementById('transferSourceWarehouse')?.value||''; const panel=ensureTransferLotPanel(); if(!panel||!pCode||!wh||!productsMap[pCode]){if(panel)panel.style.display='none';return;} try{const lots=getAvailableLots(pCode,wh,null); panel.style.display=lots.length?'block':'none'; panel.innerHTML='<div style="font-size:11px;font-weight:900;margin-bottom:6px;color:#5b21b6">💰 محموله انتقال (اختیاری؛ بدون انتخاب = بدون قیمت)</div>'+lots.map(l=>`<label style="display:flex;gap:8px;align-items:center;padding:6px;border:1px solid #ddd6fe;border-radius:7px;background:#fff;margin-bottom:4px;font-size:10px;cursor:pointer"><input type="radio" name="v20TransferLot" value="${String(l.lotDocId).replace(/"/g,'&quot;')}" data-price="${Number(l.price)||0}" data-prod="${String(l.prodDate||'').replace(/"/g,'&quot;')}" data-exp="${String(l.expDate||'').replace(/"/g,'&quot;')}" data-rem="${Number(l.remaining)||0}" data-type="${l.sourceType||'unpriced'}" style="width:auto;margin:0"><span>${Number(l.price)>0?'💰 '+Number(l.price).toLocaleString('fa-IR')+' ریال':'🟡 بدون قیمت'} | ${Number(l.remaining).toLocaleString('fa-IR')} عدد${l.expDate?' | انقضا '+l.expDate:''}</span></label>`).join('');}catch(e){panel.style.display='none';}}
+  window.addTransferDraft=function(){
+    const src=document.getElementById('transferSourceWarehouse')?.value||'',dst=document.getElementById('transferDestinationWarehouse')?.value||''; if(!src||!dst||src===dst)return alert('❌ انبار مبدأ و مقصد را صحیح انتخاب کنید.');
+    const raw=(document.getElementById('transferBarcode')?.value||'').trim();if(!raw)return alert('❌ کد کالا یا بارکد را وارد کنید.'); const pCode=raw.length>=6&&!raw.startsWith('M-')?raw.substring(0,6):raw;if(!productsMap[pCode])return alert('❌ کالا یافت نشد.');
+    const units=parseInt(productsUnitsMap[pCode])||1,c=Math.max(0,parseInt(document.getElementById('transferCartonQty')?.value)||0),l=Math.max(0,parseInt(document.getElementById('transferLooseQty')?.value)||0),pieces=c*units+l;if(pieces<=0)return alert('❌ مقدار انتقال را مشخص کنید.');
+    const selected=document.querySelector('input[name="v20TransferLot"]:checked'); const lotId=selected?.value||`__UNPRICED__:${pCode}:${src}`, price=Number(selected?.dataset.price||0), prodDate=selected?.dataset.prod||'', expDate=selected?.dataset.exp||'', sourceType=selected?.dataset.type||'unpriced';
+    const available=Number(selected?.dataset.rem||getActualStock(pCode,src))||0; const reserved=transferDraftItems.filter(i=>i.pCode===pCode&&i.source===src&&String(i.lotDocId||`__UNPRICED__:${pCode}:${src}`)===String(lotId)).reduce((a,i)=>a+Number(i.totalPieces||0),0); if(available-reserved<pieces)return alert(`⛔ موجودی محموله کافی نیست.\nموجودی آزاد: ${Math.max(0,available-reserved).toLocaleString('fa-IR')}\nدرخواست: ${pieces.toLocaleString('fa-IR')}`);
+    const batch=raw.length>=9&&!raw.startsWith('M-')?raw.substring(6,9):'نامشخص'; transferDraftItems.push({pCode,batch,raw,qtyCarton:c,qtyLoose:l,totalPieces:pieces,name:productsMap[pCode],units,source:src,destination:dst,lotDocId:lotId,price,prodDate,expDate,sourceType});
+    document.getElementById('transferBarcode').value='';document.getElementById('transferCartonQty').value='1';document.getElementById('transferLooseQty').value='0';if(panel)panel.style.display='none';renderTransferDrafts();document.getElementById('transferBarcode').focus();
+  };
+  const oldRender=window.renderTransferDrafts;
+  window.renderTransferDrafts=function(){if(oldRender)oldRender(); const el=document.getElementById('transferDraftList');if(!el)return; (window.transferDraftItems||[]); if(Array.isArray(transferDraftItems)){const cards=transferDraftItems.map((i,idx)=>`<div style="background:#fff;border:1px solid #ddd6fe;border-right:4px solid #7c3aed;border-radius:8px;padding:9px;margin-bottom:7px"><div style="display:flex;justify-content:space-between;gap:8px"><div><b>${String(i.name||'').replace(/</g,'&lt;')}</b><div style="font-size:10px;color:#64748b">${i.pCode} | ${i.source} ← ${i.destination}</div><div style="font-size:10px;margin-top:3px">${i.price>0?i.price.toLocaleString('fa-IR')+' ریال':'بدون قیمت'} | ${Number(i.totalPieces).toLocaleString('fa-IR')} عدد</div></div><button type="button" style="width:auto;margin:0;background:#dc2626;padding:7px 10px;font-size:11px" onclick="removeTransferDraft(${idx})">🗑 حذف</button></div></div>`).join(''); if(cards)el.innerHTML=cards;}}
+  window.finalizeTransferDoc=async function(){
+    if(!transferDraftItems.length)return alert('❌ هیچ کالایی برای انتقال اضافه نشده است.'); const src=document.getElementById('transferSourceWarehouse')?.value||'',dst=document.getElementById('transferDestinationWarehouse')?.value||''; if(!src||!dst||src===dst)return alert('❌ انبار مبدأ و مقصد را صحیح انتخاب کنید.');
+    const officeBase=(document.getElementById('transferOfficeDoc')?.value||'').trim()||('TR-'+Date.now().toString().slice(-8)); const ref=(document.getElementById('transferRef')?.value||'').trim()||`انتقال داخلی: ${src} ← ${dst}`; const dateStr=new Date().toLocaleString('fa-IR'); const docId=generateUniqueDocId();
+    const sourceItems=transferDraftItems.map(i=>({docId,officeDoc:officeBase,date:dateStr,type:'انتقال بین انبار',movementType:'خروج',pCode:i.pCode,batch:i.batch,rawBarcode:i.raw,qtyCarton:i.qtyCarton,qtyLoose:i.qtyLoose,totalPieces:i.totalPieces,weight:(productsWeightMap[i.pCode]||0)*i.totalPieces,units:i.units,productNameSnapshot:i.name,unitsSnapshot:i.units,weightSnapshot:Number(productsWeightMap[i.pCode])||0,warehouse:src,ref:`انتقال بین انبار | مقصد: ${dst} | ${ref}`,operator:currentUser?currentUser.name:'سیستم',dispatchStatus:'done',price:i.price||0,prodDate:i.prodDate||'',expDate:i.expDate||'',consumedFrom:[{lotDocId:i.lotDocId,docId:i.lotDocId,qty:i.totalPieces,price:i.price||0,sourceType:i.sourceType||'unpriced'}]}));
+    const destItems=transferDraftItems.map(i=>({docId,officeDoc:officeBase,date:dateStr,type:'انتقال بین انبار',movementType:'ورود',pCode:i.pCode,batch:i.batch,rawBarcode:i.raw,qtyCarton:i.qtyCarton,qtyLoose:i.qtyLoose,totalPieces:i.totalPieces,weight:(productsWeightMap[i.pCode]||0)*i.totalPieces,units:i.units,productNameSnapshot:i.name,unitsSnapshot:i.units,weightSnapshot:Number(productsWeightMap[i.pCode])||0,warehouse:dst,ref:`انتقال بین انبار | مبدأ: ${src} | ${ref}`,operator:currentUser?currentUser.name:'سیستم',dispatchStatus:'done',price:i.price||0,prodDate:i.prodDate||'',expDate:i.expDate||''}));
+    try{ const res=await fetch(`${DB_URL}/api/document?company=${encodeURIComponent(companyPrefix)}`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${V20.token}`},body:JSON.stringify({docId,officeDoc:officeBase,type:'انتقال بین انبار',date:dateStr,warehouse:src,ref,operator:currentUser?.name||'سیستم',items:[...sourceItems,...destItems]})}); const j=await res.json(); if(!res.ok||j.success===false)throw new Error(j.message||j.error||'ثبت انتقال ناموفق بود'); historyLog.push(...sourceItems,...destItems); transferDraftItems=[];rebuildInventory();renderTransferDrafts();renderInventory();generateCardex();alert('✅ انتقال با lot و قیمت منبع ثبت شد.'); }catch(e){alert('❌ '+e.message)}
   }
 })();
 </script>
+
 </body>
 </html>
