@@ -1630,13 +1630,15 @@ td{border-bottom-color:#d0d8e2 !important;}
                     </div>
                     <div style="padding:16px;">
                         <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px 12px;font-size:11px;line-height:1.9;margin-bottom:14px;">
-                            این عملیات «ورود» جدید نیست و موجودی کل را تغییر نمی‌دهد. سند اصلاحی جداگانه ثبت می‌شود تا خروج‌ها و اسناد قبلی دست‌نخورده بمانند.
+                            این عملیات «ورود» جدید نیست و موجودی کل را تغییر نمی‌دهد. سند اصلاحی جداگانه ثبت می‌شود تا خروج‌ها و اسناد قبلی دست‌نخورده بمانند.<br>
+                            <b>شماره بچ را حتماً وارد کنید (۳ رقم مثل 001).</b> این بچ در کنترل بارکد و بارگیری هم قابل انتخاب و اعتبارسنجی خواهد بود.
                         </div>
                         <div class="responsive-grid">
                             <div><label>انبار</label><select id="reclassWarehouseSelect" onchange="refreshUnpricedReclassStock()"></select></div>
                             <div><label>کالا</label><select id="reclassProductSelect" onchange="refreshUnpricedReclassStock()"></select></div>
                             <div><label>موجودی بدون قیمت</label><input id="reclassUnpricedStock" type="text" readonly style="font-weight:900;background:#f8fafc;"></div>
                             <div><label>مقدار برای قیمت‌گذاری</label><input id="reclassQty" type="number" min="1" step="1" placeholder="مثلاً 700"></div>
+                            <div><label>شماره بچ</label><input id="reclassBatch" type="text" inputmode="numeric" maxlength="3" pattern="[0-9]{3}" placeholder="مثلاً 001" autocomplete="off" oninput="normalizeReclassBatchInput(this)"></div>
                             <div><label>قیمت واحد (ریال)</label><input id="reclassPrice" type="number" min="0.01" step="0.01" placeholder="مثلاً 75000"></div>
                             <div><label>تاریخ تولید</label><input id="reclassProdDate" type="text" placeholder="مثلاً 1405/05/20"></div>
                             <div><label>تاریخ انقضا</label><input id="reclassExpDate" type="text" placeholder="مثلاً 1407/05/20"></div>
@@ -7330,18 +7332,24 @@ function refreshUnpricedReclassStock() {
     if (qtyInput) qtyInput.max = String(qty);
 }
 
+function normalizeReclassBatchInput(el) {
+    if (!el) return;
+    el.value = String(el.value || '').replace(/[^0-9]/g, '').slice(0, 3);
+}
+
 function previewUnpricedReclass() {
     const wh = document.getElementById('reclassWarehouseSelect')?.value || 'انبار مرکزی';
     const pCode = document.getElementById('reclassProductSelect')?.value || '';
     const qty = Math.max(0, Number(document.getElementById('reclassQty')?.value) || 0);
+    const batch = String(document.getElementById('reclassBatch')?.value || '').trim().replace(/[^0-9]/g, '');
     const price = Math.max(0, Number(document.getElementById('reclassPrice')?.value) || 0);
     const stockLot = pCode ? getAvailableLots(pCode, wh).find(l => isUnpricedLotId(l.lotDocId)) : null;
     const stock = Math.max(0, Number(stockLot?.remaining) || 0);
     const box = document.getElementById('reclassPreview');
     if (!box) return;
-    if (!pCode || qty <= 0 || price <= 0 || qty > stock) { box.style.display = 'block'; box.style.background = '#fef2f2'; box.style.borderColor = '#fecaca'; box.innerHTML = '❌ مقدار و قیمت را درست وارد کنید و مقدار نباید از موجودی بدون قیمت بیشتر باشد.'; return; }
+    if (!pCode || qty <= 0 || price <= 0 || !/^\d{3}$/.test(batch) || qty > stock) { box.style.display = 'block'; box.style.background = '#fef2f2'; box.style.borderColor = '#fecaca'; box.innerHTML = '❌ کالا، مقدار، قیمت و شماره بچ سه‌رقمی را درست وارد کنید و مقدار نباید از موجودی بدون قیمت بیشتر باشد.'; return; }
     box.style.display = 'block'; box.style.background = '#ecfdf5'; box.style.borderColor = '#a7f3d0';
-    box.innerHTML = `<b>${escapeHtml(productsMap[pCode] || pCode)}</b> در <b>${escapeHtml(wh)}</b><br>بدون قیمت: <b>${stock.toLocaleString('fa-IR')}</b> → ${Math.max(0, stock-qty).toLocaleString('fa-IR')} عدد<br>قیمت جدید: <b>${price.toLocaleString('fa-IR')} ریال</b> برای <b>${qty.toLocaleString('fa-IR')} عدد</b><br>موجودی کل کالا تغییر نمی‌کند.`;
+    box.innerHTML = `<b>${escapeHtml(productsMap[pCode] || pCode)}</b> در <b>${escapeHtml(wh)}</b><br>بچ: <b>${escapeHtml(batch)}</b><br>بدون قیمت: <b>${stock.toLocaleString('fa-IR')}</b> → ${Math.max(0, stock-qty).toLocaleString('fa-IR')} عدد<br>قیمت جدید: <b>${price.toLocaleString('fa-IR')} ریال</b> برای <b>${qty.toLocaleString('fa-IR')} عدد</b><br>موجودی کل کالا تغییر نمی‌کند.`;
 }
 
 async function submitUnpricedReclass() {
@@ -7349,6 +7357,7 @@ async function submitUnpricedReclass() {
     const wh = document.getElementById('reclassWarehouseSelect')?.value || 'انبار مرکزی';
     const pCode = document.getElementById('reclassProductSelect')?.value || '';
     const qty = Math.max(0, Number(document.getElementById('reclassQty')?.value) || 0);
+    const batch = String(document.getElementById('reclassBatch')?.value || '').trim().replace(/[^0-9]/g, '');
     const price = Math.max(0, Number(document.getElementById('reclassPrice')?.value) || 0);
     const prodDate = String(document.getElementById('reclassProdDate')?.value || '').trim();
     const expDate = String(document.getElementById('reclassExpDate')?.value || '').trim();
@@ -7358,8 +7367,9 @@ async function submitUnpricedReclass() {
     const unpricedQty = Math.max(0, Number(lot?.remaining) || 0);
     if (!pCode || !productsMap[pCode]) return alert('❌ کالا را انتخاب کنید.');
     if (qty <= 0 || qty > unpricedQty) return alert(`❌ مقدار واردشده از موجودی بدون قیمت بیشتر است. موجودی: ${unpricedQty.toLocaleString('fa-IR')} عدد`);
+    if (!/^\d{3}$/.test(batch)) return alert('❌ شماره بچ الزامی است و باید دقیقاً ۳ رقم باشد؛ مثلاً 001.');
     if (price <= 0) return alert('❌ قیمت باید بیشتر از صفر باشد.');
-    if (!confirm(`تبدیل ${qty.toLocaleString('fa-IR')} عدد از «بدون قیمت» به قیمت ${price.toLocaleString('fa-IR')} ریال؟\n\nهیچ سند ورود/خروجی ایجاد نمی‌شود و موجودی کل کالا تغییر نمی‌کند.`)) return;
+    if (!confirm(`تبدیل ${qty.toLocaleString('fa-IR')} عدد از «بدون قیمت» به محموله بچ ${batch} با قیمت ${price.toLocaleString('fa-IR')} ریال؟\n\nهیچ سند ورود/خروجی ایجاد نمی‌شود و موجودی کل کالا تغییر نمی‌کند.`)) return;
 
     const reclassId = `RC-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
     const dateStr = new Date().toLocaleString('fa-IR');
@@ -7370,6 +7380,7 @@ async function submitUnpricedReclass() {
         pCode,
         warehouse: wh,
         qty,
+        batch,
         price,
         prodDate,
         expDate,
@@ -7385,6 +7396,7 @@ async function submitUnpricedReclass() {
         saveData();
         hideUploadProgress();
         document.getElementById('reclassQty').value = '';
+        document.getElementById('reclassBatch').value = '';
         document.getElementById('reclassPrice').value = '';
         document.getElementById('reclassProdDate').value = '';
         document.getElementById('reclassExpDate').value = '';
@@ -7436,7 +7448,7 @@ function renderUnpricedReclassHistory() {
         const qty = getReclassQty(r); const undo = canUndoReclass(r);
         const rid = String(r.reclassId || '').replace(/'/g, '\\&#39;');
         return `<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;padding:9px 10px;border:1px solid var(--border);border-radius:8px;background:#fff;flex-wrap:wrap;">
-            <div style="flex:1;min-width:280px;font-size:11px;line-height:1.8;"><b>${escapeHtml(productsMap[r.pCode] || r.pCode)}</b> | ${escapeHtml(r.warehouse || '')}<br>${qty.toLocaleString('fa-IR')} عدد → ${Number(r.price||0).toLocaleString('fa-IR')} ریال | تولید: ${escapeHtml(r.prodDate || 'نامشخص')} | انقضا: ${escapeHtml(r.expDate || 'نامشخص')}<br>${escapeHtml(r.date || '')}${r.note ? ' | ' + escapeHtml(r.note) : ''}</div>
+            <div style="flex:1;min-width:280px;font-size:11px;line-height:1.8;"><b>${escapeHtml(productsMap[r.pCode] || r.pCode)}</b> | ${escapeHtml(r.warehouse || '')}<br>${qty.toLocaleString('fa-IR')} عدد → بچ ${escapeHtml(r.batch || 'نامشخص')} → ${Number(r.price||0).toLocaleString('fa-IR')} ریال | تولید: ${escapeHtml(r.prodDate || 'نامشخص')} | انقضا: ${escapeHtml(r.expDate || 'نامشخص')}<br>${escapeHtml(r.date || '')}${r.note ? ' | ' + escapeHtml(r.note) : ''}</div>
             <button class="btn-red" style="width:auto;padding:6px 9px;font-size:10px;" ${undo ? '' : 'disabled'} onclick="undoUnpricedReclass('${rid}')">${undo ? '↩️ لغو اصلاح' : '🔒 دارای خروج وابسته'}</button>
         </div>`;
     }).join('');
@@ -7515,7 +7527,7 @@ function getAvailableLots(pCode, wh, excludeDocId = null) {
                 lotDocId: buildReclassLotId(entry),
                 legacyDocId: String(entry.reclassId || ''),
                 price: Number(entry.price) || 0,
-                batch: 'تکمیل مشخصات',
+                batch: entry.batch || 'نامشخص',
                 prodDate: entry.prodDate || '',
                 expDate: entry.expDate || '',
                 remaining: qty,
