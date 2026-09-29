@@ -2627,6 +2627,7 @@ window.addEventListener('DOMContentLoaded', () => {
             sessionStorage.removeItem('activeCompany'); 
             currentUser = null;
             companyPrefix = '';
+            document.documentElement.removeAttribute('data-user-role');
             
             document.getElementById('mainUI').style.display = 'none';
             document.getElementById('login-overlay').style.display = 'flex'; 
@@ -2721,64 +2722,77 @@ window.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        function initAfterLogin() {
+        window.applyRoleVisibility = function applyRoleVisibility() {
+            const role = String(currentUser?.role || '').trim();
+            const root = document.documentElement;
+            if (role) root.setAttribute('data-user-role', role);
+            else root.removeAttribute('data-user-role');
+
+            const hide = (id) => { const el=document.getElementById(id); if(el) el.style.display='none'; };
+            const show = (id, display='block') => { const el=document.getElementById(id); if(el) el.style.display=display; };
+
+            // Reset only role-controlled navigation elements, then apply role policy.
+            show('tabBtnDashboard'); show('tabBtnInventory'); show('tabBtnCardex');
+            show('tabBtnEntry'); show('tabBtnExit'); show('settingsTabBtn');
+            show('tabBtnInventoryCount'); show('tabBtnTransfer');
+
+            if (role === 'loader') {
+                ['tabBtnDashboard','tabBtnInventory','tabBtnEntry','tabBtnExit','settingsTabBtn','tabBtnInventoryCount','tabBtnTransfer'].forEach(hide);
+                show('tabBtnCardex');
+            } else if (role === 'viewer') {
+                hide('settingsTabBtn'); hide('tabBtnEntry'); hide('tabBtnExit'); hide('tabBtnTransfer'); hide('tabBtnInventoryCount');
+                show('tabBtnDashboard'); show('tabBtnInventory'); show('tabBtnCardex');
+            } else if (role === 'user') {
+                hide('settingsTabBtn');
+                show('tabBtnDashboard'); show('tabBtnInventory'); show('tabBtnCardex'); show('tabBtnEntry'); show('tabBtnExit'); show('tabBtnTransfer'); show('tabBtnInventoryCount');
+            } else if (role === 'admin') {
+                show('tabBtnDashboard'); show('tabBtnInventory'); show('tabBtnCardex'); show('tabBtnEntry'); show('tabBtnExit'); show('settingsTabBtn'); show('tabBtnInventoryCount'); show('tabBtnTransfer');
+            }
+
             const reclassBtn = document.getElementById('btnUnpricedReclass');
-            if (reclassBtn) reclassBtn.style.display = (currentUser && currentUser.role === 'admin') ? 'inline-flex' : 'none';
-            document.getElementById('mainUI').style.display = 'block'; 
-            document.getElementById('top-bar').style.display = 'flex'; 
-            
-            let roleTitle = currentUser.role === 'admin' ? 'مدیر سیستم' : (currentUser.role === 'viewer' ? 'پورتال دفتر مرکزی' : currentUser.role === 'loader' ? 'راننده/بارگیر' : 'انباردار');
-            document.getElementById('currentUserDisplay').innerHTML = `👤 ${currentUser.name} (${roleTitle})`;
-            
-            if (currentUser.role === 'loader') {
-                document.getElementById('tabBtnDashboard').style.display = 'none';
-                document.getElementById('tabBtnInventory').style.display = 'none';
-                document.getElementById('tabBtnEntry').style.display = 'none';
-                document.getElementById('tabBtnExit').style.display = 'none';
-                document.getElementById('settingsTabBtn').style.display = 'none';
-                if(document.getElementById('tabBtnInventoryCount')) document.getElementById('tabBtnInventoryCount').style.display = 'none';
-                if(document.getElementById('tabBtnTransfer')) document.getElementById('tabBtnTransfer').style.display = 'none';
-                
-                document.getElementById('tabBtnCardex').innerText = '🚚 حواله‌های بارگیری';
-                document.getElementById('cardexTitleLabel').innerText = '🚚 حواله‌های در انتظار بارگیری';
-                document.getElementById('cardexModeSelectorCard').style.display = 'none';
-                document.getElementById('cardexFilterCard').style.display = 'none';
-                
-                setTimeout(() => { openTab('tab-cardex', document.getElementById('tabBtnCardex')); }, 50);
+            if (reclassBtn) reclassBtn.style.display = role === 'admin' ? 'inline-flex' : 'none';
+
+            if (role === 'loader') {
+                const mode=document.getElementById('cardexModeSelectorCard'); if(mode) mode.style.display='none';
+                const filt=document.getElementById('cardexFilterCard'); if(filt) filt.style.display='none';
+                const cardexBtn=document.getElementById('tabBtnCardex'); if(cardexBtn) cardexBtn.innerText='🚚 حواله‌های بارگیری';
+                const title=document.getElementById('cardexTitleLabel'); if(title) title.innerText='🚚 حواله‌های در انتظار بارگیری';
             } else {
-                document.getElementById('tabBtnDashboard').style.display = 'block';
-                document.getElementById('tabBtnInventory').style.display = 'block';
-                document.getElementById('tabBtnCardex').style.display = 'block';
-                if(document.getElementById('tabBtnTransfer')) document.getElementById('tabBtnTransfer').style.display = (currentUser.role === 'viewer') ? 'none' : 'block';
-                document.getElementById('tabBtnCardex').innerText = '📋 اسناد و کاردکس';
-                document.getElementById('cardexTitleLabel').innerText = '📋 اسناد و کاردکس کالاها';
-                document.getElementById('cardexModeSelectorCard').style.display = 'block';
-                document.getElementById('cardexFilterCard').style.display = 'block';
+                const mode=document.getElementById('cardexModeSelectorCard'); if(mode) mode.style.display='block';
+                const filt=document.getElementById('cardexFilterCard'); if(filt) filt.style.display='block';
+                const cardexBtn=document.getElementById('tabBtnCardex'); if(cardexBtn) cardexBtn.innerText='📋 اسناد و کاردکس';
+                const title=document.getElementById('cardexTitleLabel'); if(title) title.innerText='📋 اسناد و کاردکس کالاها';
+            }
+        }
 
-                document.getElementById('settingsTabBtn').style.display = (currentUser.role === 'admin') ? 'block' : 'none';
-                const reclassBtn = document.getElementById('btnUnpricedReclass');
-                if (reclassBtn) reclassBtn.style.display = (currentUser.role === 'admin') ? 'inline-flex' : 'none';
-                document.getElementById('tabBtnEntry').style.display = (currentUser.role === 'viewer') ? 'none' : 'block';
-                document.getElementById('tabBtnExit').style.display = (currentUser.role === 'viewer') ? 'none' : 'block';
+        function initAfterLogin() {
+            applyRoleVisibility();
+            document.getElementById('mainUI').style.display = 'block';
+            document.getElementById('top-bar').style.display = 'flex';
 
-                document.getElementById('dashWelcomeName').innerText = currentUser.name;
-                document.getElementById('dashWelcomeCompany').innerText = companyNameStr;
+            const role = String(currentUser?.role || '');
+            const roleTitle = role === 'admin' ? 'مدیر سیستم' : (role === 'viewer' ? 'پورتال دفتر مرکزی' : role === 'loader' ? 'راننده/بارگیر' : 'انباردار');
+            const userDisplay=document.getElementById('currentUserDisplay');
+            if(userDisplay) userDisplay.innerHTML = `👤 ${currentUser.name} (${roleTitle})`;
 
-                try{ loadDropdowns(); }catch(e){} 
-                
-                setTimeout(() => {
-                    if(currentUser.role === 'admin') { try{ renderSettings(); }catch(e){} }
-                    try{ renderInventory(); }catch(e){} 
+            try{ loadDropdowns(); }catch(e){}
+            if(role === 'admin'){ try{ renderSettings(); }catch(e){} }
+            try{ renderInventory(); }catch(e){}
+
+            setTimeout(() => {
+                if(role === 'loader') {
+                    openTab('tab-cardex', document.getElementById('tabBtnCardex'));
+                } else {
                     openTab('tab-dashboard', document.getElementById('tabBtnDashboard'));
-               try {
+                }
+                try {
                     let dIn = localStorage.getItem(companyPrefix + '_draftEntry');
                     if(dIn) draftEntryItems = JSON.parse(dIn) || [];
                     let dOut = localStorage.getItem(companyPrefix + '_draftExit');
                     if(dOut) { let p = JSON.parse(dOut); draftExitItems = p.items || []; outRequirements = p.reqs || []; }
                     renderDrafts(); renderRequirements();
                 } catch(e){}
- }, 50);
-            }
+            }, 50);
         }
 
         function getActiveInventoryBaseline(wh) {
@@ -7122,6 +7136,19 @@ function finalizeInventoryCount(){
 }
 
 function openTab(tabId, btn) {
+    const role = String(currentUser?.role || '');
+    const allowed = {
+        loader: ['tab-cardex'],
+        viewer: ['tab-dashboard','tab-inventory','tab-cardex'],
+        user: ['tab-dashboard','tab-inventory','tab-cardex','tab-entry','tab-exit','tab-inventory-count','tab-transfer'],
+        admin: ['tab-dashboard','tab-inventory','tab-cardex','tab-entry','tab-exit','tab-settings','tab-inventory-count','tab-transfer']
+    };
+    if (role && Array.isArray(allowed[role]) && !allowed[role].includes(tabId)) {
+        const fallback = role === 'loader' ? 'tab-cardex' : 'tab-dashboard';
+        const fb = document.getElementById(role === 'loader' ? 'tabBtnCardex' : 'tabBtnDashboard');
+        if (tabId !== fallback) return openTab(fallback, fb);
+        return;
+    }
     document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none'); 
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     let targetTab = document.getElementById(tabId);
@@ -11566,6 +11593,7 @@ window.showAppPromptText = function(message, opts){
 function applyTheme(t){
     if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
     else document.documentElement.removeAttribute('data-theme');
+    if (typeof window.applyRoleVisibility === 'function') { try { window.applyRoleVisibility(); } catch(e){} }
     var btn = document.getElementById('appThemeToggle');
     if (btn) btn.textContent = t === 'dark' ? '☀️' : '🌙';
     var sw = document.getElementById('settingsThemeSwitch');
@@ -12037,5 +12065,38 @@ html[data-theme="dark"] .tab-btn .tab-label{
 })();
 </script>
 
+
+
+<style id="role-visibility-hardening-v1.10">
+/* Role visibility is security-sensitive UI state. These rules intentionally use !important
+   so dark-mode presentation rules can never make a forbidden tab visible again. */
+html[data-user-role="loader"] #tabBtnDashboard,
+html[data-user-role="loader"] #tabBtnInventory,
+html[data-user-role="loader"] #tabBtnEntry,
+html[data-user-role="loader"] #tabBtnExit,
+html[data-user-role="loader"] #settingsTabBtn,
+html[data-user-role="loader"] #tabBtnInventoryCount,
+html[data-user-role="loader"] #tabBtnTransfer{display:none !important;}
+html[data-user-role="loader"] #tabBtnCardex{display:block !important;}
+
+html[data-user-role="viewer"] #settingsTabBtn,
+html[data-user-role="viewer"] #tabBtnEntry,
+html[data-user-role="viewer"] #tabBtnExit,
+html[data-user-role="viewer"] #tabBtnInventoryCount,
+html[data-user-role="viewer"] #tabBtnTransfer{display:none !important;}
+html[data-user-role="viewer"] #tabBtnDashboard,
+html[data-user-role="viewer"] #tabBtnInventory,
+html[data-user-role="viewer"] #tabBtnCardex{display:block !important;}
+
+html[data-user-role="user"] #settingsTabBtn{display:none !important;}
+html[data-user-role="admin"] #tabBtnDashboard,
+html[data-user-role="admin"] #tabBtnInventory,
+html[data-user-role="admin"] #tabBtnCardex,
+html[data-user-role="admin"] #tabBtnEntry,
+html[data-user-role="admin"] #tabBtnExit,
+html[data-user-role="admin"] #settingsTabBtn,
+html[data-user-role="admin"] #tabBtnInventoryCount,
+html[data-user-role="admin"] #tabBtnTransfer{display:block !important;}
+</style>
 </body>
 </html>
