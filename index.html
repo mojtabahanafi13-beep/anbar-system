@@ -1241,7 +1241,8 @@ td{border-bottom-color:#d0d8e2 !important;}
                     <button class="btn-red" style="padding:12px; font-size:15px; background:var(--text-muted);" onclick="showLoginMain()">بازگشت</button>
                 </div>
                 <div style="margin-top: 15px; border-top: 2px solid var(--bg-color); padding-top: 10px; display: flex; gap: 8px;">
-                    <button style="background: #f1f5f9; color: var(--dark); font-size: 12px; padding: 8px; margin: 0; border:1px solid var(--border); flex:1;" onclick="showChangePassView()">🔑 تغییر رمز عبور</button>
+                    <button style="background: #f1f5f9; color: var(--dark); font-size: 12px; padding: 8px; margin: 0; border:1px solid var(--border); flex:1;" onclick="alert('🔐 برای تغییر رمز، ابتدا وارد سیستم شوید و از بخش مدیریت کاربران گزینه «تغییر رمز من» را بزنید.');">🔑 تغییر رمز پس از ورود</button>
+                    <button style="background:#7c3aed;color:#fff;font-size:12px;padding:8px;margin:0;border:0;flex:1;" onclick="recoverAdminPassword()">🛠 بازیابی رمز مدیر</button>
                 </div>
                 <button style="margin-top:10px; background:transparent; color:var(--danger); border:2px dashed var(--danger); font-size:12px; padding:8px;" onclick="showCompanySelect()">🔙 بازگشت به لیست شرکت‌ها</button>
             </div>
@@ -2134,6 +2135,9 @@ td{border-bottom-color:#d0d8e2 !important;}
                         </div>
                     </div>
 
+                    <div style="display:flex; gap:8px; flex-wrap:wrap; margin:0 0 12px 0;">
+                        <button type="button" class="btn-blue" style="width:auto; margin:0; background:#0f766e; padding:9px 14px;" onclick="openMyPasswordChange()">🔐 تغییر رمز من</button>
+                    </div>
                     <div class="scrollable-list"><ul class="settings-list" id="list-users"></ul></div>
                 </div>
 
@@ -2374,7 +2378,10 @@ function jalaliToGregorian(j_y, j_m, j_d) {
         // اصلاحات قیمت‌گذاری موجودی جدا از اسناد انبار نگهداری می‌شوند و در historyLog قرار نمی‌گیرند.
         let inventoryReclassifications = [];
         let lastDocNumber = 1000;
-        let currentUser = null, selectedLoginIndex = null; 
+        let currentUser = null, selectedLoginIndex = null;
+        // مهاجرت یک‌باره کاربران نسخه قدیمی: فقط در حافظه نگه داشته می‌شود تا مدیر آن را به D1 منتقل کند.
+        let legacyLocalUsers = [];
+
         let draftEntryItems = [], draftExitItems = [], outRequirements = [];
         let editingEntryDocId = null, editingExitDocId = null;
         let currentUploadDocId = null, currentViewingDocData = null, currentItemCardexData = [];
@@ -2392,7 +2399,8 @@ function jalaliToGregorian(j_y, j_m, j_d) {
         function createLocalSafetyBackup() {
             try {
                 if (!companyPrefix) return;
-                const payload = { productsMap, productsUnitsMap, productsWeightMap, inventory, historyLog, lastDocNumber, sysSettings, sysUsers, _backupAt: new Date().toISOString() };
+                const safeUsers = (Array.isArray(sysUsers) ? sysUsers : []).map(u => ({name:String(u?.name||''), role:String(u?.role||'user'), active:u?.active !== false})).filter(u => u.name);
+                const payload = { productsMap, productsUnitsMap, productsWeightMap, inventory, historyLog, lastDocNumber, sysSettings, sysUsers:safeUsers, _backupAt: new Date().toISOString() };
                 localStorage.setItem(companyPrefix + '_sysSafetyBackup', JSON.stringify(payload));
             } catch (e) { console.warn('Safety backup failed', e); }
         }
@@ -2434,13 +2442,12 @@ function jalaliToGregorian(j_y, j_m, j_d) {
  
 
         function ensureDefaultUsers() {
-            sysUsers = (Array.isArray(sysUsers) ? sysUsers : []).filter(u => u && u.name);
-            let admin = sysUsers.find(u => String(u.role) === 'admin');
-            if(!admin){ admin = {name:'مجتبی حنفی',role:'admin',pass:'1234'}; sysUsers.push(admin); }
-            else if(!admin.pass || admin.pass === '__SERVER__' || String(admin.pass).startsWith('sha256:')) admin.pass = '1234';
-            let viewer = sysUsers.find(u => String(u.role) === 'viewer');
-            if(!viewer){ viewer = {name:'مدیریت دفتر مرکزی',role:'viewer',pass:'0000'}; sysUsers.push(viewer); }
-            else if(!viewer.pass || viewer.pass === '__SERVER__' || String(viewer.pass).startsWith('sha256:')) viewer.pass = '0000';
+            // احراز هویت مرکزی است؛ مرورگر فقط نام/Role کاربران را cache می‌کند و هرگز رمز را نگه نمی‌دارد.
+            sysUsers = (Array.isArray(sysUsers) ? sysUsers : []).map(u => ({
+                name: String(u?.name || '').trim(),
+                role: String(u?.role || 'user'),
+                active: u?.active !== false
+            })).filter(u => u.name && u.active !== false);
         }
 
         function renderLoginButtons() {
@@ -2524,8 +2531,9 @@ window.addEventListener('DOMContentLoaded', () => {
     // ... ادامه کدهای قبلی
             try { sessionComp = JSON.parse(sessionStorage.getItem('activeCompany')); sessionUser = JSON.parse(sessionStorage.getItem('activeUser')); } catch(e) {}
             if(sessionComp) {
-                if(sessionUser) { currentUser = sessionUser; selectCompany(sessionComp.prefix, sessionComp.name, true); } 
-                else { selectCompany(sessionComp.prefix, sessionComp.name, false); }
+                currentUser = null;
+                selectCompany(sessionComp.prefix, sessionComp.name, false);
+                if(window.__V20?.restoreSession) window.__V20.restoreSession().catch(()=>{});
             } else {
                 document.getElementById('login-overlay').style.display = 'flex'; 
                 document.getElementById('view-company-select').style.display = 'block';
@@ -2584,26 +2592,29 @@ window.addEventListener('DOMContentLoaded', () => {
             if(!sysSettings.customers || !Array.isArray(sysSettings.customers)) sysSettings.customers = ["باربری محبی (شوش)", "دفتر مرکزی"]; 
             if(!sysSettings.senders || !Array.isArray(sysSettings.senders)) sysSettings.senders = ["کارخانه تولیدی", "تامین‌کننده اصلی"]; 
             
-            let rawUsers = getSafeLocal(prefix + '_sysUsersList', []); 
-            sysUsers = Array.isArray(rawUsers) ? rawUsers : Object.values(rawUsers);
-            sysUsers = sysUsers.filter(u => u && u.name);
-            ensureDefaultUsers();
-            localStorage.setItem(prefix + '_sysUsersList', JSON.stringify(sysUsers));
-            
+            try {
+                const legacy = getSafeLocal(prefix + '_sysUsersList', []);
+                const arr = Array.isArray(legacy) ? legacy : Object.values(legacy || {});
+                legacyLocalUsers = arr.filter(u => u && String(u.name||'').trim() && String(u.pass||'').trim()).map(u => ({name:String(u.name).trim(), role:String(u.role||'user'), pass:String(u.pass)}));
+                localStorage.removeItem(prefix + '_sysUsersList');
+            } catch(e) { legacyLocalUsers = []; }
+            sysUsers = [];
+            currentUser = null;
+            selectedLoginIndex = null;
+            try { sessionStorage.removeItem('activeUser'); sessionStorage.removeItem('v20SessionToken'); } catch(e) {}
             sessionStorage.setItem('activeCompany', JSON.stringify({prefix, name}));
             document.getElementById('view-company-select').style.display = 'none';
-
-            if(autoLogin && currentUser) {
-                document.getElementById('login-overlay').style.display = 'none';
-                initAfterLogin();
-            } else {
-                document.getElementById('login-overlay').style.display = 'flex';
-                document.getElementById('view-login-main').style.display = 'block';
-                document.getElementById('subTitleCompany').innerText = "ورود به " + name;
-                renderLoginButtons();
+            document.getElementById('login-overlay').style.display = 'flex';
+            document.getElementById('view-login-main').style.display = 'block';
+            document.getElementById('subTitleCompany').innerText = "ورود به " + name;
+            renderLoginButtons();
+            if(window.__V20?.loadAuthUsers) {
+                window.__V20.loadAuthUsers().catch(e => {
+                    console.error('Central user list failed:', e);
+                    const box=document.getElementById('loginUserButtons');
+                    if(box) box.innerHTML='<div style="padding:12px;color:#b91c1c;font-weight:900">❌ فهرست کاربران از سرور دریافت نشد. اتصال D1 را بررسی کنید.</div>';
+                });
             }
-            
-            fetchDataFromServer();
             if(autoSyncInterval) clearInterval(autoSyncInterval);
             autoSyncInterval = setInterval(fetchDataFromServer, 30000);
         }
@@ -2629,38 +2640,93 @@ window.addEventListener('DOMContentLoaded', () => {
         
         function showLoginMain() { document.getElementById('view-change-pass').style.display = 'none'; document.getElementById('view-login-main').style.display = 'block'; document.getElementById('loginPassArea').style.display = 'none'; document.getElementById('loginUserButtons').style.display = 'flex'; renderLoginButtons(); }
         
-        function showChangePassView() { 
-            let opts = sysUsers.map((u, i) => `<div class="custom-option" onclick="selectCS('changePassUser', '${i}', '${u.name}')">${u.name}</div>`).join('');
-            document.getElementById('opt-changePassUser').innerHTML = opts;
-            if(sysUsers.length > 0) {
-                document.getElementById('changePassUser').value = "0";
-                document.getElementById('disp-changePassUser').innerHTML = `${sysUsers[0].name} <span style="font-size:10px;">▼</span>`;
+        function showChangePassView() {
+            if(!currentUser) return alert("🔐 ابتدا وارد سیستم شوید؛ تغییر رمز فقط برای حساب واردشده مجاز است.");
+            document.getElementById('changePassUser').value = '';
+            document.getElementById('disp-changePassUser').innerHTML = `${currentUser.name} <span style="font-size:10px;">(حساب فعلی)</span>`;
+            document.getElementById('opt-changePassUser').innerHTML = '';
+            document.getElementById('view-login-main').style.display = 'none';
+            document.getElementById('view-change-pass').style.display = 'block';
+            document.getElementById('login-overlay').style.display = 'flex';
+            document.getElementById('changePassOld').value = '';
+            document.getElementById('changePassNew').value = '';
+        }
+
+        window.openMyPasswordChange = function(){ showChangePassView(); };
+
+        async function changeUserPassword() {
+            if(!currentUser || !window.__V20?.changeMyPassword) return alert("🔐 ابتدا وارد سیستم شوید.");
+            const oldP = String(document.getElementById('changePassOld')?.value || '');
+            const newP = String(document.getElementById('changePassNew')?.value || '');
+            if(newP.length < 4) return alert("❌ رمز جدید باید حداقل ۴ کاراکتر باشد.");
+            try {
+                await window.__V20.changeMyPassword(oldP, newP);
+                alert("✅ رمز عبور با موفقیت در D1 تغییر کرد.");
+                document.getElementById('view-change-pass').style.display='none';
+                document.getElementById('login-overlay').style.display='none';
+            } catch(e) {
+                alert("❌ " + (e.message || 'تغییر رمز ناموفق بود.'));
             }
-            document.getElementById('view-login-main').style.display = 'none'; 
-            document.getElementById('view-change-pass').style.display = 'block'; 
         }
 
-        function changeUserPassword() { 
-            let idx = document.getElementById('changePassUser').value; 
-            let oldP = document.getElementById('changePassOld').value; 
-            let newP = document.getElementById('changePassNew').value; 
-            if(idx === "") return alert("کاربر را انتخاب کنید!");
-            let user = sysUsers[idx]; 
-            if(user.pass && user.pass !== oldP) return alert("رمز فعلی اشتباه است!"); 
-            user.pass = newP; saveData(); alert("رمز تغییر کرد."); 
-            showLoginMain(); 
+        function selectUserForLogin(index) {
+            selectedLoginIndex = index;
+            const user = sysUsers[index];
+            if(!user) return;
+            document.getElementById('loginUserButtons').style.display = 'none';
+            document.getElementById('loginPassArea').style.display = 'block';
+            document.getElementById('loginPassword').value = '';
+            setTimeout(()=> document.getElementById('loginPassword').focus(), 100);
         }
 
-        function selectUserForLogin(index) { selectedLoginIndex = index; let user = sysUsers[index]; if(user.pass && user.pass.trim() !== '') { document.getElementById('loginUserButtons').style.display = 'none'; document.getElementById('loginPassArea').style.display = 'block'; document.getElementById('loginPassword').value = ''; setTimeout(()=> document.getElementById('loginPassword').focus(), 100); } else { performLogin(); } }
-        
-        function performLogin() { 
-            if(selectedLoginIndex === null) return; 
-            let user = sysUsers[selectedLoginIndex]; 
-            if (user.pass && user.pass !== document.getElementById('loginPassword').value) return alert("رمز اشتباه است!"); 
-            currentUser = user; 
-            sessionStorage.setItem('activeUser', JSON.stringify(user)); 
-            document.getElementById('login-overlay').style.display = 'none'; 
-            initAfterLogin(); 
+        async function recoverAdminPassword(){
+            const user = (selectedLoginIndex!==null && sysUsers[selectedLoginIndex]) ? sysUsers[selectedLoginIndex] : null;
+            if(!user || !user.name) return alert('ابتدا حساب مدیر را انتخاب کنید.');
+            const key=prompt('کلید بازیابی AUTH_RECOVERY_KEY را وارد کنید:');
+            if(!key) return;
+            const np=prompt('رمز جدید مدیر (حداقل ۸ کاراکتر):');
+            if(!np || np.length<8) return alert('رمز جدید باید حداقل ۸ کاراکتر باشد.');
+            try{
+                if(!window.__V20?.recoverAdmin) throw new Error('ماژول بازیابی مرکزی هنوز آماده نیست.');
+                const j=await window.__V20.recoverAdmin(user.name,key,np);
+                if(!j?.success) throw new Error(j?.message||j?.error||'بازیابی ناموفق بود.');
+                alert('✅ رمز مدیر بازیابی شد. اکنون با رمز جدید وارد شوید.');
+                document.getElementById('loginPassword').value='';
+                showLoginMain();
+            }catch(e){ alert('❌ '+(e.message||'بازیابی ناموفق بود.')); }
+        }
+
+        async function performLogin() {
+            if(selectedLoginIndex === null) return;
+            const user = sysUsers[selectedLoginIndex];
+            const pass = String(document.getElementById('loginPassword')?.value || '');
+            if(!user || !user.name) return alert('❌ کاربر انتخاب‌شده معتبر نیست.');
+            if(!pass) return alert('❌ رمز عبور را وارد کنید.');
+            try {
+                if(!window.__V20?.login) throw new Error('ماژول احراز هویت مرکزی هنوز آماده نیست.');
+                const auth = await window.__V20.login(user.name, pass);
+                currentUser = auth.user;
+                sessionStorage.setItem('activeUser', JSON.stringify(currentUser));
+                sessionStorage.setItem('activeCompany', JSON.stringify({prefix:companyPrefix,name:companyNameStr}));
+                if(currentUser.role === 'admin' && legacyLocalUsers.length && window.__V20.importLegacyUsers){
+                    try {
+                        const migrated = await window.__V20.importLegacyUsers(legacyLocalUsers);
+                        sysUsers = Array.isArray(migrated.users) ? migrated.users : sysUsers;
+                        legacyLocalUsers = [];
+                        alert('✅ کاربران نسخه قدیمی این دستگاه با موفقیت به D1 منتقل شدند. از این به بعد رمزها مرکزی هستند.');
+                    } catch(migErr) {
+                        console.warn('Legacy user migration failed:', migErr);
+                        alert('⚠️ ورود موفق بود، ولی انتقال کاربران قدیمی انجام نشد: ' + (migErr.message || 'خطای نامشخص'));
+                    }
+                }
+                document.getElementById('login-overlay').style.display = 'none';
+                document.getElementById('view-change-pass').style.display = 'none';
+                initAfterLogin();
+                fetchDataFromServer();
+                if(auth.mustChangePassword) setTimeout(()=>openMyPasswordChange(),250);
+            } catch(e) {
+                alert('❌ ' + (e.message || 'ورود ناموفق بود.'));
+            }
         }
 
         function initAfterLogin() {
@@ -2923,7 +2989,6 @@ function fetchDataFromServer() {
                 localStorage.setItem(companyPrefix + '_sysInventoryReclassifications', JSON.stringify(inventoryReclassifications)); 
                 localStorage.setItem(companyPrefix + '_sysLastDocNumber', lastDocNumber); 
                 localStorage.setItem(companyPrefix + '_sysSettingsApp', JSON.stringify(sysSettings)); 
-                localStorage.setItem(companyPrefix + '_sysUsersList', JSON.stringify(sysUsers)); 
             } catch(e) {}
         }
 
@@ -3099,23 +3164,23 @@ function uploadLocalToCloud() {
             }
         });
 
-        function registerNewUserFromSettings() {
-            let name = document.getElementById('newUserName').value.trim();
-            let role = document.getElementById('newUserRole').value;
-            let pass = document.getElementById('newUserPass').value;
-            
+        async function registerNewUserFromSettings() {
+            const name = document.getElementById('newUserName').value.trim();
+            const role = document.getElementById('newUserRole').value;
+            const pass = document.getElementById('newUserPass').value;
             if(!name) return alert("❌ نام کاربر الزامی است.");
-            if(!pass) return alert("❌ رمز عبور الزامی است.");
-            
-            sysUsers.push({ name, role, pass });
-            saveData();
-            
-            document.getElementById('newUserName').value = '';
-            document.getElementById('newUserPass').value = '';
-            selectCS('newUserRole', 'user', 'انباردار (ثبت اسناد)');
-            
-            alert(`✅ کاربر [${name}] با موفقیت به سیستم اضافه شد.`);
-            renderSettings();
+            if(pass.length < 4) return alert("❌ رمز عبور باید حداقل ۴ کاراکتر باشد.");
+            try {
+                const j = await window.__V20.createUser(name, role, pass);
+                sysUsers = Array.isArray(j.users) ? j.users : sysUsers;
+                document.getElementById('newUserName').value = '';
+                document.getElementById('newUserPass').value = '';
+                selectCS('newUserRole', 'user', 'انباردار (ثبت اسناد)');
+                renderSettings();
+                alert(`✅ کاربر [${name}] در D1 ثبت شد.`);
+            } catch(e) {
+                alert('❌ ' + (e.message || 'ثبت کاربر ناموفق بود.'));
+            }
         }
 
        function renderSettings() {
@@ -3127,7 +3192,7 @@ function uploadLocalToCloud() {
     document.getElementById('list-warehouses').innerHTML = sysSettings.warehouses.map((w, i) => `<li>${w} <button class="del-btn" onclick="deleteSetting('warehouses', ${i})">حذف</button></li>`).join('');
     document.getElementById('list-senders').innerHTML = sysSettings.senders.map((s, i) => `<li>${s} <button class="del-btn" onclick="deleteSetting('senders', ${i})">حذف</button></li>`).join('');
     
-    document.getElementById('list-users').innerHTML = sysUsers.map((u, i) => `<li><b>${u.name}</b> (${u.role === 'admin' ? 'مدیر' : u.role === 'viewer' ? 'مشاهده' : u.role === 'loader' ? 'راننده/بارگیر' : 'کاربر'}) <button class="del-btn" onclick="deleteUser(${i})">حذف</button></li>`).join('');
+    document.getElementById('list-users').innerHTML = sysUsers.map((u, i) => `<li><b>${u.name}</b> (${u.role === 'admin' ? 'مدیر' : u.role === 'viewer' ? 'مشاهده' : u.role === 'loader' ? 'راننده/بارگیر' : 'کاربر'}) <span style="font-size:10px;color:#059669">● مرکزی</span> <button class="del-btn" onclick="deleteUser(${i})">حذف</button></li>`).join('');
 
     renderProductsSettings(); // 👈 این خط اضافه شود
 }
@@ -3157,13 +3222,19 @@ function uploadLocalToCloud() {
             }
         }
 
-        function deleteUser(index) {
-            if(sysUsers[index].role === 'admin' && sysUsers.filter(u => u.role === 'admin').length <= 1) {
-                return alert("نمی‌توانید تنها مدیر سیستم را حذف کنید!");
-            }
-            if(confirm("آیا از حذف این کاربر مطمئن هستید؟")) {
-                sysUsers.splice(index, 1);
-                saveData(); renderSettings();
+    async function deleteUser(index) {
+            const user = sysUsers[index];
+            if(!user) return;
+            if(user.name === currentUser?.name) return alert("❌ کاربر جاری را نمی‌توانید حذف کنید.");
+            if(user.role === 'admin' && sysUsers.filter(u => u.role === 'admin').length <= 1) return alert("❌ نمی‌توانید تنها مدیر سیستم را حذف کنید!");
+            if(!confirm(`آیا از حذف کاربر «${user.name}» مطمئن هستید؟`)) return;
+            try {
+                const j = await window.__V20.deleteUser(user.name);
+                sysUsers = Array.isArray(j.users) ? j.users : sysUsers.filter((_,i)=>i!==index);
+                renderSettings();
+                alert('✅ کاربر از D1 حذف شد.');
+            } catch(e) {
+                alert('❌ ' + (e.message || 'حذف کاربر ناموفق بود.'));
             }
         }
 
@@ -8022,7 +8093,7 @@ function viewSystemFactor(docId) {
                     if (cloudData.productsUnitsMap) productsUnitsMap = cloudData.productsUnitsMap;
                     if (cloudData.productsWeightMap) productsWeightMap = cloudData.productsWeightMap;
                     if (cloudData.sysSettings) sysSettings = cloudData.sysSettings;
-                    // کاربران ورود فقط محلی هستند؛ sysUsers را از D1 جایگزین نمی‌کنیم.
+                    if (Array.isArray(cloudData.sysUsers)) sysUsers = cloudData.sysUsers.map(u=>({name:String(u?.name||''),role:String(u?.role||'user'),active:u?.active!==false})).filter(u=>u.name && u.active!==false);
                     if (Array.isArray(cloudData.inventoryReclassifications)) inventoryReclassifications = cloudData.inventoryReclassifications.filter(Boolean);
                     
                     if (Array.isArray(cloudData.historyLog)) {
@@ -11652,13 +11723,10 @@ html[data-theme="dark"] .tab-btn .tab-label{
 </style>
 <script>
 (function(){
-  function localAuthTokenForUser(u){
-    return `LOCAL:${encodeURIComponent(String(u?.name||'سیستم'))}:${encodeURIComponent(String(u?.role||'user'))}`;
-  }
   let __storedUser=null; try{ __storedUser=JSON.parse(sessionStorage.getItem('activeUser')||'null'); }catch(e){}
   const __storedToken=sessionStorage.getItem('v20SessionToken')||'';
-  const V20 = window.__V20 = { token: (__storedUser ? localAuthTokenForUser(__storedUser) : __storedToken), reservations:[], audit:[], serverVersion:'', reportCache:null, reportLoading:false };
-  try{ if(__storedUser) sessionStorage.setItem('v20SessionToken',V20.token); }catch(e){}
+  const V20 = window.__V20 = { token: __storedToken, reservations:[], audit:[], serverVersion:'', reportCache:null, reportLoading:false };
+  try{ if(!__storedToken) sessionStorage.removeItem('v20SessionToken'); }catch(e){}
   const DB = (typeof DB_URL !== 'undefined') ? DB_URL : 'https://anbar-db.mojtaba-hanafi13.workers.dev';
   function jsonHeaders(){ return {'Content-Type':'application/json'}; }
   function escapeV20(v){return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
@@ -11809,7 +11877,7 @@ html[data-theme="dark"] .tab-btn .tab-label{
   try{ if(typeof autoSyncInterval!=='undefined' && autoSyncInterval){ clearInterval(autoSyncInterval); autoSyncInterval=setInterval(()=>{if(V20.token)V20.checkVersion();},30000); } }catch(e){}
 
 
-  /* -------- local login + local session bridge -------- */
+  /* -------- central login + server session bridge -------- */
   const originalFetch=window.fetch.bind(window);
   window.fetch=function(input,init={}){
     const originalUrl=typeof input==='string' ? input : (input?.url||'');
@@ -11817,9 +11885,8 @@ html[data-theme="dark"] .tab-btn .tab-label{
     const isFallback=String(originalUrl).startsWith(DB_FALLBACK_URL);
     const buildRequest=(target)=>{
       const h={...(init.headers||{})};
-      if(currentUser && (!V20.token || V20.token==='LOCAL-SESSION')) V20.token=localAuthTokenForUser(currentUser);
       if(V20.token) h.Authorization=`Bearer ${V20.token}`;
-      const targetUrl=isPrimary ? String(originalUrl).replace(DB,target) : String(originalUrl);
+      const targetUrl=(isPrimary ? String(originalUrl).replace(DB,target) : String(originalUrl));
       return {url:targetUrl, options:{...init,headers:h}};
     };
     if(isPrimary || isFallback){
@@ -11838,39 +11905,80 @@ html[data-theme="dark"] .tab-btn .tab-label{
   XMLHttpRequest.prototype.open=function(method,url,...rest){this.__v20Url=String(url||'');return XO.call(this,method,url,...rest)};
   XMLHttpRequest.prototype.setRequestHeader=function(k,v){
     try{
-      if(this.__v20Url&&this.__v20Url.startsWith(DB)&&V20.token&&String(k).toLowerCase()!=='authorization') XS.call(this,'Authorization',`Bearer ${V20.token}`);
+      if(this.__v20Url&&(this.__v20Url.startsWith(DB)||this.__v20Url.startsWith(DB_FALLBACK_URL))&&V20.token&&String(k).toLowerCase()!=='authorization') XS.call(this,'Authorization',`Bearer ${V20.token}`);
     }catch(e){}
     return XS.call(this,k,v);
   };
   XMLHttpRequest.prototype.send=function(body){
     try{
-      if(this.__v20Url&&this.__v20Url.startsWith(DB)&&V20.token){try{XS.call(this,'Authorization',`Bearer ${V20.token}`)}catch(e){}}
+      if(this.__v20Url&&(this.__v20Url.startsWith(DB)||this.__v20Url.startsWith(DB_FALLBACK_URL))&&V20.token){try{XS.call(this,'Authorization',`Bearer ${V20.token}`)}catch(e){}}
     }catch(e){}
     return XSend.call(this,body);
   };
 
-  /* -------- local login: no password request to D1 -------- */
-  window.performLogin=async function(){
-    if(typeof selectedLoginIndex==='undefined'||selectedLoginIndex===null)return;
-    const user=Array.isArray(sysUsers)?sysUsers[selectedLoginIndex]:null;
-    if(!user)return;
-    const pass=String(document.getElementById('loginPassword')?.value||'');
-    const expected=String(user.pass??'');
-    if(expected && pass!==expected){ alert('❌ رمز عبور صحیح نیست.'); return; }
-    currentUser={name:String(user.name||'سیستم'),role:String(user.role||'user')};
-    V20.token=localAuthTokenForUser(currentUser);
+  V20.loadAuthUsers=async function(){
+    const j=await api(`/api/auth/users?company=${encodeURIComponent(companyPrefix)}`);
+    sysUsers=Array.isArray(j.users)?j.users:[];
+    ensureDefaultUsers();
+    renderLoginButtons();
+    return sysUsers;
+  };
+  V20.login=async function(userName,password){
+    const r=await fetchDbWithFallback(`/api/auth/login?company=${encodeURIComponent(companyPrefix)}`,{method:'POST',headers:jsonHeaders(),body:JSON.stringify({userName,password})},12000);
+    const t=await r.text(); let j={}; try{j=JSON.parse(t)}catch(e){j={message:t}};
+    if(!r.ok || j.success===false){ const b=r.headers.get('X-Warehouse-Auth-Build')||'unknown-build'; throw new Error((j.message||j.error||`HTTP ${r.status}`)+` [HTTP ${r.status} | ${b}]`); }
+    V20.token=String(j.token||'');
+    if(!V20.token) throw new Error('سرور نشست معتبر برنگرداند.');
     sessionStorage.setItem('v20SessionToken',V20.token);
-    sessionStorage.setItem('activeUser',JSON.stringify(currentUser));
-    V20.setStatus('✅ ورود محلی سریع','ok');
-    document.getElementById('login-overlay').style.display='none';
-    if(window.initAfterLogin) window.initAfterLogin();
-    if(window.fetchDataFromServer) window.fetchDataFromServer();
-    injectLaunchbar();
+    sessionStorage.setItem('activeUser',JSON.stringify(j.user||{}));
+    return j;
+  };
+  V20.recoverAdmin=async function(userName,recoveryKey,newPassword){
+    const r=await fetchDbWithFallback(`/api/auth/recover-admin?company=${encodeURIComponent(companyPrefix)}`,{method:'POST',headers:jsonHeaders(),body:JSON.stringify({recoveryKey,userName,newPassword})},12000);
+    const t=await r.text(); let j={}; try{j=JSON.parse(t)}catch(e){j={message:t}};
+    if(!r.ok || j.success===false){ const b=r.headers.get('X-Warehouse-Auth-Build')||'unknown-build'; throw new Error((j.message||j.error||`HTTP ${r.status}`)+` [HTTP ${r.status} | ${b}]`); }
+    return j;
+  };
+  V20.restoreSession=async function(){
+    if(!V20.token || !companyPrefix) return false;
+    try{
+      const j=await api(`/api/auth/me?company=${encodeURIComponent(companyPrefix)}`);
+      currentUser=j.user||null;
+      if(currentUser) sessionStorage.setItem('activeUser',JSON.stringify(currentUser));
+      document.getElementById('login-overlay').style.display='none';
+      initAfterLogin();
+      fetchDataFromServer();
+      return true;
+    }catch(e){
+      V20.token=''; currentUser=null; sessionStorage.removeItem('v20SessionToken'); sessionStorage.removeItem('activeUser');
+      return false;
+    }
+  };
+  V20.changeMyPassword=async function(oldPassword,newPassword){
+    const j=await api(`/api/auth/change-password?company=${encodeURIComponent(companyPrefix)}`,{method:'POST',headers:jsonHeaders(),body:JSON.stringify({oldPassword,newPassword})});
+    return j;
+  };
+  V20.createUser=async function(name,role,password){
+    const j=await api(`/api/auth/users?company=${encodeURIComponent(companyPrefix)}`,{method:'POST',headers:jsonHeaders(),body:JSON.stringify({name,role,password})});
+    return j;
+  };
+  V20.deleteUser=async function(name){
+    const j=await api(`/api/auth/users/${encodeURIComponent(name)}?company=${encodeURIComponent(companyPrefix)}`,{method:'DELETE'});
+    return j;
+  };
+  V20.importLegacyUsers=async function(users){
+    const list=(Array.isArray(users)?users:[]).filter(u=>u&&String(u.name||'').trim()&&String(u.pass||'').trim());
+    if(!list.length) return {success:true,users:sysUsers};
+    return await api(`/api/auth/import-local-users?company=${encodeURIComponent(companyPrefix)}`,{method:'POST',headers:jsonHeaders(),body:JSON.stringify({users:list})});
+  };
+  V20.logoutCentral=async function(){
+    if(!V20.token) return;
+    try{ await api(`/api/auth/logout?company=${encodeURIComponent(companyPrefix)}`,{method:'POST'}); }catch(e){}
+    V20.token=''; sessionStorage.removeItem('v20SessionToken'); sessionStorage.removeItem('activeUser');
   };
   const legacyLogout=window.logoutApp;
   window.logoutApp=async function(){
-    V20.token='';
-    sessionStorage.removeItem('v20SessionToken');
+    await V20.logoutCentral();
     if(legacyLogout) legacyLogout();
   };
 
@@ -11884,6 +11992,7 @@ html[data-theme="dark"] .tab-btn .tab-label{
     try{
       const r=await api(`/api/init?company=${encodeURIComponent(companyPrefix)}&t=${Date.now()}`);
       if(r.productsMap) productsMap=r.productsMap; if(r.productsUnitsMap) productsUnitsMap=r.productsUnitsMap; if(r.productsWeightMap) productsWeightMap=r.productsWeightMap; if(r.sysSettings) sysSettings=r.sysSettings;
+      if(Array.isArray(r.sysUsers)) sysUsers=r.sysUsers.map(u=>({name:String(u?.name||''),role:String(u?.role||'user'),active:u?.active!==false})).filter(u=>u.name && u.active!==false);
       if(Array.isArray(r.inventoryReclassifications)) inventoryReclassifications=r.inventoryReclassifications; if(r.lastDocNumber) lastDocNumber=Number(r.lastDocNumber)||lastDocNumber; if(Array.isArray(r.historyLog)) historyLog=r.historyLog.filter(x=>x&&x.docId!=null&&!isReclassDoc(x));
       V20.serverVersion=r.serverVersion||V20.serverVersion; V20.reportCache=null;
       rebuildInventory(); updateLocalCacheOnly(); V20.setStatus('☁️ آنلاین (D1)','ok');
