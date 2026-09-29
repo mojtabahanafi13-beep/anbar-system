@@ -2198,7 +2198,8 @@ td{border-bottom-color:#d0d8e2 !important;}
     <div id="fullscreen-reader" style="width:100%; max-width:450px; margin:30px auto; background:#000; border-radius:12px; overflow:hidden; border:2px solid #3b82f6;"></div>
 </div>
     <script>
-    const DB_URL = "https://anbar-db.mojtaba-hanafi13.workers.dev";
+    const DB_URL = "https://app.factor-anbar.online";
+    const DB_FALLBACK_URL = "https://anbar-db.mojtaba-hanafi13.workers.dev";
         let autoSyncInterval = null;
 // تابع مبدل تاریخ شمسی به میلادی برای محاسبات سیستم
 function jalaliToGregorian(j_y, j_m, j_d) {
@@ -11691,9 +11692,32 @@ html[data-theme="dark"] .tab-btn .tab-label{
   function show(title,html){injectModal();document.getElementById('v20ModalTitle').textContent=title;document.getElementById('v20ModalBody').innerHTML=html;document.getElementById('v20EnterpriseModal').style.display='flex';}
   window.__V20.close=closeV20;
   document.addEventListener('keydown',e=>{if(e.key==='Escape' && document.getElementById('v20EnterpriseModal')?.style.display==='flex')closeV20();});
+  async function fetchDbWithFallback(path, opts={}, timeoutMs=12000){
+    const targets=[DB, DB_FALLBACK_URL].filter((v,i,a)=>v && a.indexOf(v)===i);
+    let lastErr=null;
+    for(const base of targets){
+      for(let attempt=0; attempt<2; attempt++){
+        let timer=null;
+        try{
+          const o={...opts,headers:{...(opts.headers||{}),'Authorization':V20.token?`Bearer ${V20.token}`:'',...(opts.body?jsonHeaders():{})}};
+          const ctrl=new AbortController();
+          timer=setTimeout(()=>ctrl.abort(), timeoutMs);
+          o.signal=ctrl.signal;
+          const r=await fetch(`${base}${path}`,o);
+          clearTimeout(timer);
+          return r;
+        }catch(e){
+          if(timer) clearTimeout(timer);
+          lastErr=e;
+          await new Promise(r=>setTimeout(r, attempt===0?250:700));
+        }
+      }
+    }
+    throw lastErr || new Error('اتصال به سرور برقرار نشد.');
+  }
   async function api(path,opts={}){
-    const o={...opts,headers:{...(opts.headers||{}),'Authorization':V20.token?`Bearer ${V20.token}`:'',...(opts.body?jsonHeaders():{})}};
-    const r=await fetch(`${DB}${path}`,o); const t=await r.text(); let j={}; try{j=JSON.parse(t)}catch(e){j={success:false,message:t}}; if(r.status===401){V20.token='';sessionStorage.removeItem('v20SessionToken');} if(!r.ok||j.success===false) throw new Error(j.message||j.error||`HTTP ${r.status}`); return j;
+    const r=await fetchDbWithFallback(path,opts,12000);
+    const t=await r.text(); let j={}; try{j=JSON.parse(t)}catch(e){j={success:false,message:t}}; if(r.status===401){V20.token='';sessionStorage.removeItem('v20SessionToken');} if(!r.ok||j.success===false) throw new Error(j.message||j.error||`HTTP ${r.status}`); return j;
   }
   async function loadReservations(){try{const j=await api(`/api/reservations?company=${encodeURIComponent(companyPrefix)}`);V20.reservations=j.rows||[];return V20.reservations}catch(e){return[]}}
   function fastReportRows(){
@@ -11781,22 +11805,33 @@ html[data-theme="dark"] .tab-btn .tab-label{
   window.addEventListener('load',()=>{injectLaunchbar();injectModal(); const ab=document.getElementById('v20LaunchAudit'),bb=document.getElementById('v20LaunchBackup'); if(currentUser?.role==='admin'){if(ab)ab.style.display='inline-block';if(bb)bb.style.display='inline-block';}});
   setTimeout(()=>{injectLaunchbar();injectModal(); const ab=document.getElementById('v20LaunchAudit'),bb=document.getElementById('v20LaunchBackup'); if(currentUser?.role==='admin'){if(ab)ab.style.display='inline-block';if(bb)bb.style.display='inline-block';} if(V20.token&&currentUser){window.fetchDataFromServer&&window.fetchDataFromServer();}},1200);
   V20.setStatus=(text,kind='ok')=>{const s=document.getElementById('cloudStatus');if(!s)return;s.innerText=text;s.style.background=kind==='ok'?'rgba(16,185,129,.9)':kind==='warn'?'rgba(245,158,11,.9)':'rgba(239,68,68,.9)';};
-  V20.checkVersion=async()=>{if(!V20.token||!companyPrefix)return;try{const j=await api(`/api/version?company=${encodeURIComponent(companyPrefix)}`);V20.setStatus('☁️ آنلاین (D1)','ok');if(j.version && j.version!==V20.serverVersion){await window.fetchDataFromServer();}}catch(e){V20.setStatus('⚠️ اتصال D1 قطع است','error');}};
+  V20.checkVersion=async()=>{if(!V20.token||!companyPrefix)return;try{const j=await api(`/api/version?company=${encodeURIComponent(companyPrefix)}`);V20.setStatus('☁️ آنلاین (D1)','ok');if(j.version && j.version!==V20.serverVersion){V20.serverVersion=j.version;}}catch(e){V20.setStatus('⚠️ اتصال D1 ناپایدار؛ تلاش مجدد...','warn');}};
   try{ if(typeof autoSyncInterval!=='undefined' && autoSyncInterval){ clearInterval(autoSyncInterval); autoSyncInterval=setInterval(()=>{if(V20.token)V20.checkVersion();},30000); } }catch(e){}
 
 
   /* -------- local login + local session bridge -------- */
   const originalFetch=window.fetch.bind(window);
   window.fetch=function(input,init={}){
-    try{
-      const url=typeof input==='string'?input:(input?.url||'');
-      if(String(url).startsWith(DB)){
-        const h={...(init.headers||{})};
-        if(currentUser && (!V20.token || V20.token==='LOCAL-SESSION')) V20.token=localAuthTokenForUser(currentUser);
-        if(V20.token) h.Authorization=`Bearer ${V20.token}`;
-        init={...init,headers:h};
-      }
-    }catch(e){}
+    const originalUrl=typeof input==='string' ? input : (input?.url||'');
+    const isPrimary=String(originalUrl).startsWith(DB);
+    const isFallback=String(originalUrl).startsWith(DB_FALLBACK_URL);
+    const buildRequest=(target)=>{
+      const h={...(init.headers||{})};
+      if(currentUser && (!V20.token || V20.token==='LOCAL-SESSION')) V20.token=localAuthTokenForUser(currentUser);
+      if(V20.token) h.Authorization=`Bearer ${V20.token}`;
+      const targetUrl=isPrimary ? String(originalUrl).replace(DB,target) : String(originalUrl);
+      return {url:targetUrl, options:{...init,headers:h}};
+    };
+    if(isPrimary || isFallback){
+      const primary=buildRequest(DB);
+      return originalFetch(primary.url,primary.options).catch(err=>{
+        if(isPrimary && DB_FALLBACK_URL && DB_FALLBACK_URL!==DB){
+          const fb=buildRequest(DB_FALLBACK_URL);
+          return originalFetch(fb.url,fb.options);
+        }
+        throw err;
+      });
+    }
     return originalFetch(input,init);
   };
   const XO=XMLHttpRequest.prototype.open, XS=XMLHttpRequest.prototype.setRequestHeader, XSend=XMLHttpRequest.prototype.send;
