@@ -1,111 +1,113 @@
 <!doctype html>
 <html lang="fa" dir="rtl">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#0f172a">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="انبارداری">
-  <meta name="mobile-web-app-capable" content="yes">
-  <link rel="manifest" href="./manifest.json">
-  <link rel="icon" type="image/svg+xml" href="./logo.svg">
-  <link rel="apple-touch-icon" href="./logo.svg">
-  <title>سیستم انبارداری هولدینگ</title>
-  <style>
-    :root{color-scheme:light}
-    html,body{min-height:100%;margin:0}
-    body{font-family:Tahoma,Arial,sans-serif;background:linear-gradient(135deg,#f8fafc,#e2e8f0);color:#0f172a;display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box}
-    .box{width:min(520px,100%);background:#fff;border:1px solid #cbd5e1;border-radius:22px;padding:28px;box-shadow:0 18px 50px rgba(15,23,42,.15);text-align:center}
-    .logo{width:130px;height:130px;object-fit:contain;margin:0 auto 12px}
-    h1{font-size:24px;margin:10px 0}
-    p{line-height:1.9;color:#475569;font-size:14px}
-    .actions{display:grid;gap:10px;margin-top:18px}
-    button,a{font:inherit;border:0;border-radius:12px;padding:13px 16px;text-decoration:none;cursor:pointer}
-    .primary{background:#16a34a;color:#fff;font-weight:800}
-    .secondary{background:#0f172a;color:#fff;font-weight:800}
-    .guide{margin-top:14px;background:#eff6ff;border:1px solid #bfdbfe;color:#1e3a8a;border-radius:12px;padding:12px;font-size:13px;line-height:1.8}
-    .muted{font-size:11px;color:#64748b;margin-top:16px}
-    .hidden{display:none!important}
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f172a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="انبارداری">
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" href="./icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<title>سیستم انبارداری هولدینگ</title>
+<style>
+*{box-sizing:border-box}html,body{min-height:100%;margin:0}
+body{font-family:Tahoma,Arial,sans-serif;background:linear-gradient(135deg,#0b1220,#18273f);color:#172033;display:flex;align-items:center;justify-content:center;padding:20px}
+.box{width:min(540px,100%);background:#fff;border-radius:22px;padding:28px;box-shadow:0 22px 60px rgba(0,0,0,.28);text-align:center}
+.logo{width:118px;height:118px;object-fit:contain;margin:0 auto 8px}
+h1{font-size:23px;margin:10px 0;color:#0f172a}p{font-size:14px;line-height:2;color:#64748b}
+.actions{display:grid;gap:10px;margin-top:18px}
+button,a{font:inherit;border:0;border-radius:11px;padding:13px 15px;text-decoration:none;cursor:pointer}
+.primary{background:#059669;color:#fff;font-weight:900}.secondary{background:#2563eb;color:#fff;font-weight:900}
+.install{background:#0f172a;color:#fff;font-weight:900}.hint{margin-top:12px;padding:11px;border-radius:10px;border:1px dashed #cbd5e1;background:#f8fafc;color:#475569;font-size:12px;line-height:1.9}
+.hidden{display:none!important}.status{margin-top:10px;font-size:12px;color:#64748b}
+</style>
 </head>
 <body>
-  <main class="box">
-    <img class="logo" src="./logo.svg" alt="لوگوی شرکت">
-    <h1>سیستم انبارداری هولدینگ</h1>
-    <p>نسخه جدید و رسمی سیستم روی سرور اصلی در دسترس است.</p>
+<main class="box">
+<img class="logo" src="./icon-192.png" alt="لوگوی سیستم انبارداری">
+<h1>سیستم انبارداری هولدینگ</h1>
+<p>نسخه جدید و رسمی سیستم روی سرور اصلی در دسترس است.</p>
 
-    <div id="installArea" class="actions hidden">
-      <button id="installBtn" class="primary">📱 نصب اپلیکیشن روی گوشی</button>
-      <a class="secondary" href="https://app.factor-anbar.online/">ورود به سیستم</a>
-    </div>
+<div class="actions">
+  <a class="primary" href="https://app.factor-anbar.online/">ورود به سیستم انبارداری</a>
+  <button id="installBtn" class="install hidden" type="button">💻📱 نصب اپلیکیشن روی کامپیوتر / گوشی</button>
+</div>
 
-    <div id="iosGuide" class="guide hidden">
-      در سافاری، از دکمه‌ی اشتراک‌گذاری، گزینه‌ی «افزودن به صفحه‌ی اصلی» را بزنید.
-    </div>
+<div id="desktopHint" class="hint hidden">
+🖥️ برای نصب روی کامپیوتر، در Chrome یا Edge از آیکون <b>Install</b> کنار نوار آدرس یا منوی مرورگر استفاده کنید.
+</div>
 
-    <div id="fallbackArea" class="actions">
-      <a class="primary" href="https://app.factor-anbar.online/">ورود به نسخه جدید سیستم</a>
-    </div>
+<div id="iosHint" class="hint hidden">
+📱 در سافاری، از دکمهٔ <b>اشتراک‌گذاری</b> گزینهٔ <b>افزودن به صفحهٔ اصلی</b> را بزنید.
+</div>
 
-    <div class="muted">برای استفاده از آخرین قابلیت‌ها از آدرس اصلی سیستم استفاده کنید.</div>
-  </main>
+<div id="status" class="status">در حال بررسی امکان نصب...</div>
+</main>
 
-  <script>
-    (function () {
-      const productionUrl = 'https://app.factor-anbar.online/';
-      const installArea = document.getElementById('installArea');
-      const installBtn = document.getElementById('installBtn');
-      const iosGuide = document.getElementById('iosGuide');
-      const fallbackArea = document.getElementById('fallbackArea');
+<script>
+(function(){
+  const PRODUCTION='https://app.factor-anbar.online/';
+  let deferredPrompt=null;
+  const installBtn=document.getElementById('installBtn');
+  const desktopHint=document.getElementById('desktopHint');
+  const iosHint=document.getElementById('iosHint');
+  const status=document.getElementById('status');
 
-      let deferredPrompt = null;
+  function standalone(){
+    return window.matchMedia('(display-mode: standalone)').matches ||
+      window.navigator.standalone===true;
+  }
+  function ios(){
+    const ua=navigator.userAgent||navigator.vendor||'';
+    return /iPad|iPhone|iPod/i.test(ua) ||
+      (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+  }
 
-      function isIOS() {
-        const ua = navigator.userAgent || navigator.vendor || '';
-        return /iPad|iPhone|iPod/i.test(ua) ||
-          (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-      }
+  if(standalone()){
+    status.textContent='نسخه نصب‌شده فعال است.';
+    setTimeout(()=>location.replace(PRODUCTION),50);
+    return;
+  }
 
-      function isStandalone() {
-        return window.matchMedia('(display-mode: standalone)').matches ||
-          (window.navigator.standalone === true);
-      }
+  if(ios()){
+    iosHint.classList.remove('hidden');
+    status.textContent='راهنمای نصب برای iPhone/iPad آماده است.';
+  }else{
+    desktopHint.classList.remove('hidden');
+    status.textContent='در صورت پشتیبانی مرورگر، دکمه نصب فعال می‌شود.';
+  }
 
-      if (!isStandalone()) {
-        window.addEventListener('beforeinstallprompt', function (event) {
-          event.preventDefault();
-          deferredPrompt = event;
-          installArea.classList.remove('hidden');
-          fallbackArea.classList.add('hidden');
-        });
+  window.addEventListener('beforeinstallprompt',function(e){
+    e.preventDefault();
+    deferredPrompt=e;
+    installBtn.classList.remove('hidden');
+    desktopHint.classList.add('hidden');
+    status.textContent='این برنامه آماده نصب است.';
+  });
 
-        installBtn.addEventListener('click', async function () {
-          if (!deferredPrompt) return;
-          await deferredPrompt.prompt();
-          try { await deferredPrompt.userChoice; } catch (_) {}
-          deferredPrompt = null;
-          installArea.classList.add('hidden');
-          fallbackArea.classList.remove('hidden');
-        });
+  installBtn.addEventListener('click',async function(){
+    if(!deferredPrompt)return;
+    await deferredPrompt.prompt();
+    try{await deferredPrompt.userChoice}catch(_){}
+    deferredPrompt=null;
+    installBtn.classList.add('hidden');
+  });
 
-        if (isIOS()) {
-          iosGuide.classList.remove('hidden');
-          fallbackArea.classList.remove('hidden');
-        }
-      }
+  window.addEventListener('appinstalled',function(){
+    deferredPrompt=null;
+    installBtn.classList.add('hidden');
+    status.textContent='برنامه نصب شد.';
+    setTimeout(()=>location.replace(PRODUCTION),300);
+  });
 
-      window.addEventListener('appinstalled', function () {
-        deferredPrompt = null;
-        installArea.classList.add('hidden');
-      });
-
-      // ورود خودکار به Production برای کاربران معمولی؛ با مکث کوتاه برای نمایش لوگو.
-      setTimeout(function () {
-        if (!isStandalone()) {
-          window.location.replace(productionUrl);
-        }
-      }, 1800);
-    })();
-  </script>
+  if('serviceWorker' in navigator){
+    window.addEventListener('load',function(){
+      navigator.serviceWorker.register('./sw.js',{scope:'./'}).catch(function(){});
+    });
+  }
+})();
+</script>
 </body>
 </html>
