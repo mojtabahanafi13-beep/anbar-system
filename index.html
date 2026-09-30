@@ -6,11 +6,8 @@
     <title>سیستم انبارداری هولدینگ</title>
 
     <!-- ===== PWA: manifest و آیکون‌ها ===== -->
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#0f172a">
-    <link rel="icon" href="icon-192.png">
-    <link rel="apple-touch-icon" href="icon-192.png">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0f172a">
+<meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="انبارداری">
 
@@ -1496,7 +1493,7 @@ td{border-bottom-color:#d0d8e2 !important;}
 <!-- تب داشبورد (با قرارگیری نیازمند شارژ در دیدرس مستقیم) -->
 <div id="tab-dashboard" class="tab-content" style="display:block;">
     <div class="dash-header">
-        <h2>وضعیت انبار: <span id="dashWelcomeCompany">...</span></h2>
+        <h2>وضعیت انبار: <span id="dashWelcomeCompany">در حال بارگذاری...</span></h2>
         <p id="dashWelcomeName" style="margin:0; font-size:13px; opacity:500;"></p>
     </div>
 
@@ -2554,7 +2551,9 @@ window.addEventListener('DOMContentLoaded', () => {
         }
 
         function selectCompany(prefix, name, autoLogin = false) {
-            companyPrefix = prefix; companyNameStr = name;
+            companyPrefix = String(prefix || '').trim();
+            const companyNames = { rojin: 'شرکت آرایشی بهداشتی روژین', zhik: 'شرکت طلوع سلامت ژیک' };
+            companyNameStr = String(name || companyNames[companyPrefix] || companyPrefix || '').trim();
             productsMap = getSafeLocal(prefix + '_sysProductsMap', {}); 
             productsUnitsMap = getSafeLocal(prefix + '_sysProductsUnitsMap', {}); 
             productsWeightMap = getSafeLocal(prefix + '_sysProductsWeightMap', {}); 
@@ -2767,6 +2766,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
         function initAfterLogin() {
             applyRoleVisibility();
+            updateDashboardIdentity();
             document.getElementById('mainUI').style.display = 'block';
             document.getElementById('top-bar').style.display = 'flex';
 
@@ -3097,7 +3097,7 @@ function uploadLocalToCloud() {
                     sysSettings
                 };
 
-                fetch(`${DB_URL}/api/save-master?company=${encodeURIComponent(companyPrefix)}`, {
+                fetchDbWithFallback(`/api/save-master?company=${encodeURIComponent(companyPrefix)}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(masterPayload),
@@ -5215,7 +5215,20 @@ async function viewReceipt(docId) {
             }
         }
         
-        currentReceiptImages = list.filter(item => typeof item === 'string' && (item.startsWith('data:image') || item.startsWith('data:application/pdf') || item.startsWith('http') || item.startsWith('https')));
+        currentReceiptImages = list
+            .filter(item => typeof item === 'string' && (item.startsWith('data:image') || item.startsWith('data:application/pdf') || item.startsWith('http') || item.startsWith('https')))
+            .map(item => {
+                try {
+                    if (item.startsWith('data:')) return item;
+                    const parsed = new URL(item, window.location.origin);
+                    if (parsed.pathname === '/api/file') {
+                        return `${window.location.origin}${parsed.pathname}${parsed.search}`;
+                    }
+                    return item;
+                } catch (_) {
+                    return item;
+                }
+            });
         
         if(!currentReceiptImages.length) {
             alert("رسیدی برای این سند در سرور یافت نشد.");
@@ -5802,8 +5815,21 @@ if(companyPrefix) {
             } catch(e) { console.error("Expiry alert error", e); }
         }
 
+        function updateDashboardIdentity() {
+            const companyNames = {
+                rojin: 'شرکت آرایشی بهداشتی روژین',
+                zhik: 'شرکت طلوع سلامت ژیک'
+            };
+            const displayCompany = String(companyNameStr || companyNames[String(companyPrefix || '')] || companyPrefix || '').trim() || 'در حال بارگذاری...';
+            const companyEl = document.getElementById('dashWelcomeCompany');
+            const userEl = document.getElementById('dashWelcomeName');
+            if (companyEl) companyEl.textContent = displayCompany;
+            if (userEl) userEl.textContent = currentUser?.name ? `👤 ${currentUser.name}` : '';
+        }
+
         function renderDashboard() {
             try {
+                updateDashboardIdentity();
                 renderDashboardActionCenter();
                 renderExpiryAlerts();
                 let todayStr = new Date().toLocaleDateString('fa-IR'); 
@@ -8243,7 +8269,7 @@ if(typeof updateTodayCounter === 'function') updateTodayCounter();
         const timeoutId = setTimeout(() => controller.abort(), 12000);
         let res;
         try {
-            res = await fetch(`${DB_URL}/api/document?company=${encodeURIComponent(companyPrefix)}`, {
+            res = await fetchDbWithFallback(`/api/document?company=${encodeURIComponent(companyPrefix)}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
@@ -11903,7 +11929,7 @@ html[data-theme="dark"] .tab-btn .tab-label{
   window.addEventListener('load',()=>{injectLaunchbar();injectModal(); const ab=document.getElementById('v20LaunchAudit'),bb=document.getElementById('v20LaunchBackup'); if(currentUser?.role==='admin'){if(ab)ab.style.display='inline-block';if(bb)bb.style.display='inline-block';}});
   setTimeout(()=>{injectLaunchbar();injectModal(); const ab=document.getElementById('v20LaunchAudit'),bb=document.getElementById('v20LaunchBackup'); if(currentUser?.role==='admin'){if(ab)ab.style.display='inline-block';if(bb)bb.style.display='inline-block';} if(V20.token&&currentUser){window.fetchDataFromServer&&window.fetchDataFromServer();}},1200);
   V20.setStatus=(text,kind='ok')=>{const s=document.getElementById('cloudStatus');if(!s)return;s.innerText=text;s.style.background=kind==='ok'?'rgba(16,185,129,.9)':kind==='warn'?'rgba(245,158,11,.9)':'rgba(239,68,68,.9)';};
-  V20.checkVersion=async()=>{if(!V20.token||!companyPrefix)return;try{const j=await api(`/api/version?company=${encodeURIComponent(companyPrefix)}`);V20.setStatus('☁️ آنلاین (D1)','ok');if(j.version && j.version!==V20.serverVersion){V20.serverVersion=j.version;}}catch(e){V20.setStatus('⚠️ اتصال D1 ناپایدار؛ تلاش مجدد...','warn');}};
+  V20.checkVersion=async()=>{if(!V20.token||!companyPrefix)return;try{const j=await api(`/api/version?company=${encodeURIComponent(companyPrefix)}`);V20.setStatus('☁️ آنلاین (D1)','ok');if(j.version && j.version!==V20.serverVersion){V20.serverVersion=j.version;}}catch(e){V20.setStatus('🟡 اتصال D1 ناپایدار؛ تلاش مجدد...','warn');}};
   try{ if(typeof autoSyncInterval!=='undefined' && autoSyncInterval){ clearInterval(autoSyncInterval); autoSyncInterval=setInterval(()=>{if(V20.token)V20.checkVersion();},30000); } }catch(e){}
 
 
@@ -11921,16 +11947,26 @@ html[data-theme="dark"] .tab-btn .tab-label{
     };
     if(isPrimary || isFallback){
       const primary=buildRequest(DB);
-      return originalFetch(primary.url,primary.options).catch(err=>{
+      const shouldFallback = (r)=> !!r && [502,503,504].includes(r.status);
+      const doFetch=(target)=>originalFetch(target.url,target.options);
+      return doFetch(primary).then(r=>{
+        if(isPrimary && shouldFallback(r) && DB_FALLBACK_URL && DB_FALLBACK_URL!==DB){
+          const fb=buildRequest(DB_FALLBACK_URL);
+          return doFetch(fb);
+        }
+        return r;
+      }).catch(err=>{
         if(isPrimary && DB_FALLBACK_URL && DB_FALLBACK_URL!==DB){
           const fb=buildRequest(DB_FALLBACK_URL);
-          return originalFetch(fb.url,fb.options);
+          return doFetch(fb);
         }
         throw err;
       });
     }
     return originalFetch(input,init);
   };
+  window.__V20Fetch = async function(path, opts={}, timeoutMs=12000){ return fetchDbWithFallback(path, opts, timeoutMs); };
+
   const XO=XMLHttpRequest.prototype.open, XS=XMLHttpRequest.prototype.setRequestHeader, XSend=XMLHttpRequest.prototype.send;
   XMLHttpRequest.prototype.open=function(method,url,...rest){this.__v20Url=String(url||'');return XO.call(this,method,url,...rest)};
   XMLHttpRequest.prototype.setRequestHeader=function(k,v){
@@ -12026,6 +12062,7 @@ html[data-theme="dark"] .tab-btn .tab-label{
       if(Array.isArray(r.inventoryReclassifications)) inventoryReclassifications=r.inventoryReclassifications; if(r.lastDocNumber) lastDocNumber=Number(r.lastDocNumber)||lastDocNumber; if(Array.isArray(r.historyLog)) historyLog=r.historyLog.filter(x=>x&&x.docId!=null&&!isReclassDoc(x));
       V20.serverVersion=r.serverVersion||V20.serverVersion; V20.reportCache=null;
       rebuildInventory(); updateLocalCacheOnly(); V20.setStatus('☁️ آنلاین (D1)','ok');
+      updateDashboardIdentity();
       if(currentUser){loadDropdowns&&loadDropdowns(); renderInventory&&renderInventory(); if(document.getElementById('tab-dashboard')?.style.display==='block') renderDashboard&&renderDashboard(); if(document.getElementById('tab-cardex')?.style.display==='block') generateCardex&&generateCardex();} injectLaunchbar();
     }catch(e){ V20.setStatus('⚠️ اتصال D1 قطع است','error'); if(String(e.message||'').toLowerCase().includes('auth')){sessionStorage.removeItem('v20SessionToken');V20.token='';} }
   };
