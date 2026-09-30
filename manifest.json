@@ -1,20 +1,21 @@
 {
-  "name":"سیستم انبارداری هولدینگ",
-  "short_name":"انبارداری",
-  "description":"سیستم مدیریت و انبارداری هولدینگ",
-  "id":"./index.html",
-  "start_url":"./index.html",
-  "scope":"./",
-  "display":"standalone",
-  "orientation":"any",
-  "background_color":"#ffffff",
-  "theme_color":"#0f172a",
-  "dir":"rtl",
-  "lang":"fa",
-  "icons":[
-    {"src":"./icon-192.png","sizes":"192x192","type":"image/png","purpose":"any"},
-    {"src":"./icon-512.png","sizes":"512x512","type":"image/png","purpose":"any"},
-    {"src":"./icon-192-maskable.png","sizes":"192x192","type":"image/png","purpose":"maskable"},
-    {"src":"./icon-512-maskable.png","sizes":"512x512","type":"image/png","purpose":"maskable"}
+  "name": "سیستم انبارداری هولدینگ",
+  "short_name": "انبارداری",
+  "description": "سیستم مدیریت و انبارداری هولدینگ",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
+  "orientation": "any",
+  "background_color": "#ffffff",
+  "theme_color": "#0f172a",
+  "dir": "rtl",
+  "lang": "fa",
+  "icons": [
+    {"src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "/icon-192-maskable.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable"},
+    {"src": "/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
   ]
 }
