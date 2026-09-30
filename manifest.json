@@ -4,13 +4,20 @@
   "description": "سیستم مدیریت و انبارداری هولدینگ",
   "start_url": "./index.html",
   "scope": "./",
+  "id": "./index.html",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#e2e8f0",
+  "background_color": "#ffffff",
   "theme_color": "#0f172a",
   "dir": "rtl",
   "lang": "fa",
   "icons": [
+    {
+      "src": "logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
     {
       "src": "icon-192.png",
       "sizes": "192x192",
