@@ -2207,6 +2207,51 @@ td{border-bottom-color:#d0d8e2 !important;}
     <script>
     const DB_URL = "https://app.factor-anbar.online";
     const DB_FALLBACK_URL = "https://anbar-db.mojtaba-hanafi13.workers.dev";
+    // Global DB helper: outer application code (مثل saveData) also uses this function.
+    // It intentionally lives at top-level so it is not trapped inside the V20 IIFE scope.
+    async function fetchDbWithFallback(path, opts = {}, timeoutMs = 12000) {
+        const targets = [DB_URL, DB_FALLBACK_URL].filter((v, i, a) => v && a.indexOf(v) === i);
+        let lastErr = null;
+
+        for (const base of targets) {
+            for (let attempt = 0; attempt < 2; attempt++) {
+                let timer = null;
+                try {
+                    const headers = { ...(opts.headers || {}) };
+                    const token = (window.__V20 && window.__V20.token) ||
+                        sessionStorage.getItem('v20SessionToken') || '';
+
+                    if (token && !headers.Authorization) {
+                        headers.Authorization = `Bearer ${token}`;
+                    }
+
+                    if (opts.body && !Object.keys(headers).some(k => k.toLowerCase() === 'content-type')) {
+                        headers['Content-Type'] = 'application/json';
+                    }
+
+                    const controller = new AbortController();
+                    timer = setTimeout(() => controller.abort(), timeoutMs);
+
+                    const response = await fetch(`${base}${path}`, {
+                        ...opts,
+                        headers,
+                        signal: controller.signal
+                    });
+
+                    clearTimeout(timer);
+                    return response;
+                } catch (error) {
+                    if (timer) clearTimeout(timer);
+                    lastErr = error;
+                    if (attempt === 0) {
+                        await new Promise(resolve => setTimeout(resolve, 250));
+                    }
+                }
+            }
+        }
+
+        throw lastErr || new Error('اتصال به سرور برقرار نشد.');
+    }
         let autoSyncInterval = null;
 // تابع مبدل تاریخ شمسی به میلادی برای محاسبات سیستم
 function jalaliToGregorian(j_y, j_m, j_d) {
