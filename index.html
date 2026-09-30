@@ -1181,12 +1181,15 @@ td{border-bottom-color:#d0d8e2 !important;}
                 </div>
 
                 <!-- ===== نصب اپلیکیشن (PWA) ===== -->
-                <div id="pwaInstallArea" style="margin-top:18px; display:none;">
+                <div id="pwaInstallArea" style="margin-top:18px; display:block;">
                     <button id="pwaInstallBtn" type="button"
-                        style="background:#0f172a; padding:12px; font-size:14px; display:none;"
+                        style="background:#0f172a; padding:12px; font-size:14px; display:inline-flex;"
                         onclick="handlePwaInstallClick()">
-                        ⬇️ نصب اپلیکیشن روی گوشی
+                        ⬇️ نصب اپلیکیشن
                     </button>
+                    <div id="pwaInstallHint" style="display:none; font-size:11px; font-weight:bold; color:var(--text-muted); background:#f1f5f9; border:1px dashed var(--border); border-radius:8px; padding:10px; margin-top:6px; line-height:1.9;">
+                        📱 اگر پنجره نصب خودکار باز نشد، از منوی مرورگر گزینه‌ی <b>نصب برنامه / Install app</b> یا <b>افزودن به صفحه اصلی</b> را انتخاب کنید.
+                    </div>
                     <div id="pwaIosHint" style="display:none; font-size:11px; font-weight:bold; color:var(--text-muted); background:#f1f5f9; border:1px dashed var(--border); border-radius:8px; padding:10px; margin-top:6px; line-height:1.9;">
                         📱 برای نصب روی آیفون: از دکمه‌ی <b>اشتراک‌گذاری (Share)</b> پایین صفحه‌ی سافاری، گزینه‌ی
                         <b>«افزودن به صفحه‌ی اصلی» (Add to Home Screen)</b> را بزنید.
@@ -1198,36 +1201,41 @@ td{border-bottom-color:#d0d8e2 !important;}
             (function () {
                 var area = document.getElementById('pwaInstallArea');
                 var btn = document.getElementById('pwaInstallBtn');
+                var hint = document.getElementById('pwaInstallHint');
                 var iosHint = document.getElementById('pwaIosHint');
 
                 function render(state) {
-                    // اگر از قبل نصب شده یا در حالت standalone در حال اجراست: چیزی نشون نده
+                    // اگر از قبل نصب شده یا در حالت standalone در حال اجراست، گزینه نصب را مخفی کن.
                     if (state.standalone) {
                         area.style.display = 'none';
-                        btn.style.display = 'none';
-                        iosHint.style.display = 'none';
                         return;
                     }
+
+                    area.style.display = 'block';
+
                     if (state.ios) {
-                        area.style.display = 'block';
                         btn.style.display = 'none';
+                        hint.style.display = 'none';
                         iosHint.style.display = 'block';
                         return;
                     }
-                    if (state.canPromptInstall) {
-                        area.style.display = 'block';
-                        btn.style.display = 'inline-flex';
-                        iosHint.style.display = 'none';
-                    } else {
-                        // مرورگر Chromium هست ولی هنوز رویداد beforeinstallprompt نرسیده
-                        area.style.display = 'none';
-                    }
+
+                    // دکمه همیشه قابل مشاهده است؛ اگر beforeinstallprompt موجود باشد،
+                    // با یک کلیک پنجره رسمی نصب Chrome باز می‌شود.
+                    btn.style.display = 'inline-flex';
+                    iosHint.style.display = 'none';
+                    hint.style.display = state.canPromptInstall ? 'none' : 'block';
                 }
 
                 window.handlePwaInstallClick = function () {
                     window.PWAInstall.promptInstall().then(function (choice) {
                         if (choice && choice.outcome === 'accepted') {
                             area.style.display = 'none';
+                            return;
+                        }
+                        // وقتی مرورگر هنوز رویداد نصب را نداده، کاربر را به گزینه رسمی مرورگر راهنمایی کن.
+                        if (!window.PWAInstall.getState().canPromptInstall) {
+                            document.getElementById('pwaInstallHint').style.display = 'block';
                         }
                     });
                 };
