@@ -1,19 +1,14 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-<script>
-/* FIX-2026-10-01-B: حذف سرویس‌ورکر و کش قدیمی یک‌بار برای هر نسخه */
-(function(){try{
-  var B='FIX-2026-10-01-B';
-  if(localStorage.getItem('__build_seen')!==B){
-    localStorage.setItem('__build_seen',B);
-    var p=[];
-    if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations)p.push(navigator.serviceWorker.getRegistrations().then(function(r){return Promise.all(r.map(function(x){return x.unregister();}));}));
-    if(window.caches&&caches.keys)p.push(caches.keys().then(function(k){return Promise.all(k.map(function(x){return caches.delete(x);}));}));
-    Promise.all(p).then(function(){location.reload();}).catch(function(){});
-  }
-}catch(e){}})();
-</script>
+<!-- PWA: manifest و آیکون‌ها -->
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" href="./icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<meta name="theme-color" content="#0f172a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="انبارداری">
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -78,7 +73,7 @@
         // ثبت سرویس‌ورکر (برای معیار قابل‌نصب بودن در کروم لازم است)
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function () {
-                navigator.serviceWorker.register('sw.js').catch(function () {});
+                navigator.serviceWorker.register('./sw.js', {scope:'./'}).catch(function (err) { console.warn('PWA service worker registration failed:', err); });
             });
         }
 
