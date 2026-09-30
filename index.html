@@ -1,16 +1,27 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
+<script>
+/* FIX-2026-10-01-B: حذف سرویس‌ورکر و کش قدیمی یک‌بار برای هر نسخه */
+(function(){try{
+  var B='FIX-2026-10-01-B';
+  if(localStorage.getItem('__build_seen')!==B){
+    localStorage.setItem('__build_seen',B);
+    var p=[];
+    if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations)p.push(navigator.serviceWorker.getRegistrations().then(function(r){return Promise.all(r.map(function(x){return x.unregister();}));}));
+    if(window.caches&&caches.keys)p.push(caches.keys().then(function(k){return Promise.all(k.map(function(x){return caches.delete(x);}));}));
+    Promise.all(p).then(function(){location.reload();}).catch(function(){});
+  }
+}catch(e){}})();
+</script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>سیستم انبارداری هولدینگ</title>
 
     <!-- ===== PWA: manifest و آیکون‌ها ===== -->
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#0f172a">
-    <link rel="icon" href="icon-192.png">
-    <link rel="apple-touch-icon" href="icon-192.png">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0f172a">
+<meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="انبارداری">
 
@@ -445,6 +456,9 @@
         .dispatch-manual-select{display:block!important;width:100%!important;min-width:0!important;height:42px!important;padding:7px 10px!important;font-size:13px!important;border-radius:8px!important;box-sizing:border-box!important;}
         .dispatch-manual-entry{display:flex;align-items:center;gap:7px;width:100%;min-width:0;box-sizing:border-box;}
         .dispatch-manual-qty{width:72px!important;min-width:72px!important;flex:0 0 72px!important;height:38px!important;padding:6px 4px!important;text-align:center;font-weight:bold;font-size:14px!important;box-sizing:border-box;}
+        .dispatch-manual-qty::placeholder{color:#94a3b8;font-weight:800;}
+        .dispatch-manual-qty:focus{outline:2px solid rgba(139,92,246,.22);box-shadow:0 0 0 3px rgba(139,92,246,.08);border-color:#8b5cf6!important;}
+        #dispatchManualCartonItem:focus,#dispatchManualLooseItem:focus{outline:2px solid rgba(37,99,235,.18);}
         .dispatch-manual-entry .dispatch-control-btn{flex:1 1 auto!important;min-width:0!important;width:auto!important;}
         @media (max-width:600px){
             .dispatch-manual-grid{grid-template-columns:1fr;gap:8px;}
@@ -983,8 +997,7 @@ td{border-bottom-color:#d0d8e2 !important;}
   #tab-cardex #cardexFilterCard{padding:6px!important;margin-bottom:5px!important;}
   #tab-cardex #cardexModeSelectorCard .radio-group{gap:4px!important;}
   #tab-cardex #cardexModeSelectorCard .radio-label{min-height:36px!important;font-size:10px!important;padding:5px 6px!important;}
-  #tab-cardex #cardexFilterCard .filter-quick-row{grid-template-columns:1fr!important;gap:5px!important;}
-  #tab-cardex #cardexFilterCard .filter-search-wrap input{font-size:11px!important;height:38px!important;}
+  #tab-cardex #cardexFilterCard .filter-quick-row{grid-template-columns:1fr!important;gap:5px!important;}  #tab-cardex #cardexFilterCard .filter-search-wrap input{font-size:11px!important;height:38px!important;}
   #tab-cardex #cardexFilterCard .quick-filter-select{height:34px!important;}
   #tab-cardex #cardexFilterCard .invoice-only-search input{font-size:11px!important;height:38px!important;}
   #tab-cardex #cardexFilterCard .invoice-only-search button{height:38px!important;flex-basis:38px!important;width:38px!important;}
@@ -1238,7 +1251,8 @@ td{border-bottom-color:#d0d8e2 !important;}
                     <button class="btn-red" style="padding:12px; font-size:15px; background:var(--text-muted);" onclick="showLoginMain()">بازگشت</button>
                 </div>
                 <div style="margin-top: 15px; border-top: 2px solid var(--bg-color); padding-top: 10px; display: flex; gap: 8px;">
-                    <button style="background: #f1f5f9; color: var(--dark); font-size: 12px; padding: 8px; margin: 0; border:1px solid var(--border); flex:1;" onclick="showChangePassView()">🔑 تغییر رمز عبور</button>
+                    <button style="background: #f1f5f9; color: var(--dark); font-size: 12px; padding: 8px; margin: 0; border:1px solid var(--border); flex:1;" onclick="alert('🔐 برای تغییر رمز، ابتدا وارد سیستم شوید و از بخش مدیریت کاربران گزینه «تغییر رمز من» را بزنید.');">🔑 تغییر رمز پس از ورود</button>
+                    <button style="background:#7c3aed;color:#fff;font-size:12px;padding:8px;margin:0;border:0;flex:1;" onclick="recoverAdminPassword()">🛠 بازیابی رمز مدیر</button>
                 </div>
                 <button style="margin-top:10px; background:transparent; color:var(--danger); border:2px dashed var(--danger); font-size:12px; padding:8px;" onclick="showCompanySelect()">🔙 بازگشت به لیست شرکت‌ها</button>
             </div>
@@ -1305,22 +1319,22 @@ td{border-bottom-color:#d0d8e2 !important;}
                     <div class="dispatch-control-card" style="background:#f1f5f9; border:1px solid #cbd5e1;">
                         <div style="font-size:11px; font-weight:900; color:#6d28d9; margin-bottom:6px;">🔹 ثبت دستی خرده</div>
                         <div style="font-size:10px; font-weight:800; color:#475569; margin-bottom:5px;">کالای دارای خرده را انتخاب کنید؛ نیازی به بارکد نیست.</div>
-                        <select id="dispatchManualLooseItem" class="dispatch-manual-select" onchange="validateDispatchLooseInput(document.getElementById('dispatchQtyManualLoose'))">
+                        <select id="dispatchManualLooseItem" class="dispatch-manual-select" onchange="activateManualDispatchInput('dispatchManualLooseItem','dispatchQtyManualLoose')">
                             <option value="">انتخاب کالا...</option>
                         </select>
                         <div class="dispatch-manual-entry">
-                            <input type="number" id="dispatchQtyManualLoose" value="0" min="0" inputmode="numeric" class="dispatch-manual-qty" style="border-color:#8b5cf6;" placeholder="خرده" oninput="validateDispatchLooseInput(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();registerManualDispatchLoose();}">
+                            <input type="number" id="dispatchQtyManualLoose" value="" min="0" inputmode="numeric" enterkeyhint="done" class="dispatch-manual-qty" style="border-color:#8b5cf6;" placeholder="تعداد خرده" oninput="validateDispatchLooseInput(this)" onfocus="this.select()" onkeydown="if(event.key==='Enter'){event.preventDefault();registerManualDispatchLoose();}">
                             <button type="button" class="dispatch-control-btn" style="background:#8b5cf6;" onclick="registerManualDispatchLoose()">ثبت خرده</button>
                         </div>
                         <div style="font-size:10px; color:#6d28d9; font-weight:800;">فقط همان مقدار خرده باقی‌مانده قابل ثبت است.</div>
                     </div>
                     <div class="dispatch-control-card dispatch-manual-card" style="background:#fff7ed; border:1px solid #fed7aa;">
                         <div style="font-size:11px; font-weight:900; color:#9a3412;">📦 انتخاب کالا برای کارتن بدون لیبل</div>
-                        <select id="dispatchManualCartonItem" class="dispatch-manual-select" onchange="validateDispatchLooseInput(document.getElementById('dispatchQtyLoose'))">
+                        <select id="dispatchManualCartonItem" class="dispatch-manual-select" onchange="activateManualDispatchInput('dispatchManualCartonItem','dispatchQtyManualCarton')">
                             <option value="">انتخاب کالا...</option>
                         </select>
                         <div class="dispatch-manual-entry">
-                            <input type="number" id="dispatchQtyManualCarton" value="0" min="0" inputmode="numeric" class="dispatch-manual-qty" style="border-color:#f97316;" placeholder="تعداد" onkeydown="if(event.key==='Enter'){event.preventDefault();registerManualDispatchCartons();}">
+                            <input type="number" id="dispatchQtyManualCarton" value="" min="0" inputmode="numeric" enterkeyhint="done" class="dispatch-manual-qty" style="border-color:#f97316;" placeholder="تعداد کارتن" onfocus="this.select()" onkeydown="if(event.key==='Enter'){event.preventDefault();registerManualDispatchCartons();}">
                             <button type="button" class="dispatch-control-btn" style="background:#f97316;" onclick="registerManualDispatchCartons()">ثبت کارتن</button>
                         </div>
                         <div style="font-size:10px; color:#9a3412; font-weight:800;">فقط برای کارتن بدون لیبل؛ هر عدد = ۱ کارتن</div>
@@ -1492,7 +1506,7 @@ td{border-bottom-color:#d0d8e2 !important;}
 <!-- تب داشبورد (با قرارگیری نیازمند شارژ در دیدرس مستقیم) -->
 <div id="tab-dashboard" class="tab-content" style="display:block;">
     <div class="dash-header">
-        <h2>وضعیت انبار: <span id="dashWelcomeCompany">...</span></h2>
+        <h2>وضعیت انبار: <span id="dashWelcomeCompany">در حال بارگذاری...</span></h2>
         <p id="dashWelcomeName" style="margin:0; font-size:13px; opacity:500;"></p>
     </div>
 
@@ -1626,13 +1640,15 @@ td{border-bottom-color:#d0d8e2 !important;}
                     </div>
                     <div style="padding:16px;">
                         <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px 12px;font-size:11px;line-height:1.9;margin-bottom:14px;">
-                            این عملیات «ورود» جدید نیست و موجودی کل را تغییر نمی‌دهد. سند اصلاحی جداگانه ثبت می‌شود تا خروج‌ها و اسناد قبلی دست‌نخورده بمانند.
+                            این عملیات «ورود» جدید نیست و موجودی کل را تغییر نمی‌دهد. سند اصلاحی جداگانه ثبت می‌شود تا خروج‌ها و اسناد قبلی دست‌نخورده بمانند.<br>
+                            <b>شماره بچ را حتماً وارد کنید (۳ رقم مثل 001).</b> این بچ در کنترل بارکد و بارگیری هم قابل انتخاب و اعتبارسنجی خواهد بود.
                         </div>
                         <div class="responsive-grid">
                             <div><label>انبار</label><select id="reclassWarehouseSelect" onchange="refreshUnpricedReclassStock()"></select></div>
                             <div><label>کالا</label><select id="reclassProductSelect" onchange="refreshUnpricedReclassStock()"></select></div>
                             <div><label>موجودی بدون قیمت</label><input id="reclassUnpricedStock" type="text" readonly style="font-weight:900;background:#f8fafc;"></div>
                             <div><label>مقدار برای قیمت‌گذاری</label><input id="reclassQty" type="number" min="1" step="1" placeholder="مثلاً 700"></div>
+                            <div><label>شماره بچ</label><input id="reclassBatch" type="text" inputmode="numeric" maxlength="3" pattern="[0-9]{3}" placeholder="مثلاً 001" autocomplete="off" oninput="normalizeReclassBatchInput(this)"></div>
                             <div><label>قیمت واحد (ریال)</label><input id="reclassPrice" type="number" min="0.01" step="0.01" placeholder="مثلاً 75000"></div>
                             <div><label>تاریخ تولید</label><input id="reclassProdDate" type="text" placeholder="مثلاً 1405/05/20"></div>
                             <div><label>تاریخ انقضا</label><input id="reclassExpDate" type="text" placeholder="مثلاً 1407/05/20"></div>
@@ -1980,8 +1996,7 @@ td{border-bottom-color:#d0d8e2 !important;}
 .inventory-count-table{max-height:calc(100vh - 330px);overflow:auto;border:1px solid var(--border);border-radius:9px;background:#fff;}
 .inventory-count-table table{min-width:820px;}
 .inventory-count-table th{position:sticky;top:0;z-index:5;background:#eef3f8 !important;}
-.inventory-count-input{width:120px!important;margin:0!important;text-align:center!important;font-weight:900!important;}
-.inventory-count-row.diff{background:#fff7ed;}
+.inventory-count-input{width:120px!important;margin:0!important;text-align:center!important;font-weight:900!important;}.inventory-count-row.diff{background:#fff7ed;}
 .inventory-count-row.match{background:#ecfdf5;}
 .inventory-count-actions{display:flex;gap:7px;flex-wrap:wrap;}
 .inventory-count-actions button{width:auto;margin:0;padding:8px 12px;font-size:11px;}
@@ -2131,6 +2146,9 @@ td{border-bottom-color:#d0d8e2 !important;}
                         </div>
                     </div>
 
+                    <div style="display:flex; gap:8px; flex-wrap:wrap; margin:0 0 12px 0;">
+                        <button type="button" class="btn-blue" style="width:auto; margin:0; background:#0f766e; padding:9px 14px;" onclick="openMyPasswordChange()">🔐 تغییر رمز من</button>
+                    </div>
                     <div class="scrollable-list"><ul class="settings-list" id="list-users"></ul></div>
                 </div>
 
@@ -2195,7 +2213,8 @@ td{border-bottom-color:#d0d8e2 !important;}
     <div id="fullscreen-reader" style="width:100%; max-width:450px; margin:30px auto; background:#000; border-radius:12px; overflow:hidden; border:2px solid #3b82f6;"></div>
 </div>
     <script>
-    const DB_URL = "https://anbar-db.mojtaba-hanafi13.workers.dev";
+    const DB_URL = "https://app.factor-anbar.online";
+    const DB_FALLBACK_URL = "https://anbar-db.mojtaba-hanafi13.workers.dev";
         let autoSyncInterval = null;
 // تابع مبدل تاریخ شمسی به میلادی برای محاسبات سیستم
 function jalaliToGregorian(j_y, j_m, j_d) {
@@ -2370,7 +2389,10 @@ function jalaliToGregorian(j_y, j_m, j_d) {
         // اصلاحات قیمت‌گذاری موجودی جدا از اسناد انبار نگهداری می‌شوند و در historyLog قرار نمی‌گیرند.
         let inventoryReclassifications = [];
         let lastDocNumber = 1000;
-        let currentUser = null, selectedLoginIndex = null; 
+        let currentUser = null, selectedLoginIndex = null;
+        // مهاجرت یک‌باره کاربران نسخه قدیمی: فقط در حافظه نگه داشته می‌شود تا مدیر آن را به D1 منتقل کند.
+        let legacyLocalUsers = [];
+
         let draftEntryItems = [], draftExitItems = [], outRequirements = [];
         let editingEntryDocId = null, editingExitDocId = null;
         let currentUploadDocId = null, currentViewingDocData = null, currentItemCardexData = [];
@@ -2388,7 +2410,8 @@ function jalaliToGregorian(j_y, j_m, j_d) {
         function createLocalSafetyBackup() {
             try {
                 if (!companyPrefix) return;
-                const payload = { productsMap, productsUnitsMap, productsWeightMap, inventory, historyLog, lastDocNumber, sysSettings, sysUsers, _backupAt: new Date().toISOString() };
+                const safeUsers = (Array.isArray(sysUsers) ? sysUsers : []).map(u => ({name:String(u?.name||''), role:String(u?.role||'user'), active:u?.active !== false})).filter(u => u.name);
+                const payload = { productsMap, productsUnitsMap, productsWeightMap, inventory, historyLog, lastDocNumber, sysSettings, sysUsers:safeUsers, _backupAt: new Date().toISOString() };
                 localStorage.setItem(companyPrefix + '_sysSafetyBackup', JSON.stringify(payload));
             } catch (e) { console.warn('Safety backup failed', e); }
         }
@@ -2430,13 +2453,12 @@ function jalaliToGregorian(j_y, j_m, j_d) {
  
 
         function ensureDefaultUsers() {
-            sysUsers = (Array.isArray(sysUsers) ? sysUsers : []).filter(u => u && u.name);
-            let admin = sysUsers.find(u => String(u.role) === 'admin');
-            if(!admin){ admin = {name:'مجتبی حنفی',role:'admin',pass:'1234'}; sysUsers.push(admin); }
-            else if(!admin.pass || admin.pass === '__SERVER__' || String(admin.pass).startsWith('sha256:')) admin.pass = '1234';
-            let viewer = sysUsers.find(u => String(u.role) === 'viewer');
-            if(!viewer){ viewer = {name:'مدیریت دفتر مرکزی',role:'viewer',pass:'0000'}; sysUsers.push(viewer); }
-            else if(!viewer.pass || viewer.pass === '__SERVER__' || String(viewer.pass).startsWith('sha256:')) viewer.pass = '0000';
+            // احراز هویت مرکزی است؛ مرورگر فقط نام/Role کاربران را cache می‌کند و هرگز رمز را نگه نمی‌دارد.
+            sysUsers = (Array.isArray(sysUsers) ? sysUsers : []).map(u => ({
+                name: String(u?.name || '').trim(),
+                role: String(u?.role || 'user'),
+                active: u?.active !== false
+            })).filter(u => u.name && u.active !== false);
         }
 
         function renderLoginButtons() {
@@ -2520,8 +2542,9 @@ window.addEventListener('DOMContentLoaded', () => {
     // ... ادامه کدهای قبلی
             try { sessionComp = JSON.parse(sessionStorage.getItem('activeCompany')); sessionUser = JSON.parse(sessionStorage.getItem('activeUser')); } catch(e) {}
             if(sessionComp) {
-                if(sessionUser) { currentUser = sessionUser; selectCompany(sessionComp.prefix, sessionComp.name, true); } 
-                else { selectCompany(sessionComp.prefix, sessionComp.name, false); }
+                currentUser = null;
+                selectCompany(sessionComp.prefix, sessionComp.name, false);
+                if(window.__V20?.restoreSession) window.__V20.restoreSession().catch(()=>{});
             } else {
                 document.getElementById('login-overlay').style.display = 'flex'; 
                 document.getElementById('view-company-select').style.display = 'block';
@@ -2540,7 +2563,9 @@ window.addEventListener('DOMContentLoaded', () => {
         }
 
         function selectCompany(prefix, name, autoLogin = false) {
-            companyPrefix = prefix; companyNameStr = name;
+            companyPrefix = String(prefix || '').trim();
+            const companyNames = { rojin: 'شرکت آرایشی بهداشتی روژین', zhik: 'شرکت طلوع سلامت ژیک' };
+            companyNameStr = String(name || companyNames[companyPrefix] || companyPrefix || '').trim();
             productsMap = getSafeLocal(prefix + '_sysProductsMap', {}); 
             productsUnitsMap = getSafeLocal(prefix + '_sysProductsUnitsMap', {}); 
             productsWeightMap = getSafeLocal(prefix + '_sysProductsWeightMap', {}); 
@@ -2580,26 +2605,28 @@ window.addEventListener('DOMContentLoaded', () => {
             if(!sysSettings.customers || !Array.isArray(sysSettings.customers)) sysSettings.customers = ["باربری محبی (شوش)", "دفتر مرکزی"]; 
             if(!sysSettings.senders || !Array.isArray(sysSettings.senders)) sysSettings.senders = ["کارخانه تولیدی", "تامین‌کننده اصلی"]; 
             
-            let rawUsers = getSafeLocal(prefix + '_sysUsersList', []); 
-            sysUsers = Array.isArray(rawUsers) ? rawUsers : Object.values(rawUsers);
-            sysUsers = sysUsers.filter(u => u && u.name);
-            ensureDefaultUsers();
-            localStorage.setItem(prefix + '_sysUsersList', JSON.stringify(sysUsers));
-            
+            // کاربران قدیمی LocalStorage دیگر به‌صورت خودکار مهاجرت نمی‌شوند.
+            // مدیریت کاربران فقط از داخل D1 و توسط مدیر انجام می‌شود.
+            // داده قدیمی را حذف می‌کنیم تا نتواند رمز حساب‌های مرکزی را بازنویسی کند.
+            try { localStorage.removeItem(prefix + '_sysUsersList'); } catch(e) {}
+            legacyLocalUsers = [];
+            sysUsers = [];
+            currentUser = null;
+            selectedLoginIndex = null;
+            try { sessionStorage.removeItem('activeUser'); sessionStorage.removeItem('v20SessionToken'); } catch(e) {}
             sessionStorage.setItem('activeCompany', JSON.stringify({prefix, name}));
             document.getElementById('view-company-select').style.display = 'none';
-
-            if(autoLogin && currentUser) {
-                document.getElementById('login-overlay').style.display = 'none';
-                initAfterLogin();
-            } else {
-                document.getElementById('login-overlay').style.display = 'flex';
-                document.getElementById('view-login-main').style.display = 'block';
-                document.getElementById('subTitleCompany').innerText = "ورود به " + name;
-                renderLoginButtons();
+            document.getElementById('login-overlay').style.display = 'flex';
+            document.getElementById('view-login-main').style.display = 'block';
+            document.getElementById('subTitleCompany').innerText = "ورود به " + name;
+            renderLoginButtons();
+            if(window.__V20?.loadAuthUsers) {
+                window.__V20.loadAuthUsers().catch(e => {
+                    console.error('Central user list failed:', e);
+                    const box=document.getElementById('loginUserButtons');
+                    if(box) box.innerHTML='<div style="padding:12px;color:#b91c1c;font-weight:900">❌ فهرست کاربران از سرور دریافت نشد. اتصال D1 را بررسی کنید.</div>';
+                });
             }
-            
-            fetchDataFromServer();
             if(autoSyncInterval) clearInterval(autoSyncInterval);
             autoSyncInterval = setInterval(fetchDataFromServer, 30000);
         }
@@ -2611,6 +2638,7 @@ window.addEventListener('DOMContentLoaded', () => {
             sessionStorage.removeItem('activeCompany'); 
             currentUser = null;
             companyPrefix = '';
+            document.documentElement.removeAttribute('data-user-role');
             
             document.getElementById('mainUI').style.display = 'none';
             document.getElementById('login-overlay').style.display = 'flex'; 
@@ -2625,98 +2653,158 @@ window.addEventListener('DOMContentLoaded', () => {
         
         function showLoginMain() { document.getElementById('view-change-pass').style.display = 'none'; document.getElementById('view-login-main').style.display = 'block'; document.getElementById('loginPassArea').style.display = 'none'; document.getElementById('loginUserButtons').style.display = 'flex'; renderLoginButtons(); }
         
-        function showChangePassView() { 
-            let opts = sysUsers.map((u, i) => `<div class="custom-option" onclick="selectCS('changePassUser', '${i}', '${u.name}')">${u.name}</div>`).join('');
-            document.getElementById('opt-changePassUser').innerHTML = opts;
-            if(sysUsers.length > 0) {
-                document.getElementById('changePassUser').value = "0";
-                document.getElementById('disp-changePassUser').innerHTML = `${sysUsers[0].name} <span style="font-size:10px;">▼</span>`;
+        function showChangePassView() {
+            if(!currentUser) return alert("🔐 ابتدا وارد سیستم شوید؛ تغییر رمز فقط برای حساب واردشده مجاز است.");
+            document.getElementById('changePassUser').value = '';
+            document.getElementById('disp-changePassUser').innerHTML = `${currentUser.name} <span style="font-size:10px;">(حساب فعلی)</span>`;
+            document.getElementById('opt-changePassUser').innerHTML = '';
+            document.getElementById('view-login-main').style.display = 'none';
+            document.getElementById('view-change-pass').style.display = 'block';
+            document.getElementById('login-overlay').style.display = 'flex';
+            document.getElementById('changePassOld').value = '';
+            document.getElementById('changePassNew').value = '';
+        }
+
+        window.openMyPasswordChange = function(){ showChangePassView(); };
+
+        async function changeUserPassword() {
+            if(!currentUser || !window.__V20?.changeMyPassword) return alert("🔐 ابتدا وارد سیستم شوید.");
+            const oldP = String(document.getElementById('changePassOld')?.value || '');
+            const newP = String(document.getElementById('changePassNew')?.value || '');
+            if(newP.length < 4) return alert("❌ رمز جدید باید حداقل ۴ کاراکتر باشد.");
+            try {
+                await window.__V20.changeMyPassword(oldP, newP);
+                alert("✅ رمز عبور با موفقیت در D1 تغییر کرد.");
+                document.getElementById('view-change-pass').style.display='none';
+                document.getElementById('login-overlay').style.display='none';
+            } catch(e) {
+                alert("❌ " + (e.message || 'تغییر رمز ناموفق بود.'));
             }
-            document.getElementById('view-login-main').style.display = 'none'; 
-            document.getElementById('view-change-pass').style.display = 'block'; 
         }
 
-        function changeUserPassword() { 
-            let idx = document.getElementById('changePassUser').value; 
-            let oldP = document.getElementById('changePassOld').value; 
-            let newP = document.getElementById('changePassNew').value; 
-            if(idx === "") return alert("کاربر را انتخاب کنید!");
-            let user = sysUsers[idx]; 
-            if(user.pass && user.pass !== oldP) return alert("رمز فعلی اشتباه است!"); 
-            user.pass = newP; saveData(); alert("رمز تغییر کرد."); 
-            showLoginMain(); 
+        function selectUserForLogin(index) {
+            selectedLoginIndex = index;
+            const user = sysUsers[index];
+            if(!user) return;
+            document.getElementById('loginUserButtons').style.display = 'none';
+            document.getElementById('loginPassArea').style.display = 'block';
+            document.getElementById('loginPassword').value = '';
+            setTimeout(()=> document.getElementById('loginPassword').focus(), 100);
         }
 
-        function selectUserForLogin(index) { selectedLoginIndex = index; let user = sysUsers[index]; if(user.pass && user.pass.trim() !== '') { document.getElementById('loginUserButtons').style.display = 'none'; document.getElementById('loginPassArea').style.display = 'block'; document.getElementById('loginPassword').value = ''; setTimeout(()=> document.getElementById('loginPassword').focus(), 100); } else { performLogin(); } }
-        
-        function performLogin() { 
-            if(selectedLoginIndex === null) return; 
-            let user = sysUsers[selectedLoginIndex]; 
-            if (user.pass && user.pass !== document.getElementById('loginPassword').value) return alert("رمز اشتباه است!"); 
-            currentUser = user; 
-            sessionStorage.setItem('activeUser', JSON.stringify(user)); 
-            document.getElementById('login-overlay').style.display = 'none'; 
-            initAfterLogin(); 
+        async function recoverAdminPassword(){
+            const user = (selectedLoginIndex!==null && sysUsers[selectedLoginIndex]) ? sysUsers[selectedLoginIndex] : null;
+            if(!user || !user.name) return alert('ابتدا حساب مدیر را انتخاب کنید.');
+            const key=prompt('کلید بازیابی AUTH_RECOVERY_KEY را وارد کنید:');
+            if(!key) return;
+            const np=prompt('رمز جدید مدیر (حداقل ۸ کاراکتر):');
+            if(!np || np.length<8) return alert('رمز جدید باید حداقل ۸ کاراکتر باشد.');
+            try{
+                if(!window.__V20?.recoverAdmin) throw new Error('ماژول بازیابی مرکزی هنوز آماده نیست.');
+                const j=await window.__V20.recoverAdmin(user.name,key,np);
+                if(!j?.success) throw new Error(j?.message||j?.error||'بازیابی ناموفق بود.');
+                alert('✅ رمز مدیر بازیابی شد. اکنون با رمز جدید وارد شوید.');
+                document.getElementById('loginPassword').value='';
+                showLoginMain();
+            }catch(e){ alert('❌ '+(e.message||'بازیابی ناموفق بود.')); }
+        }
+
+        async function performLogin() {
+            if(selectedLoginIndex === null) return;
+            const user = sysUsers[selectedLoginIndex];
+            const pass = String(document.getElementById('loginPassword')?.value || '');
+            if(!user || !user.name) return alert('❌ کاربر انتخاب‌شده معتبر نیست.');
+            if(!pass) return alert('❌ رمز عبور را وارد کنید.');
+            try {
+                if(!window.__V20?.login) throw new Error('ماژول احراز هویت مرکزی هنوز آماده نیست.');
+                const auth = await window.__V20.login(user.name, pass);
+                currentUser = auth.user;
+                sessionStorage.setItem('activeUser', JSON.stringify(currentUser));
+                sessionStorage.setItem('activeCompany', JSON.stringify({prefix:companyPrefix,name:companyNameStr}));
+                // مهاجرت خودکار کاربران قدیمی عمداً حذف شده است.
+                // کاربران فقط توسط مدیر از تنظیمات و مستقیماً در D1 تعریف می‌شوند.
+                document.getElementById('login-overlay').style.display = 'none';
+                document.getElementById('view-change-pass').style.display = 'none';
+                initAfterLogin();
+                fetchDataFromServer();
+                if(auth.mustChangePassword) setTimeout(()=>openMyPasswordChange(),250);
+            } catch(e) {
+                alert('❌ ' + (e.message || 'ورود ناموفق بود.'));
+            }
+        }
+
+        window.applyRoleVisibility = function applyRoleVisibility() {
+            const role = String(currentUser?.role || '').trim();
+            const root = document.documentElement;
+            if (role) root.setAttribute('data-user-role', role);
+            else root.removeAttribute('data-user-role');
+
+            const hide = (id) => { const el=document.getElementById(id); if(el) el.style.display='none'; };
+            const show = (id, display='block') => { const el=document.getElementById(id); if(el) el.style.display=display; };
+
+            // Reset only role-controlled navigation elements, then apply role policy.
+            show('tabBtnDashboard'); show('tabBtnInventory'); show('tabBtnCardex');
+            show('tabBtnEntry'); show('tabBtnExit'); show('settingsTabBtn');
+            show('tabBtnInventoryCount'); show('tabBtnTransfer');
+
+            if (role === 'loader') {
+                ['tabBtnDashboard','tabBtnInventory','tabBtnEntry','tabBtnExit','settingsTabBtn','tabBtnInventoryCount','tabBtnTransfer'].forEach(hide);
+                show('tabBtnCardex');
+            } else if (role === 'viewer') {
+                hide('settingsTabBtn'); hide('tabBtnEntry'); hide('tabBtnExit'); hide('tabBtnTransfer'); hide('tabBtnInventoryCount');
+                show('tabBtnDashboard'); show('tabBtnInventory'); show('tabBtnCardex');
+            } else if (role === 'user') {
+                hide('settingsTabBtn');
+                show('tabBtnDashboard'); show('tabBtnInventory'); show('tabBtnCardex'); show('tabBtnEntry'); show('tabBtnExit'); show('tabBtnTransfer'); show('tabBtnInventoryCount');
+            } else if (role === 'admin') {
+                show('tabBtnDashboard'); show('tabBtnInventory'); show('tabBtnCardex'); show('tabBtnEntry'); show('tabBtnExit'); show('settingsTabBtn'); show('tabBtnInventoryCount'); show('tabBtnTransfer');
+            }
+
+            const reclassBtn = document.getElementById('btnUnpricedReclass');
+            if (reclassBtn) reclassBtn.style.display = role === 'admin' ? 'inline-flex' : 'none';
+
+            if (role === 'loader') {
+                const mode=document.getElementById('cardexModeSelectorCard'); if(mode) mode.style.display='none';
+                const filt=document.getElementById('cardexFilterCard'); if(filt) filt.style.display='none';
+                const cardexBtn=document.getElementById('tabBtnCardex'); if(cardexBtn) cardexBtn.innerText='🚚 حواله‌های بارگیری';
+                const title=document.getElementById('cardexTitleLabel'); if(title) title.innerText='🚚 حواله‌های در انتظار بارگیری';
+            } else {
+                const mode=document.getElementById('cardexModeSelectorCard'); if(mode) mode.style.display='block';
+                const filt=document.getElementById('cardexFilterCard'); if(filt) filt.style.display='block';
+                const cardexBtn=document.getElementById('tabBtnCardex'); if(cardexBtn) cardexBtn.innerText='📋 اسناد و کاردکس';
+                const title=document.getElementById('cardexTitleLabel'); if(title) title.innerText='📋 اسناد و کاردکس کالاها';
+            }
         }
 
         function initAfterLogin() {
-            const reclassBtn = document.getElementById('btnUnpricedReclass');
-            if (reclassBtn) reclassBtn.style.display = (currentUser && currentUser.role === 'admin') ? 'inline-flex' : 'none';
-            document.getElementById('mainUI').style.display = 'block'; 
-            document.getElementById('top-bar').style.display = 'flex'; 
-            
-            let roleTitle = currentUser.role === 'admin' ? 'مدیر سیستم' : (currentUser.role === 'viewer' ? 'پورتال دفتر مرکزی' : currentUser.role === 'loader' ? 'راننده/بارگیر' : 'انباردار');
-            document.getElementById('currentUserDisplay').innerHTML = `👤 ${currentUser.name} (${roleTitle})`;
-            
-            if (currentUser.role === 'loader') {
-                document.getElementById('tabBtnDashboard').style.display = 'none';
-                document.getElementById('tabBtnInventory').style.display = 'none';
-                document.getElementById('tabBtnEntry').style.display = 'none';
-                document.getElementById('tabBtnExit').style.display = 'none';
-                document.getElementById('settingsTabBtn').style.display = 'none';
-                if(document.getElementById('tabBtnInventoryCount')) document.getElementById('tabBtnInventoryCount').style.display = 'none';
-                if(document.getElementById('tabBtnTransfer')) document.getElementById('tabBtnTransfer').style.display = 'none';
-                
-                document.getElementById('tabBtnCardex').innerText = '🚚 حواله‌های بارگیری';
-                document.getElementById('cardexTitleLabel').innerText = '🚚 حواله‌های در انتظار بارگیری';
-                document.getElementById('cardexModeSelectorCard').style.display = 'none';
-                document.getElementById('cardexFilterCard').style.display = 'none';
-                
-                setTimeout(() => { openTab('tab-cardex', document.getElementById('tabBtnCardex')); }, 50);
-            } else {
-                document.getElementById('tabBtnDashboard').style.display = 'block';
-                document.getElementById('tabBtnInventory').style.display = 'block';
-                document.getElementById('tabBtnCardex').style.display = 'block';
-                if(document.getElementById('tabBtnTransfer')) document.getElementById('tabBtnTransfer').style.display = (currentUser.role === 'viewer') ? 'none' : 'block';
-                document.getElementById('tabBtnCardex').innerText = '📋 اسناد و کاردکس';
-                document.getElementById('cardexTitleLabel').innerText = '📋 اسناد و کاردکس کالاها';
-                document.getElementById('cardexModeSelectorCard').style.display = 'block';
-                document.getElementById('cardexFilterCard').style.display = 'block';
+            applyRoleVisibility();
+            updateDashboardIdentity();
+            document.getElementById('mainUI').style.display = 'block';
+            document.getElementById('top-bar').style.display = 'flex';
 
-                document.getElementById('settingsTabBtn').style.display = (currentUser.role === 'admin') ? 'block' : 'none';
-                const reclassBtn = document.getElementById('btnUnpricedReclass');
-                if (reclassBtn) reclassBtn.style.display = (currentUser.role === 'admin') ? 'inline-flex' : 'none';
-                document.getElementById('tabBtnEntry').style.display = (currentUser.role === 'viewer') ? 'none' : 'block';
-                document.getElementById('tabBtnExit').style.display = (currentUser.role === 'viewer') ? 'none' : 'block';
+            const role = String(currentUser?.role || '');
+            const roleTitle = role === 'admin' ? 'مدیر سیستم' : (role === 'viewer' ? 'پورتال دفتر مرکزی' : role === 'loader' ? 'راننده/بارگیر' : 'انباردار');
+            const userDisplay=document.getElementById('currentUserDisplay');
+            if(userDisplay) userDisplay.innerHTML = `👤 ${currentUser.name} (${roleTitle})`;
 
-                document.getElementById('dashWelcomeName').innerText = currentUser.name;
-                document.getElementById('dashWelcomeCompany').innerText = companyNameStr;
+            try{ loadDropdowns(); }catch(e){}
+            if(role === 'admin'){ try{ renderSettings(); }catch(e){} }
+            try{ renderInventory(); }catch(e){}
 
-                try{ loadDropdowns(); }catch(e){} 
-                
-                setTimeout(() => {
-                    if(currentUser.role === 'admin') { try{ renderSettings(); }catch(e){} }
-                    try{ renderInventory(); }catch(e){} 
+            setTimeout(() => {
+                if(role === 'loader') {
+                    openTab('tab-cardex', document.getElementById('tabBtnCardex'));
+                } else {
                     openTab('tab-dashboard', document.getElementById('tabBtnDashboard'));
-               try {
+                }
+                try {
                     let dIn = localStorage.getItem(companyPrefix + '_draftEntry');
                     if(dIn) draftEntryItems = JSON.parse(dIn) || [];
                     let dOut = localStorage.getItem(companyPrefix + '_draftExit');
                     if(dOut) { let p = JSON.parse(dOut); draftExitItems = p.items || []; outRequirements = p.reqs || []; }
                     renderDrafts(); renderRequirements();
                 } catch(e){}
- }, 50);
-            }
+            }, 50);
         }
 
         function getActiveInventoryBaseline(wh) {
@@ -2882,7 +2970,20 @@ function fetchDataFromServer() {
                             historyLog = cloudData.historyLog.filter(x => x && x.docId != null && !isReclassDoc(x));
                         }
                         if (Array.isArray(cloudData.inventoryReclassifications)) {
-                            inventoryReclassifications = cloudData.inventoryReclassifications.filter(Boolean);
+                            const cloudReclasses = cloudData.inventoryReclassifications.filter(Boolean);
+                            const localReclasses = Array.isArray(inventoryReclassifications) ? inventoryReclassifications.filter(Boolean) : [];
+                            const keyOf = (r) => String(r?.reclassId ?? r?.docId ?? [r?.pCode || '', r?.warehouse || '', r?.batch || '', r?.date || '', r?.price || '', r?.qty ?? r?.sourceQty ?? ''].join('|'));
+                            const merged = [];
+                            const seen = new Set();
+                            for (const r of cloudReclasses) { const k=keyOf(r); if(!seen.has(k)){ seen.add(k); merged.push(r); } }
+                            let localOnly = 0;
+                            for (const r of localReclasses) { const k=keyOf(r); if(!seen.has(k)){ seen.add(k); merged.push(r); localOnly++; } }
+                            inventoryReclassifications = merged;
+                            // اگر اصلاحات قبلی فقط روی همین دستگاه بوده‌اند و هنوز در D1 نیستند،
+                            // بعد از دریافت داده ابری همان اصلاحات را یک‌بار به D1 منتقل می‌کنیم.
+                            if (localOnly > 0 && typeof window.saveData === 'function') {
+                                setTimeout(() => { try { window.saveData(); } catch(e) {} }, 100);
+                            }
                         }
                         // کاربران ورود فقط روی همین دستگاه نگهداری می‌شوند و از D1 خوانده نمی‌شوند.
                         ensureDefaultUsers();
@@ -2894,8 +2995,7 @@ function fetchDataFromServer() {
                         }
                     }
 
-                    if (currentUser) {
-                        if (currentUser.role !== 'loader') loadDropdowns();
+                    if (currentUser) {                        if (currentUser.role !== 'loader') loadDropdowns();
                         if (currentUser.role === 'admin') renderSettings();
                         if (currentUser.role !== 'loader') renderInventory();
                         if (document.getElementById('tab-dashboard')?.style.display === 'block') renderDashboard();
@@ -2919,7 +3019,6 @@ function fetchDataFromServer() {
                 localStorage.setItem(companyPrefix + '_sysInventoryReclassifications', JSON.stringify(inventoryReclassifications)); 
                 localStorage.setItem(companyPrefix + '_sysLastDocNumber', lastDocNumber); 
                 localStorage.setItem(companyPrefix + '_sysSettingsApp', JSON.stringify(sysSettings)); 
-                localStorage.setItem(companyPrefix + '_sysUsersList', JSON.stringify(sysUsers)); 
             } catch(e) {}
         }
 
@@ -3022,7 +3121,7 @@ function uploadLocalToCloud() {
                     sysSettings
                 };
 
-                fetch(`${DB_URL}/api/save-master?company=${encodeURIComponent(companyPrefix)}`, {
+                fetchDbWithFallback(`/api/save-master?company=${encodeURIComponent(companyPrefix)}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(masterPayload),
@@ -3095,23 +3194,23 @@ function uploadLocalToCloud() {
             }
         });
 
-        function registerNewUserFromSettings() {
-            let name = document.getElementById('newUserName').value.trim();
-            let role = document.getElementById('newUserRole').value;
-            let pass = document.getElementById('newUserPass').value;
-            
+        async function registerNewUserFromSettings() {
+            const name = document.getElementById('newUserName').value.trim();
+            const role = document.getElementById('newUserRole').value;
+            const pass = document.getElementById('newUserPass').value;
             if(!name) return alert("❌ نام کاربر الزامی است.");
-            if(!pass) return alert("❌ رمز عبور الزامی است.");
-            
-            sysUsers.push({ name, role, pass });
-            saveData();
-            
-            document.getElementById('newUserName').value = '';
-            document.getElementById('newUserPass').value = '';
-            selectCS('newUserRole', 'user', 'انباردار (ثبت اسناد)');
-            
-            alert(`✅ کاربر [${name}] با موفقیت به سیستم اضافه شد.`);
-            renderSettings();
+            if(pass.length < 4) return alert("❌ رمز عبور باید حداقل ۴ کاراکتر باشد.");
+            try {
+                const j = await window.__V20.createUser(name, role, pass);
+                sysUsers = Array.isArray(j.users) ? j.users : sysUsers;
+                document.getElementById('newUserName').value = '';
+                document.getElementById('newUserPass').value = '';
+                selectCS('newUserRole', 'user', 'انباردار (ثبت اسناد)');
+                renderSettings();
+                alert(`✅ کاربر [${name}] در D1 ثبت شد.`);
+            } catch(e) {
+                alert('❌ ' + (e.message || 'ثبت کاربر ناموفق بود.'));
+            }
         }
 
        function renderSettings() {
@@ -3123,7 +3222,7 @@ function uploadLocalToCloud() {
     document.getElementById('list-warehouses').innerHTML = sysSettings.warehouses.map((w, i) => `<li>${w} <button class="del-btn" onclick="deleteSetting('warehouses', ${i})">حذف</button></li>`).join('');
     document.getElementById('list-senders').innerHTML = sysSettings.senders.map((s, i) => `<li>${s} <button class="del-btn" onclick="deleteSetting('senders', ${i})">حذف</button></li>`).join('');
     
-    document.getElementById('list-users').innerHTML = sysUsers.map((u, i) => `<li><b>${u.name}</b> (${u.role === 'admin' ? 'مدیر' : u.role === 'viewer' ? 'مشاهده' : u.role === 'loader' ? 'راننده/بارگیر' : 'کاربر'}) <button class="del-btn" onclick="deleteUser(${i})">حذف</button></li>`).join('');
+    document.getElementById('list-users').innerHTML = sysUsers.map((u, i) => `<li><b>${u.name}</b> (${u.role === 'admin' ? 'مدیر' : u.role === 'viewer' ? 'مشاهده' : u.role === 'loader' ? 'راننده/بارگیر' : 'کاربر'}) <span style="font-size:10px;color:#059669">● مرکزی</span> <button class="del-btn" onclick="deleteUser(${i})">حذف</button></li>`).join('');
 
     renderProductsSettings(); // 👈 این خط اضافه شود
 }
@@ -3153,13 +3252,19 @@ function uploadLocalToCloud() {
             }
         }
 
-        function deleteUser(index) {
-            if(sysUsers[index].role === 'admin' && sysUsers.filter(u => u.role === 'admin').length <= 1) {
-                return alert("نمی‌توانید تنها مدیر سیستم را حذف کنید!");
-            }
-            if(confirm("آیا از حذف این کاربر مطمئن هستید؟")) {
-                sysUsers.splice(index, 1);
-                saveData(); renderSettings();
+    async function deleteUser(index) {
+            const user = sysUsers[index];
+            if(!user) return;
+            if(user.name === currentUser?.name) return alert("❌ کاربر جاری را نمی‌توانید حذف کنید.");
+            if(user.role === 'admin' && sysUsers.filter(u => u.role === 'admin').length <= 1) return alert("❌ نمی‌توانید تنها مدیر سیستم را حذف کنید!");
+            if(!confirm(`آیا از حذف کاربر «${user.name}» مطمئن هستید؟`)) return;
+            try {
+                const j = await window.__V20.deleteUser(user.name);
+                sysUsers = Array.isArray(j.users) ? j.users : sysUsers.filter((_,i)=>i!==index);
+                renderSettings();
+                alert('✅ کاربر از D1 حذف شد.');
+            } catch(e) {
+                alert('❌ ' + (e.message || 'حذف کاربر ناموفق بود.'));
             }
         }
 
@@ -3889,8 +3994,7 @@ function closeDispatchScanner() {
         let dispatchValidationSeq = 0;
 
         // نرمال‌سازی کلید مقایسه: ارقام فارسی/عربی، ي/ك عربی، نیم‌فاصله و فاصله‌های اضافه
-        function dispatchNormKey(v) {
-            return String(v ?? '')
+        function dispatchNormKey(v) {            return String(v ?? '')
                 .replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d))
                 .replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d))
                 .replace(/ي/g, 'ی').replace(/ك/g, 'ک')
@@ -3898,7 +4002,17 @@ function closeDispatchScanner() {
                 .trim();
         }
 
-        // برای پیام خطا: بچ‌هایی که برای این کالا در کاردکس محلی ورود خورده‌اند
+        // «تکمیل مشخصات موجودی بدون قیمت» سند ورود نیست و در historyLog نمی‌آید؛ بچ آن در inventoryReclassifications است.
+        function getDispatchReclassesFor(pc, wh, bt) {
+            return (Array.isArray(inventoryReclassifications) ? inventoryReclassifications : []).filter(r =>
+                r && dispatchNormKey(r.pCode) === pc &&
+                dispatchNormKey(r.warehouse || 'انبار مرکزی') === wh &&
+                dispatchNormKey(r.batch) === bt &&
+                Number(r.price) > 0
+            );
+        }
+
+        // برای پیام خطا: بچ‌هایی که برای این کالا در کاردکس و تکمیل مشخصات ثبت شده‌اند
         function getLocalBatchDiagnostics(pCode) {
             const pc = dispatchNormKey(pCode);
             const seen = new Map();
@@ -3908,6 +4022,12 @@ function closeDispatchScanner() {
                 if (!inbound) continue;
                 const k = `${String(row.batch || 'نامشخص').trim()} ← ${String(row.warehouse || 'انبار مرکزی').trim()}`;
                 seen.set(k, (seen.get(k) || 0) + (Number(row.totalPieces) || 0));
+            }
+            for (const r of (Array.isArray(inventoryReclassifications) ? inventoryReclassifications : [])) {
+                if (!r || dispatchNormKey(r.pCode) !== pc) continue;
+                const q = (typeof getReclassQty === 'function') ? getReclassQty(r) : (Number(r.qty) || 0);
+                const k = `${String(r.batch || 'نامشخص').trim()} ← ${String(r.warehouse || 'انبار مرکزی').trim()} (تکمیل مشخصات)`;
+                seen.set(k, (seen.get(k) || 0) + q);
             }
             return Array.from(seen.entries()).slice(0, 8).map(([k, q]) => `${k} (${q} عدد ورودی)`);
         }
@@ -3923,6 +4043,21 @@ function closeDispatchScanner() {
             let price = 0, prodDate = '', expDate = '';
             const rows = Array.isArray(historyLog) ? historyLog : [];
 
+            // ۱) بچ‌های ساخته‌شده با «تکمیل مشخصات موجودی» (مطابق منطق سرور)
+            const reclasses = getDispatchReclassesFor(pc, wh, bt);
+            const reclassIds = new Set();
+            for (const r of reclasses) {
+                reclassIds.add(String(r.reclassId || r.docId || ''));
+                const rq = (typeof getReclassQty === 'function') ? getReclassQty(r) : Math.max(0, Number(r.qty ?? r.sourceQty) || 0);
+                if (rq <= 0) continue;
+                balance += rq;
+                found = true;
+                if (!price && Number(r.price) > 0) price = Number(r.price) || 0;
+                if (!prodDate && r.prodDate) prodDate = String(r.prodDate);
+                if (!expDate && r.expDate) expDate = String(r.expDate);
+            }
+
+            // ۲) ورودها و خروج‌های کاردکس
             for (const row of rows) {
                 if (dispatchNormKey(row?.pCode) !== pc) continue;
                 const rowWh = dispatchNormKey(row?.warehouse || 'انبار مرکزی');
@@ -3941,20 +4076,26 @@ function closeDispatchScanner() {
                     if (!prodDate && row.prodDate) prodDate = String(row.prodDate);
                     if (!expDate && row.expDate) expDate = String(row.expDate);
                 } else if (outbound) {
-                    // اگر خروج، تخصیص __BATCH__ دارد همان تخصیص ملاک است (مستقل از ستون batch ردیف)
                     const allocs = (typeof parseConsumedFrom === 'function') ? parseConsumedFrom(row.consumedFrom) : [];
-                    let hasBatchAlloc = false;
+                    let counted = false;
                     for (const a of allocs) {
                         const aid = typeof getConsumedAllocationLotId === 'function' ? getConsumedAllocationLotId(a) : (a?.lotDocId || a?.docId || '');
-                        if (!aid || !String(aid).startsWith('__BATCH__:')) continue;
-                        hasBatchAlloc = true;
-                        const bp = typeof parseBatchLotId === 'function' ? parseBatchLotId(aid) : null;
-                        if (bp && dispatchNormKey(bp.pCode) === pc && dispatchNormKey(bp.batch) === bt && dispatchNormKey(bp.warehouse) === wh) {
-                            balance -= Math.max(0, Number(a?.qty) || 0);
+                        if (!aid) continue;
+                        const sid = String(aid);
+                        if (sid.startsWith('__BATCH__:')) {
+                            counted = true;
+                            const bp = typeof parseBatchLotId === 'function' ? parseBatchLotId(sid) : null;
+                            if (bp && dispatchNormKey(bp.pCode) === pc && dispatchNormKey(bp.batch) === bt && dispatchNormKey(bp.warehouse) === wh) {
+                                balance -= Math.max(0, Number(a?.qty) || 0);
+                            }
+                        } else if (sid.startsWith('__RECLASS__:')) {
+                            counted = true;
+                            const m = sid.match(/^__RECLASS__:(.*?):(.*?):(.*)$/);
+                            if (m && reclassIds.has(String(m[1] || ''))) balance -= Math.max(0, Number(a?.qty) || 0);
                         }
                     }
-                    // بدون تخصیص بچ: مطابق rebuildInventory از روی ستون batch خود ردیف کم می‌شود
-                    if (!hasBatchAlloc && rowWh === wh && rowBt === bt) balance -= qty;
+                    // خروج قدیمی بدون تخصیص بچ: مطابق rebuildInventory از روی ستون batch همان ردیف
+                    if (!counted && rowWh === wh && rowBt === bt) balance -= qty;
                 }
             }
 
@@ -3969,7 +4110,7 @@ function closeDispatchScanner() {
             return {found, balance:Math.max(0,balance), price, prodDate, expDate};
         }
 
-        // پرسش مستقیم از D1 (برای وقتی کش محلی مرورگر کهنه یا ناقص است)
+        // پرسش مستقیم از D1 (منبع حقیقت) وقتی کش محلی مرورگر کهنه یا ناقص است
         async function fetchDispatchBatchFromServer(pCode, batch, warehouse) {
             try {
                 const resp = await fetch(`${DB_URL}/api/validate-dispatch-batch?company=${encodeURIComponent(companyPrefix)}`, {
@@ -4245,6 +4386,20 @@ function closeDispatchScanner() {
             el.value = value;
         }
 
+        // انتخاب کالای دستی روی موبایل: به محض انتخاب، فیلد تعداد خالی و فعال می‌شود.
+        function activateManualDispatchInput(selectId, inputId) {
+            const sel = document.getElementById(selectId);
+            const input = document.getElementById(inputId);
+            if (!sel || !input) return;
+            if (!sel.value) {
+                input.value = '';
+                return;
+            }
+            input.value = '';
+            try { input.focus({ preventScroll: true }); }
+            catch (e) { try { input.focus(); } catch (_) {} }
+        }
+
         let dispatchScanTimer = null;
         let dispatchLastProcessed = '';
         async function processDispatchHardwareInput(force=false) {
@@ -4348,7 +4503,8 @@ function closeDispatchScanner() {
             r.scannedLoose=(r.scannedLoose||0)+qty;
             currentDispatchScans.push({pCode:r.pCode,warehouse:r.warehouse,batch:r.batch||'بدون لیبل',rawBarcode:'MANUAL-LOOSE',pieces:qty,cartons:0,loose:qty});
             saveDispatchProgress();
-            qtyInput.value=0;
+            qtyInput.value='';
+            qtyInput.focus();
             playBeep('success');
             updateLiveInfoDispatch(false,`✅ ${qty.toLocaleString('fa-IR')} خرده برای ${r.name} ثبت شد.`);
             renderDispatchTable();
@@ -4395,7 +4551,8 @@ function closeDispatchScanner() {
             r.scannedCartons=(r.scannedCartons||0)+qty;
             currentDispatchScans.push({pCode:r.pCode,warehouse:r.warehouse,batch:r.batch||'بدون لیبل',rawBarcode:'MANUAL-CARTON',pieces:qty*units,cartons:qty,loose:0});
             saveDispatchProgress();
-            document.getElementById('dispatchQtyManualCarton').value=0;
+            document.getElementById('dispatchQtyManualCarton').value='';
+            document.getElementById('dispatchQtyManualCarton').focus();
             playBeep('success');
             updateLiveInfoDispatch(false, `✅ ${qty.toLocaleString('fa-IR')} کارتن بدون لیبل برای ${r.name} ثبت شد.`);
             renderDispatchTable();
@@ -4516,8 +4673,9 @@ function closeDispatchScanner() {
             updateLiveInfoDispatch(true, `❌ بچ ${batch} در ${whText} موجود نیست.`);
             const diag = getLocalBatchDiagnostics(normalizedPCode);
             showScanError(`بچ ${batch} برای کالای ${normalizedPCode} در ${whText} موجود نیست یا موجودی آن تمام شده است.\n\nبارکد: ${raw}`
-                + `\n\n🔎 بچ‌های ثبت‌شده برای این کالا در کاردکس: ${diag.length ? diag.join(' ، ') : 'هیچ ورودی یافت نشد'}`
-                + (serverMsgs.length ? `\n\n🔎 پاسخ D1: ${serverMsgs.join(' | ')}` : ''));
+                + `\n\n🔎 بچ‌های ثبت‌شده برای این کالا: ${diag.length ? diag.join(' ، ') : 'هیچ ورودی یافت نشد'}`
+                + (serverMsgs.length ? `\n\n🔎 پاسخ D1: ${serverMsgs.join(' | ')}` : '')
+                + `\n\n[نسخه: FIX-2026-10-01-B]`);
             return false;
         }
     }
@@ -4778,7 +4936,7 @@ function stopDispatchCamera() {
     const oldContainer = document.getElementById('dispatchCameraContainer');
     if (oldContainer) oldContainer.style.display = 'none';
 }
-function finalizeDispatchDoc() {
+async function finalizeDispatchDoc() {
             const targetDocId = String(currentDispatchDocId ?? '').trim();
             if (!targetDocId) return alert('❌ شماره حواله معتبر نیست.');
             const oldItems = historyLog.filter(log => String(log.docId) === targetDocId);
@@ -4810,6 +4968,22 @@ function finalizeDispatchDoc() {
 
             // اصل مهم: اسکن فقط متادیتای بارگیری را به سند اضافه می‌کند.
             // مقادیر quantity و warehouse سند اصلی هرگز بر اساس بارکد محاسبه یا جایگزین نمی‌شوند.
+            // FIX-2026-10-01-C: اگر یک کالا/انبار در سند بیش از یک ردیف داشته باشد،
+            // allocationهای اسکن‌شده بین ردیف‌ها به‌صورت ترتیبی تقسیم می‌شوند؛
+            // بنابراین مجموع allocation هر ردیف دقیقاً با totalPieces همان ردیف برابر می‌ماند.
+            // قبلاً همه اسکن‌های یک reqKey به تک‌تک ردیف‌ها کپی می‌شد و Worker با خطای
+            // CONSUMED_QTY_MISMATCH ثبت نهایی را رد می‌کرد.
+            const scanGroups = {};
+            (currentDispatchScans || []).forEach(scan => {
+                const pCode = String(scan?.pCode ?? '').trim();
+                const warehouse = String(scan?.warehouse || 'انبار مرکزی').trim();
+                if (!pCode) return;
+                const reqKey = dispatchReqKey(pCode, warehouse);
+                if (!scanGroups[reqKey]) scanGroups[reqKey] = [];
+                scanGroups[reqKey].push(scan);
+            });
+            const allocationCursorByReqKey = {};
+
             const updatedItems = oldItems.map(item => {
                 const clone = { ...item };
                 const reqKey = dispatchReqKey(item.pCode, item.warehouse || 'انبار مرکزی');
@@ -4819,24 +4993,40 @@ function finalizeDispatchDoc() {
                 clone.totalPieces = Number(item.totalPieces) || 0;
                 clone.warehouse = item.warehouse;
                 clone.dispatchStatus = 'done';
-                clone.dispatchDate = nowStr;
-                if (meta) {
+                clone.dispatchDate = nowStr;                if (meta) {
                     if (meta.barcodes.length) clone.rawBarcode = meta.barcodes.join(' | ');
                     if (meta.batches.length === 1) clone.batch = meta.batches[0];
                     else if (meta.batches.length > 1) clone.batch = meta.batches.join(' | ');
 
                     // خروج نهایی باید بر اساس بچ‌های واقعی اسکن‌شده ثبت شود؛ قیمت از D1 بر اساس همان بچ تعیین می‌شود.
                     const allocations = [];
-                    const scansForItem = (currentDispatchScans || []).filter(x => dispatchReqKey(x?.pCode, x?.warehouse) === reqKey);
-                    for (const scan of scansForItem) {
+                    const scansForItem = scanGroups[reqKey] || [];
+                    let remainingForItem = Math.max(0, Number(clone.totalPieces) || 0);
+                    let cursor = allocationCursorByReqKey[reqKey] || { scanIndex: 0, scanOffset: 0 };
+
+                    while (remainingForItem > 0 && cursor.scanIndex < scansForItem.length) {
+                        const scan = scansForItem[cursor.scanIndex];
                         const bt = String(scan?.batch || '').trim();
-                        const qty = Math.max(0, Number(scan?.pieces) || 0);
-                        if (!bt || bt === 'نامشخص' || bt === 'در انتظار' || qty <= 0) continue;
+                        const scanQtyTotal = Math.max(0, Number(scan?.pieces) || 0);
+                        const availableInScan = Math.max(0, scanQtyTotal - Number(cursor.scanOffset || 0));
+
+                        if (availableInScan <= 0) {
+                            cursor.scanIndex += 1;
+                            cursor.scanOffset = 0;
+                            continue;
+                        }
+                        if (!bt || bt === 'نامشخص' || bt === 'در انتظار') {
+                            cursor.scanIndex += 1;
+                            cursor.scanOffset = 0;
+                            continue;
+                        }
+
+                        const take = Math.min(remainingForItem, availableInScan);
                         const lotId = buildBatchLotId(item.pCode, bt, item.warehouse || 'انبار مرکزی');
                         const scanPrice = Number(scan?.price) || 0;
                         const existingAlloc = allocations.find(a => String(a.lotDocId) === lotId);
                         if (existingAlloc) {
-                            existingAlloc.qty += qty;
+                            existingAlloc.qty += take;
                             if (!(Number(existingAlloc.price) > 0) && scanPrice > 0) existingAlloc.price = scanPrice;
                             if (!existingAlloc.prodDate && scan?.prodDate) existingAlloc.prodDate = scan.prodDate;
                             if (!existingAlloc.expDate && scan?.expDate) existingAlloc.expDate = scan.expDate;
@@ -4844,7 +5034,7 @@ function finalizeDispatchDoc() {
                             allocations.push({
                                 lotDocId: lotId,
                                 docId: lotId,
-                                qty,
+                                qty: take,
                                 price: scanPrice,
                                 batch: bt,
                                 sourceType: 'batch',
@@ -4852,23 +5042,45 @@ function finalizeDispatchDoc() {
                                 expDate: scan?.expDate || ''
                             });
                         }
+
+                        remainingForItem -= take;
+                        cursor.scanOffset = Number(cursor.scanOffset || 0) + take;
+                        if (cursor.scanOffset >= scanQtyTotal - 0.000001) {
+                            cursor.scanIndex += 1;
+                            cursor.scanOffset = 0;
+                        }
                     }
+
+                    allocationCursorByReqKey[reqKey] = cursor;
+                    const allocatedPieces = allocations.reduce((sum, a) => sum + Math.max(0, Number(a?.qty) || 0), 0);
+
+                    // در حالت عادی allocatedPieces باید دقیقاً برابر totalPieces باشد؛
+                    // اگر به هر دلیل داده اسکن ناقص باشد، validation اولیه allDone مانع ثبت می‌شود.
                     clone.consumedFrom = JSON.stringify(allocations);
-                    const pricedPieces = allocations.reduce((sum, a) => sum + (Number(a?.qty) || 0), 0);
-                    const pricedCost = allocations.reduce((sum, a) => sum + ((Number(a?.price) || 0) * (Number(a?.qty) || 0)), 0);
-                    clone.price = pricedPieces > 0 ? (pricedCost / pricedPieces) : 0;
+                    const pricedCost = allocations.reduce((sum, a) => sum + ((Number(a?.price) || 0) * Math.max(0, Number(a?.qty) || 0)), 0);
+                    clone.price = allocatedPieces > 0 ? (pricedCost / allocatedPieces) : 0;
                     clone.totalCost = pricedCost;
-                    if (!clone.prodDate) {
-                        const firstD = scansForItem.find(x => x?.prodDate);
-                        if (firstD) clone.prodDate = firstD.prodDate;
-                    }
-                    if (!clone.expDate) {
-                        const firstE = scansForItem.find(x => x?.expDate);
-                        if (firstE) clone.expDate = firstE.expDate;
-                    }
+                    const firstD = allocations.find(a => a?.prodDate);
+                    const firstE = allocations.find(a => a?.expDate);
+                    if (!clone.prodDate && firstD?.prodDate) clone.prodDate = firstD.prodDate;
+                    if (!clone.expDate && firstE?.expDate) clone.expDate = firstE.expDate;
                 }
                 return clone;
             });
+
+            // ابتدا سند نهایی‌شده را در D1 ثبت می‌کنیم؛ سپس پیشرفت موقت اسکن پاک می‌شود.
+            // اگر D1 خطا بدهد، بارکدهای گرفته‌شده و وضعیت محلی برای ادامه کار حفظ می‌شوند.
+            try {
+                await syncSingleDocToServerStrict(targetDocId, updatedItems, true);
+            } catch (syncErr) {
+                console.error('Dispatch final D1 save error:', syncErr);
+                historyLog = historyLog.filter(log => String(log.docId) !== targetDocId);
+                historyLog.push(...updatedItems);
+                saveData();
+                generateCardex();
+                alert('❌ بارگیری در D1 ذخیره نشد. بارکدهای گرفته‌شده در این دستگاه نگه داشته شدند.\n\nخطا: ' + (syncErr?.message || syncErr));
+                return;
+            }
 
             historyLog = historyLog.filter(log => String(log.docId) !== targetDocId);
             historyLog.push(...updatedItems);
@@ -4876,7 +5088,7 @@ function finalizeDispatchDoc() {
             saveData();
             generateCardex();
             closeDispatchScanner();
-            alert('🎉 بارگیری ثبت شد؛ بارکدها فقط به اطلاعات سند اضافه شدند و موجودی از بابت اسکن تغییر نکرد.');
+            alert('🎉 بارگیری با موفقیت در D1 ذخیره شد؛ بارکدها فقط به اطلاعات سند اضافه شدند و موجودی از بابت اسکن تغییر نکرد.');
         }
 
         async function bypassAndFinalizeDispatch() {
@@ -5180,7 +5392,20 @@ async function viewReceipt(docId) {
             }
         }
         
-        currentReceiptImages = list.filter(item => typeof item === 'string' && (item.startsWith('data:image') || item.startsWith('data:application/pdf') || item.startsWith('http') || item.startsWith('https')));
+        currentReceiptImages = list
+            .filter(item => typeof item === 'string' && (item.startsWith('data:image') || item.startsWith('data:application/pdf') || item.startsWith('http') || item.startsWith('https')))
+            .map(item => {
+                try {
+                    if (item.startsWith('data:')) return item;
+                    const parsed = new URL(item, window.location.origin);
+                    if (parsed.pathname === '/api/file') {
+                        return `${window.location.origin}${parsed.pathname}${parsed.search}`;
+                    }
+                    return item;
+                } catch (_) {
+                    return item;
+                }
+            });
         
         if(!currentReceiptImages.length) {
             alert("رسیدی برای این سند در سرور یافت نشد.");
@@ -5767,8 +5992,20 @@ if(companyPrefix) {
             } catch(e) { console.error("Expiry alert error", e); }
         }
 
+        function updateDashboardIdentity() {            const companyNames = {
+                rojin: 'شرکت آرایشی بهداشتی روژین',
+                zhik: 'شرکت طلوع سلامت ژیک'
+            };
+            const displayCompany = String(companyNameStr || companyNames[String(companyPrefix || '')] || companyPrefix || '').trim() || 'در حال بارگذاری...';
+            const companyEl = document.getElementById('dashWelcomeCompany');
+            const userEl = document.getElementById('dashWelcomeName');
+            if (companyEl) companyEl.textContent = displayCompany;
+            if (userEl) userEl.textContent = currentUser?.name ? `👤 ${currentUser.name}` : '';
+        }
+
         function renderDashboard() {
             try {
+                updateDashboardIdentity();
                 renderDashboardActionCenter();
                 renderExpiryAlerts();
                 let todayStr = new Date().toLocaleDateString('fa-IR'); 
@@ -6754,8 +6991,7 @@ function getFilteredDocumentRows() {
         fTarget = normalizeSearchText(document.getElementById('filterDocTarget')?.value || ''),
         map = {};
 
-    historyLog.forEach((log, index) => {
-        if(!map[log.docId]) {
+    historyLog.forEach((log, index) => {        if(!map[log.docId]) {
             map[log.docId] = {
                 docId: log.docId,
                 officeDoc: log.officeDoc || 'بدون شماره',
@@ -7101,6 +7337,19 @@ function finalizeInventoryCount(){
 }
 
 function openTab(tabId, btn) {
+    const role = String(currentUser?.role || '');
+    const allowed = {
+        loader: ['tab-cardex'],
+        viewer: ['tab-dashboard','tab-inventory','tab-cardex'],
+        user: ['tab-dashboard','tab-inventory','tab-cardex','tab-entry','tab-exit','tab-inventory-count','tab-transfer'],
+        admin: ['tab-dashboard','tab-inventory','tab-cardex','tab-entry','tab-exit','tab-settings','tab-inventory-count','tab-transfer']
+    };
+    if (role && Array.isArray(allowed[role]) && !allowed[role].includes(tabId)) {
+        const fallback = role === 'loader' ? 'tab-cardex' : 'tab-dashboard';
+        const fb = document.getElementById(role === 'loader' ? 'tabBtnCardex' : 'tabBtnDashboard');
+        if (tabId !== fallback) return openTab(fallback, fb);
+        return;
+    }
     document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none'); 
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     let targetTab = document.getElementById(tabId);
@@ -7311,18 +7560,24 @@ function refreshUnpricedReclassStock() {
     if (qtyInput) qtyInput.max = String(qty);
 }
 
+function normalizeReclassBatchInput(el) {
+    if (!el) return;
+    el.value = String(el.value || '').replace(/[^0-9]/g, '').slice(0, 3);
+}
+
 function previewUnpricedReclass() {
     const wh = document.getElementById('reclassWarehouseSelect')?.value || 'انبار مرکزی';
     const pCode = document.getElementById('reclassProductSelect')?.value || '';
     const qty = Math.max(0, Number(document.getElementById('reclassQty')?.value) || 0);
+    const batch = String(document.getElementById('reclassBatch')?.value || '').trim().replace(/[^0-9]/g, '');
     const price = Math.max(0, Number(document.getElementById('reclassPrice')?.value) || 0);
     const stockLot = pCode ? getAvailableLots(pCode, wh).find(l => isUnpricedLotId(l.lotDocId)) : null;
     const stock = Math.max(0, Number(stockLot?.remaining) || 0);
     const box = document.getElementById('reclassPreview');
     if (!box) return;
-    if (!pCode || qty <= 0 || price <= 0 || qty > stock) { box.style.display = 'block'; box.style.background = '#fef2f2'; box.style.borderColor = '#fecaca'; box.innerHTML = '❌ مقدار و قیمت را درست وارد کنید و مقدار نباید از موجودی بدون قیمت بیشتر باشد.'; return; }
+    if (!pCode || qty <= 0 || price <= 0 || !/^\d{3}$/.test(batch) || qty > stock) { box.style.display = 'block'; box.style.background = '#fef2f2'; box.style.borderColor = '#fecaca'; box.innerHTML = '❌ کالا، مقدار، قیمت و شماره بچ سه‌رقمی را درست وارد کنید و مقدار نباید از موجودی بدون قیمت بیشتر باشد.'; return; }
     box.style.display = 'block'; box.style.background = '#ecfdf5'; box.style.borderColor = '#a7f3d0';
-    box.innerHTML = `<b>${escapeHtml(productsMap[pCode] || pCode)}</b> در <b>${escapeHtml(wh)}</b><br>بدون قیمت: <b>${stock.toLocaleString('fa-IR')}</b> → ${Math.max(0, stock-qty).toLocaleString('fa-IR')} عدد<br>قیمت جدید: <b>${price.toLocaleString('fa-IR')} ریال</b> برای <b>${qty.toLocaleString('fa-IR')} عدد</b><br>موجودی کل کالا تغییر نمی‌کند.`;
+    box.innerHTML = `<b>${escapeHtml(productsMap[pCode] || pCode)}</b> در <b>${escapeHtml(wh)}</b><br>بچ: <b>${escapeHtml(batch)}</b><br>بدون قیمت: <b>${stock.toLocaleString('fa-IR')}</b> → ${Math.max(0, stock-qty).toLocaleString('fa-IR')} عدد<br>قیمت جدید: <b>${price.toLocaleString('fa-IR')} ریال</b> برای <b>${qty.toLocaleString('fa-IR')} عدد</b><br>موجودی کل کالا تغییر نمی‌کند.`;
 }
 
 async function submitUnpricedReclass() {
@@ -7330,6 +7585,7 @@ async function submitUnpricedReclass() {
     const wh = document.getElementById('reclassWarehouseSelect')?.value || 'انبار مرکزی';
     const pCode = document.getElementById('reclassProductSelect')?.value || '';
     const qty = Math.max(0, Number(document.getElementById('reclassQty')?.value) || 0);
+    const batch = String(document.getElementById('reclassBatch')?.value || '').trim().replace(/[^0-9]/g, '');
     const price = Math.max(0, Number(document.getElementById('reclassPrice')?.value) || 0);
     const prodDate = String(document.getElementById('reclassProdDate')?.value || '').trim();
     const expDate = String(document.getElementById('reclassExpDate')?.value || '').trim();
@@ -7339,8 +7595,9 @@ async function submitUnpricedReclass() {
     const unpricedQty = Math.max(0, Number(lot?.remaining) || 0);
     if (!pCode || !productsMap[pCode]) return alert('❌ کالا را انتخاب کنید.');
     if (qty <= 0 || qty > unpricedQty) return alert(`❌ مقدار واردشده از موجودی بدون قیمت بیشتر است. موجودی: ${unpricedQty.toLocaleString('fa-IR')} عدد`);
+    if (!/^\d{3}$/.test(batch)) return alert('❌ شماره بچ الزامی است و باید دقیقاً ۳ رقم باشد؛ مثلاً 001.');
     if (price <= 0) return alert('❌ قیمت باید بیشتر از صفر باشد.');
-    if (!confirm(`تبدیل ${qty.toLocaleString('fa-IR')} عدد از «بدون قیمت» به قیمت ${price.toLocaleString('fa-IR')} ریال؟\n\nهیچ سند ورود/خروجی ایجاد نمی‌شود و موجودی کل کالا تغییر نمی‌کند.`)) return;
+    if (!confirm(`تبدیل ${qty.toLocaleString('fa-IR')} عدد از «بدون قیمت» به محموله بچ ${batch} با قیمت ${price.toLocaleString('fa-IR')} ریال؟\n\nهیچ سند ورود/خروجی ایجاد نمی‌شود و موجودی کل کالا تغییر نمی‌کند.`)) return;
 
     const reclassId = `RC-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
     const dateStr = new Date().toLocaleString('fa-IR');
@@ -7351,6 +7608,7 @@ async function submitUnpricedReclass() {
         pCode,
         warehouse: wh,
         qty,
+        batch,
         price,
         prodDate,
         expDate,
@@ -7363,9 +7621,10 @@ async function submitUnpricedReclass() {
     try {
         inventoryReclassifications = Array.isArray(inventoryReclassifications) ? inventoryReclassifications : [];
         inventoryReclassifications.push(reclass);
-        saveData();
+        await window.saveData();
         hideUploadProgress();
         document.getElementById('reclassQty').value = '';
+        document.getElementById('reclassBatch').value = '';
         document.getElementById('reclassPrice').value = '';
         document.getElementById('reclassProdDate').value = '';
         document.getElementById('reclassExpDate').value = '';
@@ -7374,7 +7633,7 @@ async function submitUnpricedReclass() {
         renderInventory();
         renderUnpricedReclassHistory();
         refreshUnpricedReclassStock();
-        alert('✅ مشخصات موجودی ثبت شد؛ هیچ سند انبار ایجاد نشد و موجودی کل کالا تغییر نکرد.');
+        alert('✅ مشخصات موجودی در D1 ذخیره شد؛ شماره بچ '+batch+' برای همین کالا و همین انبار ثبت شد و در اعتبارسنجی بارکد قابل استفاده است.');
     } catch (e) {
         hideUploadProgress();
         inventoryReclassifications = inventoryReclassifications.filter(x => String(x.reclassId) !== String(reclassId));
@@ -7417,7 +7676,7 @@ function renderUnpricedReclassHistory() {
         const qty = getReclassQty(r); const undo = canUndoReclass(r);
         const rid = String(r.reclassId || '').replace(/'/g, '\\&#39;');
         return `<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;padding:9px 10px;border:1px solid var(--border);border-radius:8px;background:#fff;flex-wrap:wrap;">
-            <div style="flex:1;min-width:280px;font-size:11px;line-height:1.8;"><b>${escapeHtml(productsMap[r.pCode] || r.pCode)}</b> | ${escapeHtml(r.warehouse || '')}<br>${qty.toLocaleString('fa-IR')} عدد → ${Number(r.price||0).toLocaleString('fa-IR')} ریال | تولید: ${escapeHtml(r.prodDate || 'نامشخص')} | انقضا: ${escapeHtml(r.expDate || 'نامشخص')}<br>${escapeHtml(r.date || '')}${r.note ? ' | ' + escapeHtml(r.note) : ''}</div>
+            <div style="flex:1;min-width:280px;font-size:11px;line-height:1.8;"><b>${escapeHtml(productsMap[r.pCode] || r.pCode)}</b> | ${escapeHtml(r.warehouse || '')}<br>${qty.toLocaleString('fa-IR')} عدد → بچ ${escapeHtml(r.batch || 'نامشخص')} → ${Number(r.price||0).toLocaleString('fa-IR')} ریال | تولید: ${escapeHtml(r.prodDate || 'نامشخص')} | انقضا: ${escapeHtml(r.expDate || 'نامشخص')}<br>${escapeHtml(r.date || '')}${r.note ? ' | ' + escapeHtml(r.note) : ''}</div>
             <button class="btn-red" style="width:auto;padding:6px 9px;font-size:10px;" ${undo ? '' : 'disabled'} onclick="undoUnpricedReclass('${rid}')">${undo ? '↩️ لغو اصلاح' : '🔒 دارای خروج وابسته'}</button>
         </div>`;
     }).join('');
@@ -7496,7 +7755,7 @@ function getAvailableLots(pCode, wh, excludeDocId = null) {
                 lotDocId: buildReclassLotId(entry),
                 legacyDocId: String(entry.reclassId || ''),
                 price: Number(entry.price) || 0,
-                batch: 'تکمیل مشخصات',
+                batch: entry.batch || 'نامشخص',
                 prodDate: entry.prodDate || '',
                 expDate: entry.expDate || '',
                 remaining: qty,
@@ -7731,8 +7990,7 @@ function addToExitDraft(isAuto = false) {
         
         let exactStock = getActualStock(pCode, wh, editingExitDocId);
         let draftedPieces = getDraftExitStock(pCode, wh);
-        let availableStock = Math.max(0, exactStock - draftedPieces);
-        if (availableStock < addedPieces) {
+        let availableStock = Math.max(0, exactStock - draftedPieces);        if (availableStock < addedPieces) {
             playBeep('error'); updateLiveInfo('out', true, `⛔ موجودی کافی نیست. قابل خروج: ${availableStock} عدد`);
             alert(`⛔ اجازه خروج داده نشد!\nموجودی قابل خروج: ${availableStock} عدد\nمقدار درخواستی: ${addedPieces} عدد`); return false;
         }
@@ -7807,37 +8065,40 @@ function viewSystemFactor(docId) {
             if (isExitDoc) {
                 try {
                     parsedConsumed = typeof item.consumedFrom === 'string' ? JSON.parse(item.consumedFrom) : item.consumedFrom;
+
                     if (Array.isArray(parsedConsumed) && parsedConsumed.length > 0) {
-                        const firstAllocation = parsedConsumed[0] || {};
-                        const sourceType = String(firstAllocation.sourceType || '').toLowerCase();
-                        const sourceId = String(firstAllocation.lotDocId || firstAllocation.docId || '');
-                        isExplicitlyUnpriced = sourceType === 'unpriced' || sourceId.startsWith('__UNPRICED__:') || Number(firstAllocation.price) === 0;
+                        // قیمت و تاریخ باید برای همین ردیف، از allocationهای همان ردیف خوانده شوند.
+                        // این موضوع مخصوصاً وقتی یک کالا از دو انبار با قیمت متفاوت خارج شده مهم است.
+                        const rowAllocations = parsedConsumed.filter(a => a && typeof a === 'object');
 
-                        // اگر قیمت روی خود خروج صفر است ولی allocation قیمت‌دار دارد، همان قیمت ثبت‌شده را نمایش بده.
-                        if (unitPrice === 0 && !isExplicitlyUnpriced && Number(firstAllocation.price) > 0) {
-                            unitPrice = Number(firstAllocation.price);
-                        }
+                        const priced = rowAllocations.filter(a => Number(a.price) > 0);
+                        const unpriced = rowAllocations.some(a => {
+                            const sid = String(a.lotDocId || a.docId || '');
+                            return String(a.sourceType || '').toLowerCase() === 'unpriced'
+                                || sid.startsWith('__UNPRICED__:');
+                        });
 
-                        // بازیابی قیمت و تاریخ فقط برای allocation قیمت‌دارِ قدیمی؛
-                        // خروج بدون قیمت هرگز نباید از یک ورود دیگر قیمت بگیرد.
-                        if (unitPrice === 0 && !isExplicitlyUnpriced && firstAllocation.docId) {
-                            const originalEntry = historyLog.find(l =>
-                                String(l.docId) === String(firstAllocation.docId) &&
-                                String(l.pCode) === String(pCode) &&
-                                (l.type === 'ورود' || l.type === 'اول دوره') &&
-                                Number(l.price) > 0
-                            );
-                            if (originalEntry) {
-                                unitPrice = Number(originalEntry.price) || 0;
-                                if(!item.prodDate) item.prodDate = originalEntry.prodDate;
-                                if(!item.expDate) item.expDate = originalEntry.expDate;
-                            }
+                        isExplicitlyUnpriced = priced.length === 0 && unpriced;
+
+                        if (priced.length > 0) {
+                            const totalAllocQty = priced.reduce((s, a) => s + Math.max(0, Number(a.qty) || 0), 0);
+                            const totalAllocValue = priced.reduce((s, a) =>
+                                s + ((Number(a.price) || 0) * Math.max(0, Number(a.qty) || 0)), 0);
+                            if (totalAllocQty > 0) unitPrice = totalAllocValue / totalAllocQty;
+
+                            const firstPriced = priced[0];
+                            if (!item.prodDate && firstPriced.prodDate) item.prodDate = firstPriced.prodDate;
+                            if (!item.expDate && firstPriced.expDate) item.expDate = firstPriced.expDate;
+                        } else if (isExplicitlyUnpriced) {
+                            unitPrice = 0;
                         }
                     }
-                } catch(e) {}
+                } catch(e) {
+                    // در سندهای قدیمی، همان price خود ردیف استفاده می‌شود.
+                }
 
-                // برای خروج بدون قیمت، عمداً هیچ fallback قیمتی نداریم.
-                // بنابراین latestLog دیگر هرگز قیمت را به آیتم بدون قیمت تزریق نمی‌کند.
+                // اگر allocation اطلاعات قیمت نداشت، فقط برای اسناد قدیمی از قیمت خود ردیف استفاده می‌کنیم.
+                // هیچ قیمت ردیف دیگری وارد این ردیف نمی‌شود.
             }
 
             const lineTotal = unitPrice * tp;
@@ -7892,7 +8153,11 @@ function viewSystemFactor(docId) {
                 </div>
                 <div style="display:flex; justify-content:space-between; background:var(--bg-color); padding:12px; border-radius:8px; margin-bottom: 15px; font-size:12px; border:1px solid var(--border);">
                     <div><b>فاکتور مرجع:</b> ${master.officeDoc || 'بدون شماره'} <br> <b style="margin-top:4px; display:inline-block;">کاربر ثبت:</b> ${master.operator || 'سیستم'}</div>
-                    <div style="text-align:left;"><b>${senderOrReceiverTitle}:</b> ${master.ref || '—'} <br> <b style="margin-top:4px; display:inline-block;">انبار:</b> ${master.warehouse || '—'}</div>
+                    <div style="text-align:left;">
+                        <b>${senderOrReceiverTitle}:</b> ${master.ref || '—'} <br>
+                        <b style="margin-top:4px; display:inline-block;">انبار:</b>
+                        ${(Array.from(new Set(docs.map(x => String(x?.warehouse || master.warehouse || '—').trim()).filter(Boolean))).join('، ') || '—')}
+                    </div>
                 </div>
                 <table style="width: 100%; border-collapse: collapse; font-size:13px; margin-bottom:15px; background:#fff;">
                     <thead>
@@ -8057,7 +8322,7 @@ function viewSystemFactor(docId) {
                     if (cloudData.productsUnitsMap) productsUnitsMap = cloudData.productsUnitsMap;
                     if (cloudData.productsWeightMap) productsWeightMap = cloudData.productsWeightMap;
                     if (cloudData.sysSettings) sysSettings = cloudData.sysSettings;
-                    // کاربران ورود فقط محلی هستند؛ sysUsers را از D1 جایگزین نمی‌کنیم.
+                    if (Array.isArray(cloudData.sysUsers)) sysUsers = cloudData.sysUsers.map(u=>({name:String(u?.name||''),role:String(u?.role||'user'),active:u?.active!==false})).filter(u=>u.name && u.active!==false);
                     if (Array.isArray(cloudData.inventoryReclassifications)) inventoryReclassifications = cloudData.inventoryReclassifications.filter(Boolean);
                     
                     if (Array.isArray(cloudData.historyLog)) {
@@ -8096,11 +8361,18 @@ if(typeof updateTodayCounter === 'function') updateTodayCounter();
         updateLocalCacheOnly();
         if (document.getElementById('tab-dashboard')?.style.display === 'block') renderDashboard();
         
-        fetch(`${DB_URL}/api/save-master?company=${companyPrefix}`, {
+        return fetch(`${DB_URL}/api/save-master?company=${companyPrefix}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ productsMap, productsUnitsMap, productsWeightMap, sysSettings })
-        }).catch(e => console.warn("خطا در همگام‌سازی تنظیمات:", e));
+            body: JSON.stringify({ productsMap, productsUnitsMap, productsWeightMap, inventoryReclassifications, lastDocNumber, sysSettings })
+        }).then(async (res) => {
+            if (!res.ok) {
+                let msg = 'HTTP ' + res.status;
+                try { const j = await res.json(); msg = j.message || j.error || msg; } catch(e) {}
+                throw new Error(msg);
+            }
+            return res;
+        });
     };
 
     // ۵. ارسال سند به سرور با پاکسازی نسخه قدیمی قبل از ثبت مجدد
@@ -8178,7 +8450,7 @@ if(typeof updateTodayCounter === 'function') updateTodayCounter();
         const timeoutId = setTimeout(() => controller.abort(), 12000);
         let res;
         try {
-            res = await fetch(`${DB_URL}/api/document?company=${encodeURIComponent(companyPrefix)}`, {
+            res = await fetchDbWithFallback(`/api/document?company=${encodeURIComponent(companyPrefix)}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
@@ -8494,22 +8766,11 @@ function computeSelectedExitCost(pCode, warehouse, qtyNeeded, excludeDocId, loca
         } catch(qe){ console.error('queueDispatchDocForRetry error:', qe); }
     }
 
+    // finalizeDispatchDoc خودش ذخیره قطعی D1 را انجام می‌دهد.
+    // این wrapper فقط همان تابع را نگه می‌دارد و از ارسال دوباره/دوگانه جلوگیری می‌کند.
     const originalFinalizeDispatch = window.finalizeDispatchDoc;
     window.finalizeDispatchDoc = async function() {
-        const targetDocId = currentDispatchDocId;
-        originalFinalizeDispatch();
-        if (targetDocId) {
-            let updatedDocs = historyLog.filter(log => String(log.docId) === String(targetDocId));
-            if(updatedDocs.length > 0) {
-                updatedDocs.forEach(d => { d.dispatchStatus = 'done'; d.dispatchDate = new Date().toLocaleString('fa-IR'); });
-                try {
-                    await syncSingleDocToServerStrict(targetDocId, updatedDocs, true);
-                } catch(e) {
-                    queueDispatchDocForRetry(targetDocId, updatedDocs);
-                    alert('⚠️ اسکن‌های بارگیری محلی ذخیره شد، اما ارسال آن به دیتابیس ابری ناموفق بود (اتصال اینترنت؟).\nبه‌محض اتصال مجدد، به‌صورت خودکار ارسال می‌شود.\n\nخطا: ' + e.message);
-                }
-            }
-        }
+        return await originalFinalizeDispatch();
     };
 
     const originalBypassDispatch = window.bypassAndFinalizeDispatch;
@@ -8728,8 +8989,7 @@ var nativeInfo = null;
 var seq = 0;
 
 function probeNative(){
-    if (nativeInfo) return Promise.resolve(nativeInfo);
-    if (!('BarcodeDetector' in window)) { nativeInfo = { formats:[], has1D:false }; return Promise.resolve(nativeInfo); }
+    if (nativeInfo) return Promise.resolve(nativeInfo);    if (!('BarcodeDetector' in window)) { nativeInfo = { formats:[], has1D:false }; return Promise.resolve(nativeInfo); }
     return window.BarcodeDetector.getSupportedFormats().then(function(has){
         var f = ONE_D.filter(function(x){ return has.indexOf(x) >= 0; });
         nativeInfo = { formats:f, has1D: f.length > 0 };
@@ -9728,8 +9988,7 @@ function runCropDecode(){
 /* اتصال به دکمه عکس موجود: بعد از بارگذاری عکس، به‌جای فقط تلاش خودکار،
    دکمه «برش دستی» هم نمایش داده می‌شود */
 var attachTimer = setInterval(function(){
-    var st = document.getElementById('inlineScanPhotoStatus');
-    if (st && !document.getElementById('inlineScanManualCropBtn')){
+    var st = document.getElementById('inlineScanPhotoStatus');    if (st && !document.getElementById('inlineScanManualCropBtn')){
         var b = document.createElement('button');
         b.type = 'button';
         b.id = 'inlineScanManualCropBtn';
@@ -10728,8 +10987,7 @@ html[data-theme="dark"] .btn-add{
     background:linear-gradient(180deg,#e7a33e,#c97919) !important;
     border:1px solid #f0bc67 !important;
     color:#fff !important;
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 7px 17px rgba(118,69,13,.25) !important;
-}
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 7px 17px rgba(118,69,13,.25) !important;}
 html[data-theme="dark"] .btn-scan{
     background:linear-gradient(180deg,#203a57,#172c44) !important;
     border:1px solid #486887 !important;
@@ -11528,6 +11786,7 @@ window.showAppPromptText = function(message, opts){
 function applyTheme(t){
     if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
     else document.documentElement.removeAttribute('data-theme');
+    if (typeof window.applyRoleVisibility === 'function') { try { window.applyRoleVisibility(); } catch(e){} }
     var btn = document.getElementById('appThemeToggle');
     if (btn) btn.textContent = t === 'dark' ? '☀️' : '🌙';
     var sw = document.getElementById('settingsThemeSwitch');
@@ -11687,13 +11946,10 @@ html[data-theme="dark"] .tab-btn .tab-label{
 </style>
 <script>
 (function(){
-  function localAuthTokenForUser(u){
-    return `LOCAL:${encodeURIComponent(String(u?.name||'سیستم'))}:${encodeURIComponent(String(u?.role||'user'))}`;
-  }
   let __storedUser=null; try{ __storedUser=JSON.parse(sessionStorage.getItem('activeUser')||'null'); }catch(e){}
   const __storedToken=sessionStorage.getItem('v20SessionToken')||'';
-  const V20 = window.__V20 = { token: (__storedUser ? localAuthTokenForUser(__storedUser) : __storedToken), reservations:[], audit:[], serverVersion:'', reportCache:null, reportLoading:false };
-  try{ if(__storedUser) sessionStorage.setItem('v20SessionToken',V20.token); }catch(e){}
+  const V20 = window.__V20 = { token: __storedToken, reservations:[], audit:[], serverVersion:'', reportCache:null, reportLoading:false };
+  try{ if(!__storedToken) sessionStorage.removeItem('v20SessionToken'); }catch(e){}
   const DB = (typeof DB_URL !== 'undefined') ? DB_URL : 'https://anbar-db.mojtaba-hanafi13.workers.dev';
   function jsonHeaders(){ return {'Content-Type':'application/json'}; }
   function escapeV20(v){return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
@@ -11727,9 +11983,37 @@ html[data-theme="dark"] .tab-btn .tab-label{
   function show(title,html){injectModal();document.getElementById('v20ModalTitle').textContent=title;document.getElementById('v20ModalBody').innerHTML=html;document.getElementById('v20EnterpriseModal').style.display='flex';}
   window.__V20.close=closeV20;
   document.addEventListener('keydown',e=>{if(e.key==='Escape' && document.getElementById('v20EnterpriseModal')?.style.display==='flex')closeV20();});
+  async function fetchDbWithFallback(path, opts={}, timeoutMs=12000){
+    const targets=[DB, DB_FALLBACK_URL].filter((v,i,a)=>v && a.indexOf(v)===i);
+    let lastErr=null;
+    for(const base of targets){      for(let attempt=0; attempt<2; attempt++){
+        let timer=null;
+        try{
+          const o={...opts,headers:{...(opts.headers||{}),'Authorization':V20.token?`Bearer ${V20.token}`:'',...(opts.body?jsonHeaders():{})}};
+          const ctrl=new AbortController();
+          timer=setTimeout(()=>ctrl.abort(), timeoutMs);
+          o.signal=ctrl.signal;
+          const r=await fetch(`${base}${path}`,o);
+          clearTimeout(timer);
+          return r;
+        }catch(e){
+          if(timer) clearTimeout(timer);
+          lastErr=e;
+          await new Promise(r=>setTimeout(r, attempt===0?250:700));
+        }
+      }
+    }
+    throw lastErr || new Error('اتصال به سرور برقرار نشد.');
+  }
+  // FIX-2026-10-01-C: expose the V20 DB helper globally so the main app
+  // functions (including ثبت خروج) can use the same fallback/retry logic.
+  // The helper previously existed only inside this IIFE, causing:
+  //   ReferenceError: fetchDbWithFallback is not defined
+  window.fetchDbWithFallback = fetchDbWithFallback;
+
   async function api(path,opts={}){
-    const o={...opts,headers:{...(opts.headers||{}),'Authorization':V20.token?`Bearer ${V20.token}`:'',...(opts.body?jsonHeaders():{})}};
-    const r=await fetch(`${DB}${path}`,o); const t=await r.text(); let j={}; try{j=JSON.parse(t)}catch(e){j={success:false,message:t}}; if(r.status===401){V20.token='';sessionStorage.removeItem('v20SessionToken');} if(!r.ok||j.success===false) throw new Error(j.message||j.error||`HTTP ${r.status}`); return j;
+    const r=await fetchDbWithFallback(path,opts,12000);
+    const t=await r.text(); let j={}; try{j=JSON.parse(t)}catch(e){j={success:false,message:t}}; if(r.status===401){V20.token='';sessionStorage.removeItem('v20SessionToken');} if(!r.ok||j.success===false) throw new Error(j.message||j.error||`HTTP ${r.status}`); return j;
   }
   async function loadReservations(){try{const j=await api(`/api/reservations?company=${encodeURIComponent(companyPrefix)}`);V20.reservations=j.rows||[];return V20.reservations}catch(e){return[]}}
   function fastReportRows(){
@@ -11817,61 +12101,122 @@ html[data-theme="dark"] .tab-btn .tab-label{
   window.addEventListener('load',()=>{injectLaunchbar();injectModal(); const ab=document.getElementById('v20LaunchAudit'),bb=document.getElementById('v20LaunchBackup'); if(currentUser?.role==='admin'){if(ab)ab.style.display='inline-block';if(bb)bb.style.display='inline-block';}});
   setTimeout(()=>{injectLaunchbar();injectModal(); const ab=document.getElementById('v20LaunchAudit'),bb=document.getElementById('v20LaunchBackup'); if(currentUser?.role==='admin'){if(ab)ab.style.display='inline-block';if(bb)bb.style.display='inline-block';} if(V20.token&&currentUser){window.fetchDataFromServer&&window.fetchDataFromServer();}},1200);
   V20.setStatus=(text,kind='ok')=>{const s=document.getElementById('cloudStatus');if(!s)return;s.innerText=text;s.style.background=kind==='ok'?'rgba(16,185,129,.9)':kind==='warn'?'rgba(245,158,11,.9)':'rgba(239,68,68,.9)';};
-  V20.checkVersion=async()=>{if(!V20.token||!companyPrefix)return;try{const j=await api(`/api/version?company=${encodeURIComponent(companyPrefix)}`);V20.setStatus('☁️ آنلاین (D1)','ok');if(j.version && j.version!==V20.serverVersion){await window.fetchDataFromServer();}}catch(e){V20.setStatus('⚠️ اتصال D1 قطع است','error');}};
+  V20.checkVersion=async()=>{if(!V20.token||!companyPrefix)return;try{const j=await api(`/api/version?company=${encodeURIComponent(companyPrefix)}`);V20.setStatus('☁️ آنلاین (D1)','ok');if(j.version && j.version!==V20.serverVersion){V20.serverVersion=j.version;}}catch(e){V20.setStatus('🟡 اتصال D1 ناپایدار؛ تلاش مجدد...','warn');}};
   try{ if(typeof autoSyncInterval!=='undefined' && autoSyncInterval){ clearInterval(autoSyncInterval); autoSyncInterval=setInterval(()=>{if(V20.token)V20.checkVersion();},30000); } }catch(e){}
 
 
-  /* -------- local login + local session bridge -------- */
+  /* -------- central login + server session bridge -------- */
   const originalFetch=window.fetch.bind(window);
   window.fetch=function(input,init={}){
-    try{
-      const url=typeof input==='string'?input:(input?.url||'');
-      if(String(url).startsWith(DB)){
-        const h={...(init.headers||{})};
-        if(currentUser && (!V20.token || V20.token==='LOCAL-SESSION')) V20.token=localAuthTokenForUser(currentUser);
-        if(V20.token) h.Authorization=`Bearer ${V20.token}`;
-        init={...init,headers:h};
-      }
-    }catch(e){}
+    const originalUrl=typeof input==='string' ? input : (input?.url||'');
+    const isPrimary=String(originalUrl).startsWith(DB);
+    const isFallback=String(originalUrl).startsWith(DB_FALLBACK_URL);
+    const buildRequest=(target)=>{
+      const h={...(init.headers||{})};
+      if(V20.token) h.Authorization=`Bearer ${V20.token}`;
+      const targetUrl=(isPrimary ? String(originalUrl).replace(DB,target) : String(originalUrl));
+      return {url:targetUrl, options:{...init,headers:h}};
+    };
+    if(isPrimary || isFallback){
+      const primary=buildRequest(DB);
+      const shouldFallback = (r)=> !!r && [502,503,504].includes(r.status);
+      const doFetch=(target)=>originalFetch(target.url,target.options);
+      return doFetch(primary).then(r=>{
+        if(isPrimary && shouldFallback(r) && DB_FALLBACK_URL && DB_FALLBACK_URL!==DB){
+          const fb=buildRequest(DB_FALLBACK_URL);
+          return doFetch(fb);
+        }
+        return r;
+      }).catch(err=>{
+        if(isPrimary && DB_FALLBACK_URL && DB_FALLBACK_URL!==DB){
+          const fb=buildRequest(DB_FALLBACK_URL);
+          return doFetch(fb);
+        }
+        throw err;
+      });
+    }
     return originalFetch(input,init);
   };
+  window.__V20Fetch = async function(path, opts={}, timeoutMs=12000){ return fetchDbWithFallback(path, opts, timeoutMs); };
+
   const XO=XMLHttpRequest.prototype.open, XS=XMLHttpRequest.prototype.setRequestHeader, XSend=XMLHttpRequest.prototype.send;
   XMLHttpRequest.prototype.open=function(method,url,...rest){this.__v20Url=String(url||'');return XO.call(this,method,url,...rest)};
   XMLHttpRequest.prototype.setRequestHeader=function(k,v){
     try{
-      if(this.__v20Url&&this.__v20Url.startsWith(DB)&&V20.token&&String(k).toLowerCase()!=='authorization') XS.call(this,'Authorization',`Bearer ${V20.token}`);
+      if(this.__v20Url&&(this.__v20Url.startsWith(DB)||this.__v20Url.startsWith(DB_FALLBACK_URL))&&V20.token&&String(k).toLowerCase()!=='authorization') XS.call(this,'Authorization',`Bearer ${V20.token}`);
     }catch(e){}
     return XS.call(this,k,v);
   };
   XMLHttpRequest.prototype.send=function(body){
     try{
-      if(this.__v20Url&&this.__v20Url.startsWith(DB)&&V20.token){try{XS.call(this,'Authorization',`Bearer ${V20.token}`)}catch(e){}}
+      if(this.__v20Url&&(this.__v20Url.startsWith(DB)||this.__v20Url.startsWith(DB_FALLBACK_URL))&&V20.token){try{XS.call(this,'Authorization',`Bearer ${V20.token}`)}catch(e){}}
     }catch(e){}
     return XSend.call(this,body);
   };
 
-  /* -------- local login: no password request to D1 -------- */
-  window.performLogin=async function(){
-    if(typeof selectedLoginIndex==='undefined'||selectedLoginIndex===null)return;
-    const user=Array.isArray(sysUsers)?sysUsers[selectedLoginIndex]:null;
-    if(!user)return;
-    const pass=String(document.getElementById('loginPassword')?.value||'');
-    const expected=String(user.pass??'');
-    if(expected && pass!==expected){ alert('❌ رمز عبور صحیح نیست.'); return; }
-    currentUser={name:String(user.name||'سیستم'),role:String(user.role||'user')};
-    V20.token=localAuthTokenForUser(currentUser);
+  V20.loadAuthUsers=async function(){
+    const j=await api(`/api/auth/users?company=${encodeURIComponent(companyPrefix)}`);
+    sysUsers=Array.isArray(j.users)?j.users:[];
+    ensureDefaultUsers();
+    renderLoginButtons();
+    return sysUsers;
+  };
+  V20.login=async function(userName,password){
+    const r=await fetchDbWithFallback(`/api/auth/login?company=${encodeURIComponent(companyPrefix)}`,{method:'POST',headers:jsonHeaders(),body:JSON.stringify({userName,password})},12000);
+    const t=await r.text(); let j={}; try{j=JSON.parse(t)}catch(e){j={message:t}};
+    if(!r.ok || j.success===false){ const b=r.headers.get('X-Warehouse-Auth-Build')||'unknown-build'; throw new Error((j.message||j.error||`HTTP ${r.status}`)+` [HTTP ${r.status} | ${b}]`); }
+    V20.token=String(j.token||'');
+    if(!V20.token) throw new Error('سرور نشست معتبر برنگرداند.');
     sessionStorage.setItem('v20SessionToken',V20.token);
-    sessionStorage.setItem('activeUser',JSON.stringify(currentUser));
-    V20.setStatus('✅ ورود محلی سریع','ok');
-    document.getElementById('login-overlay').style.display='none';
-    if(window.initAfterLogin) window.initAfterLogin();
-    if(window.fetchDataFromServer) window.fetchDataFromServer();
-    injectLaunchbar();
+    sessionStorage.setItem('activeUser',JSON.stringify(j.user||{}));
+    return j;
+  };
+  V20.recoverAdmin=async function(userName,recoveryKey,newPassword){
+    const r=await fetchDbWithFallback(`/api/auth/recover-admin?company=${encodeURIComponent(companyPrefix)}`,{method:'POST',headers:jsonHeaders(),body:JSON.stringify({recoveryKey,userName,newPassword})},12000);
+    const t=await r.text(); let j={}; try{j=JSON.parse(t)}catch(e){j={message:t}};
+    if(!r.ok || j.success===false){ const b=r.headers.get('X-Warehouse-Auth-Build')||'unknown-build'; throw new Error((j.message||j.error||`HTTP ${r.status}`)+` [HTTP ${r.status} | ${b}]`); }
+    return j;
+  };
+  V20.restoreSession=async function(){
+    if(!V20.token || !companyPrefix) return false;
+    try{
+      const j=await api(`/api/auth/me?company=${encodeURIComponent(companyPrefix)}`);
+      currentUser=j.user||null;
+      if(currentUser) sessionStorage.setItem('activeUser',JSON.stringify(currentUser));
+      document.getElementById('login-overlay').style.display='none';
+      initAfterLogin();
+      fetchDataFromServer();
+      return true;
+    }catch(e){
+      V20.token=''; currentUser=null; sessionStorage.removeItem('v20SessionToken'); sessionStorage.removeItem('activeUser');
+      return false;
+    }
+  };
+  V20.changeMyPassword=async function(oldPassword,newPassword){
+    const j=await api(`/api/auth/change-password?company=${encodeURIComponent(companyPrefix)}`,{method:'POST',headers:jsonHeaders(),body:JSON.stringify({oldPassword,newPassword})});
+    return j;
+  };
+  V20.createUser=async function(name,role,password){
+    const j=await api(`/api/auth/users?company=${encodeURIComponent(companyPrefix)}`,{method:'POST',headers:jsonHeaders(),body:JSON.stringify({name,role,password})});
+    return j;
+  };
+  V20.deleteUser=async function(name){
+    const j=await api(`/api/auth/users/${encodeURIComponent(name)}?company=${encodeURIComponent(companyPrefix)}`,{method:'DELETE'});
+    return j;
+  };
+  V20.importLegacyUsers=async function(users){
+    const list=(Array.isArray(users)?users:[]).filter(u=>u&&String(u.name||'').trim()&&String(u.pass||'').trim());
+    if(!list.length) return {success:true,users:sysUsers};
+    return await api(`/api/auth/import-local-users?company=${encodeURIComponent(companyPrefix)}`,{method:'POST',headers:jsonHeaders(),body:JSON.stringify({users:list})});
+  };
+  V20.logoutCentral=async function(){
+    if(!V20.token) return;
+    try{ await api(`/api/auth/logout?company=${encodeURIComponent(companyPrefix)}`,{method:'POST'}); }catch(e){}
+    V20.token=''; sessionStorage.removeItem('v20SessionToken'); sessionStorage.removeItem('activeUser');
   };
   const legacyLogout=window.logoutApp;
   window.logoutApp=async function(){
-    V20.token='';
-    sessionStorage.removeItem('v20SessionToken');
+    await V20.logoutCentral();
     if(legacyLogout) legacyLogout();
   };
 
@@ -11885,9 +12230,11 @@ html[data-theme="dark"] .tab-btn .tab-label{
     try{
       const r=await api(`/api/init?company=${encodeURIComponent(companyPrefix)}&t=${Date.now()}`);
       if(r.productsMap) productsMap=r.productsMap; if(r.productsUnitsMap) productsUnitsMap=r.productsUnitsMap; if(r.productsWeightMap) productsWeightMap=r.productsWeightMap; if(r.sysSettings) sysSettings=r.sysSettings;
+      if(Array.isArray(r.sysUsers)) sysUsers=r.sysUsers.map(u=>({name:String(u?.name||''),role:String(u?.role||'user'),active:u?.active!==false})).filter(u=>u.name && u.active!==false);
       if(Array.isArray(r.inventoryReclassifications)) inventoryReclassifications=r.inventoryReclassifications; if(r.lastDocNumber) lastDocNumber=Number(r.lastDocNumber)||lastDocNumber; if(Array.isArray(r.historyLog)) historyLog=r.historyLog.filter(x=>x&&x.docId!=null&&!isReclassDoc(x));
       V20.serverVersion=r.serverVersion||V20.serverVersion; V20.reportCache=null;
       rebuildInventory(); updateLocalCacheOnly(); V20.setStatus('☁️ آنلاین (D1)','ok');
+      updateDashboardIdentity();
       if(currentUser){loadDropdowns&&loadDropdowns(); renderInventory&&renderInventory(); if(document.getElementById('tab-dashboard')?.style.display==='block') renderDashboard&&renderDashboard(); if(document.getElementById('tab-cardex')?.style.display==='block') generateCardex&&generateCardex();} injectLaunchbar();
     }catch(e){ V20.setStatus('⚠️ اتصال D1 قطع است','error'); if(String(e.message||'').toLowerCase().includes('auth')){sessionStorage.removeItem('v20SessionToken');V20.token='';} }
   };
@@ -11927,5 +12274,38 @@ html[data-theme="dark"] .tab-btn .tab-label{
 })();
 </script>
 
+
+
+<style id="role-visibility-hardening-v1.10">
+/* Role visibility is security-sensitive UI state. These rules intentionally use !important
+   so dark-mode presentation rules can never make a forbidden tab visible again. */
+html[data-user-role="loader"] #tabBtnDashboard,
+html[data-user-role="loader"] #tabBtnInventory,
+html[data-user-role="loader"] #tabBtnEntry,
+html[data-user-role="loader"] #tabBtnExit,
+html[data-user-role="loader"] #settingsTabBtn,
+html[data-user-role="loader"] #tabBtnInventoryCount,
+html[data-user-role="loader"] #tabBtnTransfer{display:none !important;}
+html[data-user-role="loader"] #tabBtnCardex{display:block !important;}
+
+html[data-user-role="viewer"] #settingsTabBtn,
+html[data-user-role="viewer"] #tabBtnEntry,
+html[data-user-role="viewer"] #tabBtnExit,
+html[data-user-role="viewer"] #tabBtnInventoryCount,
+html[data-user-role="viewer"] #tabBtnTransfer{display:none !important;}
+html[data-user-role="viewer"] #tabBtnDashboard,
+html[data-user-role="viewer"] #tabBtnInventory,
+html[data-user-role="viewer"] #tabBtnCardex{display:block !important;}
+
+html[data-user-role="user"] #settingsTabBtn{display:none !important;}
+html[data-user-role="admin"] #tabBtnDashboard,
+html[data-user-role="admin"] #tabBtnInventory,
+html[data-user-role="admin"] #tabBtnCardex,
+html[data-user-role="admin"] #tabBtnEntry,
+html[data-user-role="admin"] #tabBtnExit,
+html[data-user-role="admin"] #settingsTabBtn,
+html[data-user-role="admin"] #tabBtnInventoryCount,
+html[data-user-role="admin"] #tabBtnTransfer{display:block !important;}
+</style>
 </body>
 </html>
