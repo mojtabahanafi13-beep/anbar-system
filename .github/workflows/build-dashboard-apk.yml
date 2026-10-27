@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - feat/rojin-dashboard-android
+      - feat/native-dashboard-app
     paths:
       - 'dashboard-android/**'
       - '.github/workflows/build-dashboard-apk.yml'
