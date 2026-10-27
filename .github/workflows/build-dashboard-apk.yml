@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - feat/rojin-dashboard-android
+      - feat/native-dashboard-app
     paths:
       - 'dashboard-android/**'
       - '.github/workflows/build-dashboard-apk.yml'
@@ -15,7 +16,7 @@ permissions:
 
 concurrency:
   group: build-rojin-dashboard-apk
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   build:
