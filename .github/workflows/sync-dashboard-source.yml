@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feat/dashboard-github-source
+      - main
     paths:
       - '.github/workflows/sync-dashboard-source.yml'
       - 'dashboard-source/README-FA.md'
