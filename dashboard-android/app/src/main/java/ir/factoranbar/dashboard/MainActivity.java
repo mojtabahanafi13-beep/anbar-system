@@ -836,7 +836,7 @@ public final class MainActivity extends AppCompatActivity {
                 if (loc == null || loc.isNull("lat") || loc.isNull("lng")) continue;
                 double lat = loc.optDouble("lat", Double.NaN);
                 double lon = loc.optDouble("lng", Double.NaN);
-                if (!Double.isFinite(lat) || !Double.isFinite(lon) ||
+                if (Double.isNaN(lat) || Double.isInfinite(lat) || Double.isNaN(lon) || Double.isInfinite(lon) ||
                         lat < -90 || lat > 90 || lon < -180 || lon > 180) continue;
                 GeoPoint point = new GeoPoint(lat, lon);
                 points.add(point);
@@ -1249,7 +1249,12 @@ public final class MainActivity extends AppCompatActivity {
     private String jsonArrayJoined(JSONArray values) {
         List<String> items = new ArrayList<>();
         for (int i = 0; i < values.length(); i++) items.add(values.optString(i, ""));
-        return String.join("، ", items);
+        StringBuilder joined = new StringBuilder();
+        for (String item : items) {
+            if (joined.length() > 0) joined.append("، ");
+            joined.append(item);
+        }
+        return joined.toString();
     }
 
     private String normalize(String value) {
