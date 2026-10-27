@@ -1,3 +1,16 @@
 plugins {
     id 'com.android.application' version '8.2.2' apply false
 }
+
+// Align older AndroidX transitive Kotlin artifacts with the merged Kotlin stdlib,
+// matching the dependency fix already used by the existing Safir Rojin Android project.
+subprojects {
+    configurations.configureEach {
+        resolutionStrategy.dependencySubstitution {
+            substitute(module("org.jetbrains.kotlin:kotlin-stdlib-jdk7"))
+                .using(module("org.jetbrains.kotlin:kotlin-stdlib:1.8.22"))
+            substitute(module("org.jetbrains.kotlin:kotlin-stdlib-jdk8"))
+                .using(module("org.jetbrains.kotlin:kotlin-stdlib:1.8.22"))
+        }
+    }
+}
