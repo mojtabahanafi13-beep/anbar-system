@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>مسیر کامل ارسال</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Vazirmatn,Tahoma,sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh;display:flex;flex-direction:column}
+header{padding:10px 14px;background:#1e293b;border-bottom:1px solid #334155;display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}
+header h1{font-size:15px;font-weight:800}
+.sum{font-size:12px;color:#94a3b8;display:flex;gap:12px;flex-wrap:wrap}
+.sum b{color:#e2e8f0}
+#map{height:56vh;min-height:300px;width:100%;background:#1e293b}
+.panel{padding:10px 14px 30px;max-width:900px;width:100%;margin:0 auto}
+.note{font-size:12px;padding:8px 12px;border-radius:10px;margin:8px 0;line-height:1.9}
+.note.warn{background:#422006;color:#fed7aa;border:1px solid #9a3412}
+.note.err{background:#450a0a;color:#fecaca;border:1px solid #991b1b}
+.note.ok{background:#052e16;color:#bbf7d0;border:1px solid #166534}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.btn{flex:1 1 150px;text-align:center;text-decoration:none;color:#fff;background:#2563eb;border-radius:10px;padding:11px 10px;font-size:13px;font-weight:800;border:0;cursor:pointer;font-family:inherit}
+.btn.g{background:#16a34a}.btn.o{background:#d97706}
+.stop{display:flex;gap:10px;align-items:center;background:#1e293b;border:1px solid #334155;border-radius:12px;padding:9px 10px;margin-bottom:7px}
+.stop .n{flex:0 0 28px;height:28px;border-radius:50%;background:#f59e0b;color:#fff;font-weight:900;font-size:13px;display:flex;align-items:center;justify-content:center}
+.stop .n.s{background:#16a34a}
+.stop .t{flex:1;min-width:0;font-size:13px;font-weight:700;word-break:break-word}
+.stop .t small{display:block;font-weight:400;color:#94a3b8;font-size:11px;margin-top:2px}
+.stop a{flex:0 0 auto;font-size:11px;color:#fbbf24;text-decoration:none;border:1px solid #92400e;border-radius:8px;padding:6px 8px}
+</style>
+</head>
+<body>
+<header>
+  <h1 id="ttl">مسیر کامل ارسال</h1>
+  <div class="sum" id="sum"></div>
+</header>
+<div id="map"></div>
+<div class="panel">
+  <div id="msg"></div>
+  <div class="btns" id="btns"></div>
+  <div id="list"></div>
+</div>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var fa = function (n) { return Math.round(n).toLocaleString('fa-IR'); };
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+  function note(cls, t) { $('msg').insertAdjacentHTML('beforeend', '<div class="note ' + cls + '">' + t + '</div>'); }
+
+  // داده مسیر در hash لینک: {n:نام خودرو, c:رفت‌وبرگشت؟, o:[lat,lng] انبار, p:[[lat,lng,نام],...]}
+  var D = null;
+  try {
+    var h = decodeURIComponent((location.hash || '').slice(1)).replace(/-/g, '+').replace(/_/g, '/');
+    D = JSON.parse(decodeURIComponent(escape(atob(h))));
+  } catch (e) {}
+  if (!D || !D.o || !Array.isArray(D.p) || !D.p.length) { note('err', 'لینک مسیر معتبر نیست. از داشبورد (برنامه‌ریزی ارسال) دوباره دکمه «کل مسیر» را بزنید.'); return; }
+
+  $('ttl').textContent = 'مسیر کامل: ' + (D.n || '');
+  var origin = [D.o[0], D.o[1]];
+  var stops = D.p.map(function (x) { return { c: [x[0], x[1]], name: x[2] || '' }; });
+  var closed = !!D.c;
+  var ptsAll = [origin].concat(stops.map(function (s) { return s.c; })); if (closed) ptsAll.push(origin);
+  var ll = function (p) { return p[0].toFixed(6) + ',' + p[1].toFixed(6); };
+
+  // ---- فهرست توقف‌ها و لینک‌های جایگزین ----
+  function renderList(legs) {
+    var cum = 0, html = '<div class="stop"><div class="n s">⌂</div><div class="t">انبار (شروع)</div></div>';
+    stops.forEach(function (s, i) {
+      var sub = '';
+      if (legs && legs[i]) { cum += legs[i].s; sub = '<small>' + fa(legs[i].m / 1000) + ' کیلومتر از توقف قبل · تا اینجا حدود ' + fa(cum / 60) + ' دقیقه رانندگی</small>'; }
+      var from = i === 0 ? origin : stops[i - 1].c;
+      html += '<div class="stop"><div class="n">' + (i + 1).toLocaleString('fa-IR') + '</div><div class="t">' + esc(s.name) + sub + '</div>'
+        + '<a target="_blank" rel="noopener" href="https://nshn.ir/?origin=' + encodeURIComponent(ll(from)) + '&destination=' + encodeURIComponent(ll(s.c)) + '">نشان</a></div>';
+    });
+    if (closed) html += '<div class="stop"><div class="n s">⌂</div><div class="t">بازگشت به انبار' + (legs && legs[stops.length] ? '<small>' + fa(legs[stops.length].m / 1000) + ' کیلومتر</small>' : '') + '</div></div>';
+    $('list').innerHTML = html;
+  }
+  function renderButtons() {
+    // گوگل‌مپ: حداکثر ۹ توقف در هر لینک؛ بخش‌ها زنجیره‌ای‌اند
+    var b = '', start = ll(origin), g = 0, nChunks = Math.ceil(stops.length / 9);
+    for (var k = 0; k < stops.length; k += 9) {
+      var chunk = stops.slice(k, k + 9), last = k + 9 >= stops.length, link = 'https://www.google.com/maps/dir/' + start;
+      chunk.forEach(function (s) { link += '/' + ll(s.c); });
+      if (last && closed) link += '/' + ll(origin);
+      b += '<a class="btn g" target="_blank" rel="noopener" href="' + link + '">ناوبری در گوگل‌مپ' + (nChunks > 1 ? ' (بخش ' + (++g).toLocaleString('fa-IR') + ' از ' + nChunks.toLocaleString('fa-IR') + ')' : ' (کل مسیر)') + '</a>';
+      start = ll(chunk[chunk.length - 1].c);
+    }
+    b += '<a class="btn o" target="_blank" rel="noopener" href="https://nshn.ir/?origin=' + encodeURIComponent(ll(origin)) + '&destination=' + encodeURIComponent(ll(stops[0].c)) + '">شروع در نشان (توقف ۱)</a>';
+    $('btns').innerHTML = b;
+  }
+  renderList(null); renderButtons();
+
+  // ---- نقشه ----
+  var map = null;
+  function loadLeaflet() {
+    return new Promise(function (res, rej) {
+      if (window.L && window.L.map) return res();
+      var srcs = ['vendor/leaflet/', 'https://unpkg.com/leaflet@1.9.4/dist/'], i = 0;
+      (function next() {
+        if (i >= srcs.length) return rej(new Error('leaflet'));
+        var base = srcs[i++], css = document.createElement('link'); css.rel = 'stylesheet'; css.href = base + 'leaflet.css'; document.head.appendChild(css);
+        var sc = document.createElement('script'); sc.src = base + 'leaflet.js';
+        sc.onload = function () { (window.L && window.L.map) ? res() : next(); };
+        sc.onerror = function () { css.remove(); sc.remove(); next(); };
+        document.head.appendChild(sc);
+      })();
+    });
+  }
+  function numIcon(t, cls) { return L.divIcon({ className: '', html: '<div style="background:' + (cls === 's' ? '#16a34a' : '#f59e0b') + ';color:#fff;border-radius:50%;width:26px;height:26px;line-height:26px;text-align:center;font-size:12px;font-weight:900;border:2px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.6)">' + t + '</div>', iconSize: [26, 26], iconAnchor: [13, 13] }); }
+  function draw(path, dashed) {
+    map = L.map('map'); L.tileLayer('https://mt1.google.com/vt/lyrs=m&hl=fa&x={x}&y={y}&z={z}', { attribution: '© Google Maps', maxZoom: 20 }).addTo(map);
+    var line = L.polyline(path, { color: dashed ? '#f59e0b' : '#2563eb', weight: 5, opacity: .9, dashArray: dashed ? '8 8' : null }).addTo(map);
+    L.marker(origin, { icon: numIcon('⌂', 's') }).addTo(map).bindTooltip('انبار');
+    stops.forEach(function (s, i) { L.marker(s.c, { icon: numIcon((i + 1).toLocaleString('fa-IR')) }).addTo(map).bindTooltip(s.name); });
+    map.fitBounds(line.getBounds().pad(0.15));
+  }
+
+  // ---- مسیر واقعی از سرور (نشان) ----
+  var tok = ''; try { var o = JSON.parse(localStorage.getItem('anbar_dash_token') || 'null'); if (o && o.t && (!o.e || Date.parse(o.e) > Date.now())) tok = o.t; } catch (e) {}
+  var straight = ptsAll;
+  Promise.resolve().then(function () { return loadLeaflet(); }).then(function () {
+    if (!tok) { draw(straight, true); note('warn', 'برای مسیر واقعی نشان باید در داشبورد وارد شده باشید (همین مرورگر). فعلاً خطوط مستقیم بین توقف‌ها نمایش داده می‌شود.'); return; }
+    return fetch('/api/dashboard-route-full', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + tok }, body: JSON.stringify({ points: ptsAll }) })
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { return { ok: r.ok, j: j }; }); })
+      .then(function (x) {
+        if (x.ok && x.j.success && x.j.path && x.j.path.length) {
+          draw(x.j.path, false);
+          $('sum').innerHTML = '<span>مسیر واقعی (نشان): <b>' + fa(x.j.km) + '</b> کیلومتر</span><span>حدود <b>' + fa(x.j.min) + '</b> دقیقه رانندگی (بدون توقف‌ها)</span><span><b>' + stops.length.toLocaleString('fa-IR') + '</b> توقف</span>';
+          renderList(x.j.legs);
+          note('ok', 'کل مسیر به‌صورت پیوسته و به ترتیب بهینه کشیده شده است.');
+        } else {
+          draw(straight, true);
+          note('warn', 'مسیر واقعی نشان گرفته نشد (' + esc((x.j && (x.j.message || x.j.error)) || 'خطا') + '). خطوط مستقیم بین توقف‌ها نمایش داده می‌شود؛ ترتیب توقف‌ها همچنان درست است.');
+        }
+      });
+  }).catch(function () {
+    note('warn', 'نقشه بارگذاری نشد؛ فهرست توقف‌ها و دکمه‌های ناوبری بالا همچنان قابل استفاده‌اند.');
+    $('map').style.display = 'none';
+  });
+})();
+</script>
+</body>
+</html>
