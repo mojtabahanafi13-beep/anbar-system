@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>در حال بازکردن…</title>
+<style>
+body{margin:0;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:#0f172a;color:#e2e8f0;font-family:Tahoma,sans-serif;text-align:center;padding:0 20px}
+.s{width:48px;height:48px;border-radius:50%;border:4px solid rgba(148,163,184,.3);border-top-color:#38bdf8;animation:r .8s linear infinite}
+@keyframes r{to{transform:rotate(360deg)}}
+small{opacity:.65;line-height:1.9}
+a{color:#38bdf8;display:none}
+</style>
+</head>
+<body>
+<div class="s"></div>
+<div>در حال بازکردن فایل…</div>
+<small>اگر شبکه کند باشد چند ثانیه طول می‌کشد</small>
+<a id="go" href="#">اگر باز نشد، اینجا بزنید</a>
+<script>
+(function () {
+  var ALLOWED = ['/dashboard-receipts/', '/api/file', '/api/dashboard-receipt-file', '/api/dashboard-folder', '/api/invoice-cache/open', '/api/invoice-cache/find'];
+  var u = new URLSearchParams(location.search).get('u') || '';
+  var target = null;
+  try {
+    var x = new URL(u, location.origin);
+    if (x.origin === location.origin && ALLOWED.some(function (p) { return x.pathname.indexOf(p) === 0; })) target = x.pathname + x.search + x.hash;
+  } catch (e) {}
+  if (!target) { document.querySelector('div:nth-child(2)').textContent = 'آدرس فایل نامعتبر است.'; document.querySelector('.s').style.display = 'none'; return; }
+  var go = document.getElementById('go'); go.href = target;
+  setTimeout(function () { go.style.display = 'inline'; }, 8000);
+  setTimeout(function () { location.replace(target); }, 60);
+})();
+</script>
+</body>
+</html>
