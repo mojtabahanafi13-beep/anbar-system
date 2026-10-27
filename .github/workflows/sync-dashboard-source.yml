@@ -1,0 +1,83 @@
+name: Sync dashboard frontend source
+
+on:
+  push:
+    branches:
+      - feat/dashboard-github-source
+    paths:
+      - '.github/workflows/sync-dashboard-source.yml'
+      - 'dashboard-source/README-FA.md'
+      - 'dashboard-source/deploy-dashboard.ps1'
+      - 'dashboard-source/.gitignore'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: dashboard-source-sync
+  cancel-in-progress: false
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout dashboard source branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Download allowlisted public dashboard assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          base='https://server.factor-anbar.online/dashboard'
+          root='dashboard-source/public/dashboard'
+          assets=(
+            'dashboard.html'
+            'fleet.js'
+            'manifest-dashboard.json'
+            'open.html'
+            'route.html'
+            'sw.js'
+            'dash-icon-192.png'
+            'dash-icon-512.png'
+            'vendor/chart.umd.min.js'
+            'vendor/pdf.min.mjs'
+            'vendor/pdf.worker.min.mjs'
+            'vendor/xlsx.bundle.js'
+            'vendor/fa/css/all.min.css'
+            'vendor/fa/webfonts/fa-brands-400.woff2'
+            'vendor/fa/webfonts/fa-regular-400.woff2'
+            'vendor/fa/webfonts/fa-solid-900.woff2'
+            'vendor/fa/webfonts/fa-v4compatibility.woff2'
+            'vendor/leaflet/README.txt'
+          )
+
+          for asset in "${assets[@]}"; do
+            mkdir -p "$root/$(dirname "$asset")"
+            echo "Downloading allowlisted asset: $asset"
+            curl --fail --silent --show-error --location --retry 2 \
+              --connect-timeout 15 --max-time 120 \
+              "$base/$asset" -o "$root/$asset"
+            test -s "$root/$asset"
+          done
+
+          grep -q 'dashboard-version' "$root/dashboard.html"
+          test "$(head -c 3 "$root/fleet.js")" != '<!D'
+          echo 'Dashboard frontend snapshot downloaded; no business data was requested.'
+
+      - name: Commit snapshot to this feature branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add dashboard-source/public/dashboard
+          if git diff --cached --quiet; then
+            echo 'No frontend asset changes to commit.'
+            exit 0
+          fi
+          git commit -m 'Sync dashboard frontend snapshot from production'
+          git push origin "HEAD:$GITHUB_REF_NAME"
