@@ -1,0 +1,14 @@
+# Never commit production data or server secrets
+**/.env
+**/.env.*
+**/data_export.txt
+**/*.sqlite
+**/*.sqlite-*
+**/*.db
+**/node_modules/
+**/logs/
+**/receipts/
+**/invoice-cache/
+**/fleet-photos/
+**/fleet-voice/
+**/backups/
