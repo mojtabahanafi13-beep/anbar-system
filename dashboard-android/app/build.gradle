@@ -1,0 +1,40 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'ir.factoranbar.dashboard'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'ir.factoranbar.dashboard'
+        minSdk 23
+        targetSdk 34
+        versionCode 1
+        versionName '1.0.0'
+    }
+
+    buildTypes {
+        debug {
+            applicationIdSuffix ''
+            versionNameSuffix ''
+        }
+        release {
+            // Public GitHub Actions builds are intentionally debug-signed for easy internal testing.
+            // Do not distribute this release configuration as a store-signed production release.
+            minifyEnabled false
+            signingConfig signingConfigs.debug
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'androidx.browser:browser:1.8.0'
+    implementation 'androidx.core:core:1.12.0'
+}
