@@ -854,7 +854,7 @@ public final class MainActivity extends AppCompatActivity {
         if (points.isEmpty()) {
             mapView.getController().setZoom(4.5);
             mapView.getController().setCenter(new GeoPoint(32.0, 53.0));
-            TextView empty = text("مختصات ثبت‌شده‌ای برای نمایش دریافت نشد.", 12, COLOR_AMBER, true);
+            TextView empty = text("مختصات ثبت‌شده‌ای برای نمایش دریافت نشد.", 12, color(COLOR_AMBER), true);
             empty.setGravity(Gravity.CENTER);
             root.addView(empty, matchWrap());
         } else {
@@ -863,7 +863,7 @@ public final class MainActivity extends AppCompatActivity {
             mapView.getController().setZoom(points.size() == 1 ? 12.0 : 6.0);
             mapView.getController().setCenter(new GeoPoint(latSum / points.size(), lonSum / points.size()));
             TextView count = text("تعداد خودروهای دارای مختصات: " + fmt(points.size()), 12,
-                    COLOR_GREEN, true);
+                    color(COLOR_GREEN), true);
             count.setGravity(Gravity.CENTER);
             root.addView(count, matchWrap());
         }
@@ -1083,7 +1083,7 @@ public final class MainActivity extends AppCompatActivity {
         return c;
     }
 
-    private void addText(LinearLayout parent, String value, int size, int color, boolean bold) {
+    private void addText(LinearLayout parent, String value, int size, String color, boolean bold) {
         TextView t = text(value, size, color(color), bold);
         parent.addView(t, marginParams(matchWrap(), 0, 2, 0, 4));
     }
@@ -1112,10 +1112,10 @@ public final class MainActivity extends AppCompatActivity {
         parent.addView(row, marginParams(matchWrap(), 0, 4, 0, 4));
     }
 
-    private void addStatus(LinearLayout parent, String value, int backgroundColor) {
-        TextView t = text("● " + value, 11, backgroundColor, true);
+    private void addStatus(LinearLayout parent, String value, String backgroundColor) {
+        TextView t = text("● " + value, 11, color(backgroundColor), true);
         t.setPadding(dp(10), dp(6), dp(10), dp(6));
-        t.setBackground(roundRect("#F8FAFC", 9, toHex(backgroundColor), 1));
+        t.setBackground(roundRect("#F8FAFC", 9, backgroundColor, 1));
         parent.addView(t, marginParams(matchWrap(), 0, 5, 0, 3));
     }
 
